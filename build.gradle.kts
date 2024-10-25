@@ -101,7 +101,7 @@ dependencies {
         exclude("org.slf4j")
     }
 
-    implementation("de.themoep:inventorygui:1.6.3-SNAPSHOT")
+    implementation("de.themoep:inventorygui:1.6.4-SNAPSHOT")
 
     //compileOnly("dev.majek:hexnicks:3.1.1")
 
