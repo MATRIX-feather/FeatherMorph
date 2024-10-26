@@ -251,8 +251,8 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
                 if (mainHandItem.getType() == Material.PLAYER_HEAD && action == Action.RIGHT_CLICK_BLOCK)
                     return false;
 
-                if (!morphs.doQuickDisguise(player, true)
-                        && ItemUtils.isSkillActivateItem(mainHandItem))
+                if (ItemUtils.isSkillActivateItem(mainHandItem)
+                        && !morphs.doQuickDisguise(player, true))
                 {
                     if (InventoryGui.getOpen(player) == null)
                     {
