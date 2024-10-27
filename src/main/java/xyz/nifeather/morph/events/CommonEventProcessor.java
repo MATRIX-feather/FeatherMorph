@@ -247,14 +247,14 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         {
             if (action.isRightClick()) // 下蹲+右键：快速伪装、打开伪装菜单
             {
-                // 不要妨碍别人放置头颅
-                if (mainHandItem.getType() == Material.PLAYER_HEAD && action == Action.RIGHT_CLICK_BLOCK)
-                    return false;
+                boolean isDisguiseTool = ItemUtils.isSkillActivateItem(mainHandItem);
+                boolean isValidItem = mainHandItem.getType() == Material.PLAYER_HEAD || isDisguiseTool;
 
-                if (!morphs.doQuickDisguise(player, true)
-                        && ItemUtils.isSkillActivateItem(mainHandItem))
+                if (!isValidItem || action == Action.RIGHT_CLICK_BLOCK) return false;
+
+                if (!morphs.doQuickDisguise(player, true))
                 {
-                    if (InventoryGui.getOpen(player) == null)
+                    if (isDisguiseTool && InventoryGui.getOpen(player) == null)
                     {
                         var guiScreen = new DisguiseSelectScreenWrapper(player, 0);
                         guiScreen.show();
