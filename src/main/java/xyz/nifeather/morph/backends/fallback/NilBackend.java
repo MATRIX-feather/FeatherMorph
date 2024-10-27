@@ -14,7 +14,7 @@ import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.backends.DisguiseBackend;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
-import xyz.nifeather.morph.backends.WrapperAttribute;
+import xyz.nifeather.morph.backends.WrapperProperties;
 import xyz.nifeather.morph.messages.BackendStrings;
 import xyz.nifeather.morph.misc.NetworkingHelper;
 import xyz.nifeather.morph.network.server.MorphClientHandler;
@@ -138,7 +138,7 @@ public class NilBackend extends DisguiseBackend<NilDisguise, NilWrapper>
 
         var players = new ObjectArrayList<>(Bukkit.getOnlinePlayers());
         players.remove(player);
-        var cmd = new S2CRenderMapAddCommand(player.getEntityId(), wrapper.readOrThrow(WrapperAttribute.disguiseIdentifier));
+        var cmd = new S2CRenderMapAddCommand(player.getEntityId(), wrapper.readPropertyOrThrow(WrapperProperties.DISGUISE_ID));
         players.forEach(p -> clientHandler.sendCommand(p, cmd));
 
         networkingHelper.prepareMeta(player)

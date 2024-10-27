@@ -13,7 +13,7 @@ import xiamomc.morph.network.commands.S2C.map.S2CPartialMapCommand;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
-import xyz.nifeather.morph.backends.WrapperAttribute;
+import xyz.nifeather.morph.backends.WrapperProperties;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 import xyz.nifeather.morph.network.server.MorphClientHandler;
 import xyz.nifeather.morph.utilities.MapMetaUtils;
@@ -124,7 +124,7 @@ public class NetworkingHelper extends MorphPluginObject
 
         public PrepareMeta forWrapper(DisguiseWrapper<?> wrapper)
         {
-            var profile = wrapper.readOrDefault(WrapperAttribute.profile).orElse(new GameProfile(Util.NIL_UUID, "NIL"));
+            var profile = wrapper.readProperty(WrapperProperties.PROFILE).orElse(new GameProfile(Util.NIL_UUID, "NIL"));
             var profileStr = NbtUtils.getCompoundString(NbtUtils.toCompoundTag(profile));
 
             this.setProfileCompound(profileStr)

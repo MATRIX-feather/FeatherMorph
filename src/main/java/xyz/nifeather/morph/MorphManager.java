@@ -15,10 +15,9 @@ import org.bukkit.profile.PlayerTextures;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.abilities.AbilityManager;
 import xyz.nifeather.morph.backends.DisguiseBackend;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
-import xyz.nifeather.morph.backends.WrapperAttribute;
+import xyz.nifeather.morph.backends.WrapperProperties;
 import xyz.nifeather.morph.backends.fallback.NilBackend;
 import xyz.nifeather.morph.backends.server.ServerBackend;
 import xyz.nifeather.morph.events.api.gameplay.*;
@@ -824,7 +823,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
             assert wrapper != null;
 
             // 向Wrapper写入伪装ID
-            wrapper.write(WrapperAttribute.disguiseIdentifier, disguiseIdentifier);
+            wrapper.writeProperty(WrapperProperties.DISGUISE_ID, disguiseIdentifier);
 
             // 获取此伪装将用来显示的目标装备
             EntityEquipment equipment = null;
@@ -853,6 +852,9 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
                     wrapper, provider, equipment,
                     clientHandler.getPlayerOption(player, true), playerMorphConfig);
 
+            if (result.isCopy())
+                outComingState.setSessionData(DATAKEY_SKIP_PROPERTIES, true);
+
             return DisguiseBuildResult.of(outComingState, provider, disguiseMeta, targetEntity);
         }
         catch (IllegalArgumentException iae)
@@ -879,8 +881,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         }
     }
 
-    @Resolved
-    private AbilityManager abilityManager;
+    public static final String DATAKEY_SKIP_PROPERTIES = "skip_properties_init";
 
     private void postBuildDisguise(DisguiseBuildResult result,
                                    MorphParameters parameters,
@@ -896,13 +897,16 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         var state = result.state();
         var wrapper = state.getDisguiseWrapper();
 
-        // 同步伪装属性
-        var propertyHandler = state.disguisePropertyHandler();
-        propertyHandler.setProperties(disguiseProperties.get(state.getEntityType()));
-        propertyHandler.getAll().forEach((property, value) ->
+        if (!state.getSessionDataOr(DATAKEY_SKIP_PROPERTIES, Boolean.class, false))
         {
-            wrapper.writeProperty((SingleProperty<Object>) property, value);
-        });
+            // 同步伪装属性
+            var propertyHandler = state.disguisePropertyHandler();
+            propertyHandler.setProperties(disguiseProperties.get(state.getEntityType()));
+            propertyHandler.getAll().forEach((property, value) ->
+            {
+                wrapper.writeProperty((SingleProperty<Object>) property, value);
+            });
+        }
 
         // 初始化nbt
         var wrapperCompound = provider.getInitialNbtCompound(state, targetEntity, false);

@@ -1,7 +1,6 @@
 package xyz.nifeather.morph.backends;
 
 import com.mojang.authlib.GameProfile;
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagType;
@@ -11,7 +10,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -23,7 +21,6 @@ import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
 import xyz.nifeather.morph.utilities.EntityTypeUtils;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -76,7 +73,7 @@ public abstract class DisguiseWrapper<TInstance>
      */
     public boolean getDisplayingFakeEquipments()
     {
-        return readOrDefault(WrapperAttribute.displayFakeEquip);
+        return readProperty(WrapperProperties.DISPLAY_FAKE_EQUIP);
     }
 
     /**
@@ -85,7 +82,7 @@ public abstract class DisguiseWrapper<TInstance>
      */
     public void setDisplayingFakeEquipments(boolean newVal)
     {
-        write(WrapperAttribute.displayFakeEquip, newVal);
+        writeProperty(WrapperProperties.DISPLAY_FAKE_EQUIP, newVal);
     }
 
     /**
@@ -125,7 +122,7 @@ public abstract class DisguiseWrapper<TInstance>
      */
     public String getDisguiseName()
     {
-        return readOrDefault(WrapperAttribute.disguiseName);
+        return readProperty(WrapperProperties.DISGUISE_NAME);
     }
 
     /**
@@ -134,7 +131,7 @@ public abstract class DisguiseWrapper<TInstance>
      */
     public void setDisguiseName(String name)
     {
-        write(WrapperAttribute.disguiseName, name);
+        writeProperty(WrapperProperties.DISGUISE_NAME, name);
     }
 
     /**
@@ -262,7 +259,7 @@ public abstract class DisguiseWrapper<TInstance>
      */
     public void applySkin(GameProfile profile)
     {
-        write(WrapperAttribute.profile, Optional.of(profile));
+        writeProperty(WrapperProperties.PROFILE, Optional.of(profile));
     }
 
     /**
@@ -272,7 +269,7 @@ public abstract class DisguiseWrapper<TInstance>
     @Nullable
     public GameProfile getSkin()
     {
-        return readOrDefault(WrapperAttribute.profile, Optional.empty()).orElse(null);
+        return readPropertyOr(WrapperProperties.PROFILE, Optional.empty()).orElse(null);
     }
 
     /**
@@ -334,12 +331,12 @@ public abstract class DisguiseWrapper<TInstance>
 
     public void setSaddled(boolean saddled)
     {
-        write(WrapperAttribute.saddled, saddled);
+        writeProperty(WrapperProperties.SADDLED, saddled);
     }
 
     public boolean isSaddled()
     {
-        return readOrDefault(WrapperAttribute.saddled);
+        return readProperty(WrapperProperties.SADDLED);
     }
 
     public void setAggressive(boolean aggressive)
@@ -354,76 +351,17 @@ public abstract class DisguiseWrapper<TInstance>
 
     public abstract  <X> void writeProperty(SingleProperty<X> property, X value);
 
-    public abstract  <X> X readProperty(SingleProperty<X> property);
+    /**
+     * @return 与此Property对应的值，如果没有设定则返回默认值
+     */
+    @NotNull
+    public abstract <X> X readProperty(SingleProperty<X> property);
 
     public abstract <X> X readPropertyOr(SingleProperty<X> property, X defaultVal);
 
-    private final Map<String, Object> attributes = new Object2ObjectArrayMap<>();
+    public abstract <X> X readPropertyOrThrow(SingleProperty<X> property);
 
-    protected <T> void onAttributeWrite(WrapperAttribute<T> attribute, T value)
-    {
-    }
-
-    public Map<String, Object> getAttributes()
-    {
-        return new Object2ObjectArrayMap<>(attributes);
-    }
-
-    /**
-     * 仅用作克隆使用！
-     */
-    @ApiStatus.Internal
-    protected void writeInternal(String id, Object val)
-    {
-        attributes.put(id, val);
-    }
-
-    public <T> void write(WrapperAttribute<T> attribute, T value)
-    {
-        attributes.put(attribute.getIdentifier(), value);
-
-        try
-        {
-            onAttributeWrite(attribute, value);
-        }
-        catch (Throwable t)
-        {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
-
-            logger.error("Error invoking onAttributeWrite: " + t.getMessage());
-            t.printStackTrace();
-        }
-    }
-
-    @Nullable
-    public <T> T read(WrapperAttribute<T> attribute)
-    {
-        return readOrDefault(attribute, null);
-    }
-
-    @NotNull
-    public <T> T readOrThrow(WrapperAttribute<T> attribute)
-    {
-        var obj = readOrDefault(attribute, null);
-
-        Objects.requireNonNull(obj, "Null value for attribute '%s'!".formatted(attribute.getIdentifier()));
-
-        return obj;
-    }
-
-    public <T> T readOrDefault(WrapperAttribute<T> attribute)
-    {
-        return readOrDefault(attribute, attribute.createDefault());
-    }
-
-    public <T> T readOrDefault(WrapperAttribute<T> attribute, T defaultVal)
-    {
-        var val = attributes.getOrDefault(attribute.getIdentifier(), null);
-
-        if (val == null) return defaultVal;
-
-        return (T) val;
-    }
+    public abstract Map<SingleProperty<?>, Object> getProperties();
 
     public void playAnimation(String animationId)
     {

@@ -1,6 +1,7 @@
 package xyz.nifeather.morph.backends.fallback;
 
 import com.mojang.authlib.GameProfile;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagType;
@@ -11,11 +12,12 @@ import org.bukkit.inventory.EntityEquipment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.MorphPlugin;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
 import xyz.nifeather.morph.backends.EventWrapper;
-import xyz.nifeather.morph.backends.WrapperAttribute;
 import xyz.nifeather.morph.backends.WrapperEvent;
+import xyz.nifeather.morph.backends.WrapperProperties;
 import xyz.nifeather.morph.misc.DisguiseEquipment;
 import xyz.nifeather.morph.misc.DisguiseState;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
@@ -42,12 +44,12 @@ public class NilWrapper extends EventWrapper<NilDisguise>
     @Override
     public void mergeCompound(CompoundTag compoundTag)
     {
-        var compound = readOrDefault(WrapperAttribute.nbt, null);
+        var compound = readPropertyOr(WrapperProperties.NBT, null);
 
         if (compound == null)
         {
-            compound = WrapperAttribute.nbt.createDefault();
-            write(WrapperAttribute.nbt, compound);
+            compound = WrapperProperties.NBT.defaultVal().copy();
+            writeProperty(WrapperProperties.NBT, compound);
         }
 
         compound.merge(compoundTag);
@@ -60,7 +62,7 @@ public class NilWrapper extends EventWrapper<NilDisguise>
     @Override
     public CompoundTag getCompound()
     {
-        return readOrDefault(WrapperAttribute.nbt);
+        return readPropertyOr(WrapperProperties.NBT, WrapperProperties.NBT.defaultVal().copy());
     }
 
     private static final UUID nilUUID = UUID.fromString("0-0-0-0-0");
@@ -79,13 +81,36 @@ public class NilWrapper extends EventWrapper<NilDisguise>
     private final Map<SingleProperty<?>, Object> disguiseProperties = new ConcurrentHashMap<>();
 
     @Override
-    public <X> void writeProperty(SingleProperty<X> property, X value)
+    public Map<SingleProperty<?>, Object> getProperties()
     {
-        disguiseProperties.put(property, value);
+        return new Object2ObjectOpenHashMap<>(disguiseProperties);
     }
 
     @Override
-    public <X> X readProperty(SingleProperty<X> property)
+    public <X> void writeProperty(SingleProperty<X> property, X value)
+    {
+        disguiseProperties.put(property, value);
+
+        if (property.equals(WrapperProperties.PROFILE))
+        {
+            var val = ((Optional<GameProfile>) value).orElse(null);
+
+            callEvent(WrapperEvent.SKIN_SET, val);
+            return;
+        }
+
+        if (property.equals(WrapperProperties.DISPLAY_FAKE_EQUIP) && getBindingPlayer() != null)
+        {
+            backend.getNetworkingHelper().prepareMeta(getBindingPlayer())
+                    .setDisguiseEquipmentShown(Boolean.TRUE.equals(value))
+                    .send();
+
+            return;
+        }
+    }
+
+    @Override
+    public <X> @NotNull X readProperty(SingleProperty<X> property)
     {
         return this.readPropertyOr(property, property.defaultVal());
     }
@@ -96,13 +121,22 @@ public class NilWrapper extends EventWrapper<NilDisguise>
         return (X) disguiseProperties.getOrDefault(property, defaultVal);
     }
 
+    @Override
+    public <X> X readPropertyOrThrow(SingleProperty<X> property)
+    {
+        var val = disguiseProperties.getOrDefault(property, null);
+        if (val == null) throw new NullDependencyException("The requested property '%s' was not found in %s".formatted(property.id(), this));
+
+        return (X) val;
+    }
+
     @Nullable
     @Override
     public <R extends Tag> R getTag(@NotNull String path, TagType<R> type)
     {
         try
         {
-            var obj = readOrDefault(WrapperAttribute.nbt).get(path);
+            var obj = getCompound().get(path);
 
             if (obj != null && obj.getType() == type)
                 return (R) obj;
@@ -156,7 +190,7 @@ public class NilWrapper extends EventWrapper<NilDisguise>
     {
         var instance = new NilWrapper(this.copyInstance(), (NilBackend) getBackend());
 
-        this.getAttributes().forEach(instance::writeInternal);
+        instance.disguiseProperties.putAll(this.disguiseProperties);
 
         return instance;
     }
@@ -165,7 +199,7 @@ public class NilWrapper extends EventWrapper<NilDisguise>
     {
         var instance = new NilWrapper(new NilDisguise(other.getEntityType()), backend);
 
-        other.getAttributes().forEach(instance::writeInternal);
+        instance.disguiseProperties.putAll(other.getProperties());
 
         return instance;
     }
@@ -198,28 +232,5 @@ public class NilWrapper extends EventWrapper<NilDisguise>
     public void setBindingPlayer(@Nullable Player player)
     {
         this.bindingPlayer = player;
-    }
-
-    @Override
-    protected <T> void onAttributeWrite(WrapperAttribute<T> attribute, T value)
-    {
-        if (attribute.equals(WrapperAttribute.profile))
-        {
-            var val = ((Optional<GameProfile>) value).orElse(null);
-
-            callEvent(WrapperEvent.SKIN_SET, val);
-            return;
-        }
-
-        if (attribute.equals(WrapperAttribute.displayFakeEquip) && getBindingPlayer() != null)
-        {
-            backend.getNetworkingHelper().prepareMeta(getBindingPlayer())
-                    .setDisguiseEquipmentShown(Boolean.TRUE.equals(value))
-                    .send();
-
-            return;
-        }
-
-        super.onAttributeWrite(attribute, value);
     }
 }

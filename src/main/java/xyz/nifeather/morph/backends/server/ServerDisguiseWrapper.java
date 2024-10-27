@@ -1,6 +1,7 @@
 package xyz.nifeather.morph.backends.server;
 
 import com.mojang.authlib.GameProfile;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagType;
@@ -11,11 +12,12 @@ import org.bukkit.inventory.EntityEquipment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.MorphPlugin;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
 import xyz.nifeather.morph.backends.EventWrapper;
-import xyz.nifeather.morph.backends.WrapperAttribute;
 import xyz.nifeather.morph.backends.WrapperEvent;
+import xyz.nifeather.morph.backends.WrapperProperties;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.SingleWatcher;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.types.AgeableMobWatcher;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.types.InventoryLivingWatcher;
@@ -177,7 +179,7 @@ public class ServerDisguiseWrapper extends EventWrapper<ServerDisguise>
     {
         var newInstance = new ServerDisguiseWrapper(new ServerDisguise(other.getEntityType()), backend);
 
-        other.getAttributes().forEach(newInstance::writeInternal);
+        newInstance.disguiseProperties.putAll(other.getProperties());
 
         return newInstance;
     }
@@ -194,7 +196,7 @@ public class ServerDisguiseWrapper extends EventWrapper<ServerDisguise>
     }
 
     @Override
-    public <X> X readProperty(SingleProperty<X> property)
+    public <X> @NotNull X readProperty(SingleProperty<X> property)
     {
         return this.readPropertyOr(property, property.defaultVal());
     }
@@ -203,6 +205,21 @@ public class ServerDisguiseWrapper extends EventWrapper<ServerDisguise>
     public <X> X readPropertyOr(SingleProperty<X> property, X defaultVal)
     {
         return (X) disguiseProperties.getOrDefault(property, defaultVal);
+    }
+
+    @Override
+    public <X> X readPropertyOrThrow(SingleProperty<X> property)
+    {
+        var val = disguiseProperties.getOrDefault(property, null);
+        if (val == null) throw new NullDependencyException("The requested property '%s' was not found in %s".formatted(property.id(), this));
+
+        return (X) val;
+    }
+
+    @Override
+    public Map<SingleProperty<?>, Object> getProperties()
+    {
+        return new Object2ObjectOpenHashMap<>(this.disguiseProperties);
     }
 
     @Override
@@ -225,7 +242,7 @@ public class ServerDisguiseWrapper extends EventWrapper<ServerDisguise>
     {
         if (this.getEntityType() != EntityType.PLAYER) return;
 
-        write(WrapperAttribute.profile, Optional.of(profile));
+        writeProperty(WrapperProperties.PROFILE, Optional.of(profile));
 
         if (bindingWatcher != null)
             bindingWatcher.writeEntry(CustomEntries.PROFILE, profile);
@@ -301,16 +318,14 @@ public class ServerDisguiseWrapper extends EventWrapper<ServerDisguise>
         bindingPlayer = newBinding;
 
         if (this.bindingWatcher != null)
+        {
             this.bindingWatcher.dispose();
+            this.bindingWatcher = null;
+        }
 
         refreshRegistry(newBinding, bindingWatcher);
 
         this.bindingWatcher = bindingWatcher;
-
-        this.disguiseProperties.forEach((property, value) ->
-        {
-            bindingWatcher.writeProperty((SingleProperty<Object>) property, value);
-        });
     }
 
     private void refreshRegistry(@NotNull Player bindingPlayer, @NotNull SingleWatcher bindingWatcher)
@@ -318,16 +333,21 @@ public class ServerDisguiseWrapper extends EventWrapper<ServerDisguise>
         //和watcher同步我们的NBT
         bindingWatcher.mergeFromCompound(getCompound(false));
 
+        this.disguiseProperties.forEach((property, value) ->
+        {
+            bindingWatcher.writeProperty((SingleProperty<Object>) property, value);
+        });
+
         if (getEntityType() == EntityType.PLAYER)
         {
-            var profileOptional = readOrDefault(WrapperAttribute.profile);
+            var profileOptional = readProperty(WrapperProperties.PROFILE);
             profileOptional.ifPresent(p -> bindingWatcher.writeEntry(CustomEntries.PROFILE, p));
         }
 
         //todo: 激活刷新时也刷新到玩家
         if (bindingWatcher instanceof InventoryLivingWatcher)
         {
-            bindingWatcher.writeEntry(CustomEntries.DISPLAY_FAKE_EQUIPMENT, readOrDefault(WrapperAttribute.displayFakeEquip));
+            bindingWatcher.writeEntry(CustomEntries.DISPLAY_FAKE_EQUIPMENT, readProperty(WrapperProperties.DISPLAY_FAKE_EQUIP));
             bindingWatcher.writeEntry(CustomEntries.EQUIPMENT, this.equipment);
         }
 

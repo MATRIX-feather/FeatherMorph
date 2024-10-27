@@ -3,6 +3,7 @@ package xyz.nifeather.morph.backends.modelengine;
 import com.ticxo.modelengine.api.ModelEngineAPI;
 import com.ticxo.modelengine.api.model.ActiveModel;
 import com.ticxo.modelengine.api.model.ModeledEntity;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagType;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.MorphPlugin;
 import xyz.nifeather.morph.backends.DisguiseBackend;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
@@ -201,7 +203,7 @@ public class MEDisguiseWrapper extends DisguiseWrapper<MEDisguiseInstance>
     }
 
     @Override
-    public <X> X readProperty(SingleProperty<X> property)
+    public <X> @NotNull X readProperty(SingleProperty<X> property)
     {
         return this.readPropertyOr(property, property.defaultVal());
     }
@@ -210,6 +212,21 @@ public class MEDisguiseWrapper extends DisguiseWrapper<MEDisguiseInstance>
     public <X> X readPropertyOr(SingleProperty<X> property, X defaultVal)
     {
         return (X) disguiseProperties.getOrDefault(property, defaultVal);
+    }
+
+    @Override
+    public <X> X readPropertyOrThrow(SingleProperty<X> property)
+    {
+        var val = disguiseProperties.getOrDefault(property, null);
+        if (val == null) throw new NullDependencyException("The requested property '%s' was not found in %s".formatted(property.id(), this));
+
+        return (X) val;
+    }
+
+    @Override
+    public Map<SingleProperty<?>, Object> getProperties()
+    {
+        return new Object2ObjectOpenHashMap<>(this.disguiseProperties);
     }
 
     @Override
@@ -262,7 +279,7 @@ public class MEDisguiseWrapper extends DisguiseWrapper<MEDisguiseInstance>
     {
         var newInstance = new MEDisguiseWrapper(new MEDisguiseInstance(wrapper.getModelID()), backend);
 
-        wrapper.getAttributes().forEach(newInstance::writeInternal);
+        newInstance.disguiseProperties.putAll(wrapper.getProperties());
 
         return newInstance;
     }
@@ -271,7 +288,7 @@ public class MEDisguiseWrapper extends DisguiseWrapper<MEDisguiseInstance>
     {
         var newInstance = new MEDisguiseWrapper(new MEDisguiseInstance("_fallback"), backend);
 
-        other.getAttributes().forEach(newInstance::writeInternal);
+        newInstance.disguiseProperties.putAll(other.getProperties());
 
         return newInstance;
     }

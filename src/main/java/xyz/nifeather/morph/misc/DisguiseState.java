@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.morph.network.PlayerOptions;
@@ -23,6 +24,7 @@ import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.abilities.AbilityUpdater;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
+import xyz.nifeather.morph.backends.WrapperProperties;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.EmoteStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
@@ -491,11 +493,11 @@ public class DisguiseState extends MorphPluginObject
     /**
      * @apiNote 这不是伪装的属性，仅仅针对此DisguiseState会话！
      */
-    public void setCustomData(String name, Object value)
+    public void setSessionData(String name, Object value)
     {
         if (value == null)
         {
-            this.removeCustomData(name);
+            this.removeSessionData(name);
             return;
         }
 
@@ -506,7 +508,7 @@ public class DisguiseState extends MorphPluginObject
      * @apiNote 这不是伪装的属性，仅仅针对此DisguiseState会话！
      */
     @Nullable
-    public <T> T getCustomData(String name, Class<T> type)
+    public <T> T getSessionData(String name, Class<T> type)
     {
         var value = propertiesMap.getOrDefault(name, null);
         if (value == null) return null;
@@ -516,10 +518,17 @@ public class DisguiseState extends MorphPluginObject
         return null;
     }
 
+    @NotNull
+    public <T> T getSessionDataOr(String name, Class<T> type, @NotNull T defaultVal)
+    {
+        var data = this.getSessionData(name, type);
+        return data == null ? defaultVal : data;
+    }
+
     /**
      * @apiNote 这不是伪装的属性，仅仅针对此DisguiseState会话！
      */
-    public void removeCustomData(String name)
+    public void removeSessionData(String name)
     {
         propertiesMap.remove(name);
     }

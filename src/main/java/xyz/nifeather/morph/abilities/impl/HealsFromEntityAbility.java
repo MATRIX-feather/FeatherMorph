@@ -71,7 +71,7 @@ public class HealsFromEntityAbility extends MorphAbility<HealsFromEntityOption>
     {
         if (!super.revokeFromPlayer(player, state)) return false;
 
-        state.removeCustomData(PROPERTY_ID);
+        state.removeSessionData(PROPERTY_ID);
 
         return true;
     }
@@ -92,7 +92,7 @@ public class HealsFromEntityAbility extends MorphAbility<HealsFromEntityOption>
         //Find or refresh entity
         var nmsRecord = NmsRecord.of(player);
 
-        var beamTarget = state.getCustomData(PROPERTY_ID, Entity.class);
+        var beamTarget = state.getSessionData(PROPERTY_ID, Entity.class);
         if (beamTarget != null)
         {
             if (beamTarget.isAlive())
@@ -129,7 +129,7 @@ public class HealsFromEntityAbility extends MorphAbility<HealsFromEntityOption>
                     nmsRecord.nmsPlayer().hurt(source, option.damageWhenDestroyed);
                 }
 
-                state.removeCustomData(PROPERTY_ID);
+                state.removeSessionData(PROPERTY_ID);
             }
         }
 
@@ -147,7 +147,7 @@ public class HealsFromEntityAbility extends MorphAbility<HealsFromEntityOption>
 
             if (beamTarget != newEntity)
             {
-                state.setCustomData(PROPERTY_ID, newEntity);
+                state.setSessionData(PROPERTY_ID, newEntity);
 
                 if (state.getEntityType() == org.bukkit.entity.EntityType.ENDER_DRAGON)
                     clientHandler.sendCommand(player, this.getBeamCommand(state));
@@ -168,7 +168,7 @@ public class HealsFromEntityAbility extends MorphAbility<HealsFromEntityOption>
 
     public S2CSetSNbtCommand getBeamCommand(DisguiseState state)
     {
-        var entity = state.getCustomData(PROPERTY_ID, Entity.class);
+        var entity = state.getSessionData(PROPERTY_ID, Entity.class);
 
         var compound = new CompoundTag();
 
