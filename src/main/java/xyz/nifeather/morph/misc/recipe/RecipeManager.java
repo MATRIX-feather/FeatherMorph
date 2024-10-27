@@ -122,7 +122,7 @@ public class RecipeManager extends MorphPluginObject
 
     private void buildAndAddRecipe(RecipeProperty recipeProperty)
     {
-        var resultItem = ItemUtils.buildSkillItemFrom(ItemStack.of(recipeProperty.resultMaterial()));
+        var resultItem = ItemUtils.buildDisguiseToolFrom(ItemStack.of(recipeProperty.resultMaterial()));
         resultItem.editMeta(meta ->
         {
             meta.setRarity(ItemRarity.UNCOMMON);

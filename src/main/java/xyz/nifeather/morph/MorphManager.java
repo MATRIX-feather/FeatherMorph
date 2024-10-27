@@ -448,9 +448,8 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
      * @param player 发起玩家
      * @return 操作是否成功
      */
-    public boolean doQuickDisguise(Player player, boolean ignoreActionItem)
+    public boolean tryQuickDisguise(Player player)
     {
-        var actionItem = ignoreActionItem ? null : getActionItem();
         var state = this.getDisguiseStateFor(player);
         var mainHandItem = player.getEquipment().getItemInMainHand();
         var mainHandItemType = mainHandItem.getType();
@@ -527,9 +526,6 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         }
         else
         {
-            if (actionItem != null && !mainHandItemType.equals(actionItem))
-                return false;
-
             var targetedEntity = player.getTargetEntity(5);
 
             if (targetedEntity != null)

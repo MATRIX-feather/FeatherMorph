@@ -247,12 +247,12 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         {
             if (action.isRightClick()) // 下蹲+右键：快速伪装、打开伪装菜单
             {
-                boolean isDisguiseTool = ItemUtils.isSkillActivateItem(mainHandItem);
+                boolean isDisguiseTool = ItemUtils.isDisguiseTool(mainHandItem);
                 boolean isValidItem = mainHandItem.getType() == Material.PLAYER_HEAD || isDisguiseTool;
 
                 if (!isValidItem || action == Action.RIGHT_CLICK_BLOCK) return false;
 
-                if (!morphs.doQuickDisguise(player, true))
+                if (!morphs.tryQuickDisguise(player))
                 {
                     if (isDisguiseTool && InventoryGui.getOpen(player) == null)
                     {
@@ -267,7 +267,7 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
             }
             else // 下蹲+左键：取消伪装
             {
-                if (!ItemUtils.isSkillActivateItem(mainHandItem) || disguiseState == null)
+                if (!ItemUtils.isDisguiseTool(mainHandItem) || disguiseState == null)
                     return false;
 
                 morphs.unMorph(player);
@@ -275,7 +275,7 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         }
         else
         {
-            if (!ItemUtils.isSkillActivateItem(mainHandItem) || disguiseState == null)
+            if (!ItemUtils.isDisguiseTool(mainHandItem) || disguiseState == null)
                 return false;
 
             if (action.isRightClick()) // 站立+右键：技能

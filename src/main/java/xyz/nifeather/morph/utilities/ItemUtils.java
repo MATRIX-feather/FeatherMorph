@@ -77,7 +77,7 @@ public class ItemUtils
 
     public static final String SKILL_ACTIVATE_ITEM_KEY = "feathermorph:is_disguise_tool";
 
-    public static ItemStack buildSkillItemFrom(ItemStack stack)
+    public static ItemStack buildDisguiseToolFrom(ItemStack stack)
     {
         var nms = net.minecraft.world.item.ItemStack.fromBukkitCopy(stack);
         var customData = nms.getComponents().get(DataComponents.CUSTOM_DATA);
@@ -89,7 +89,7 @@ public class ItemUtils
         return nms.asBukkitMirror();
     }
 
-    public static boolean isSkillActivateItem(ItemStack stack)
+    public static boolean isDisguiseTool(ItemStack stack)
     {
         var nms = net.minecraft.world.item.ItemStack.fromBukkitCopy(stack);
         var customData = nms.getComponents().get(DataComponents.CUSTOM_DATA);

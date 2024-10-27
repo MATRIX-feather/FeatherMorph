@@ -679,7 +679,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         var id = c2SMorphCommand.getArgumentAt(0, "");
 
         if (id.isEmpty() || id.isBlank())
-            manager.doQuickDisguise(player, true);
+            manager.tryQuickDisguise(player);
         else if (manager.canMorph(player))
             manager.morph(player, player, id, player.getTargetEntity(5));
     }

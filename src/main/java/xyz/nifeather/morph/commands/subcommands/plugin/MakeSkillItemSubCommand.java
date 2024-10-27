@@ -58,7 +58,7 @@ public class MakeSkillItemSubCommand extends MorphPluginObject implements ISubCo
             return true;
         }
 
-        item = ItemUtils.buildSkillItemFrom(item);
+        item = ItemUtils.buildDisguiseToolFrom(item);
         player.getEquipment().setItemInMainHand(item);
 
         sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.success()));
