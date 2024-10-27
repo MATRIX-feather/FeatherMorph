@@ -191,7 +191,7 @@ public class ServerDisguiseWrapper extends EventWrapper<ServerDisguise>
     {
         disguiseProperties.put(property, value);
 
-        if (bindingWatcher != null)
+        if (!property.id().startsWith("wrapper_") && bindingWatcher != null)
             bindingWatcher.writeProperty(property, value);
     }
 
