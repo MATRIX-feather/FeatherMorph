@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.bukkit.Bukkit;
 import org.java_websocket.WebSocket;
+import org.java_websocket.framing.CloseFrame;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,7 +15,6 @@ import xiamomc.pluginbase.Bindables.Bindable;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
-import xyz.nifeather.morph.network.ReasonCodes;
 import xyz.nifeather.morph.network.multiInstance.IInstanceService;
 import xyz.nifeather.morph.network.multiInstance.protocol.IClientHandler;
 import xyz.nifeather.morph.network.multiInstance.protocol.Operation;
@@ -194,7 +194,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
 
     private void disconnect(WebSocket socket, String reason)
     {
-        this.sendCommand(socket, new MIS2CDisconnectCommand(ReasonCodes.DISCONNECT, reason));
+        this.sendCommand(socket, new MIS2CDisconnectCommand(CloseFrame.NORMAL, reason));
 
         this.allowedSockets.remove(socket);
         socket.close();
@@ -350,6 +350,8 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
     @Override
     public void onMessage(InstanceServer.WsRecord wsRecord, InstanceServer server)
     {
+        if (!allowedSockets.containsKey(wsRecord.socket())) return;
+
         this.addSchedule(() -> this.onText(wsRecord));
     }
 

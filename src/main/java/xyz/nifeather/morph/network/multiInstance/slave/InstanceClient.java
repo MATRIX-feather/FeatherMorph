@@ -1,6 +1,7 @@
 package xyz.nifeather.morph.network.multiInstance.slave;
 
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.framing.CloseFrame;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import xiamomc.pluginbase.XiaMoJavaPlugin;
@@ -53,8 +54,10 @@ public class InstanceClient extends WebSocketClient
     {
         logger.info("[C] Connection closed with code '%s' and reason '%s'".formatted(code, reason));
 
+        boolean shouldRetry = true;
+
         var waitingSecond = 20;
-        if (code == 1001 || code == 1000)
+        if (shouldRetry)
         {
             logger.info("[C] Retrying connect after %s seconds...".formatted(waitingSecond));
             plugin.schedule(this::reconnect, waitingSecond * 20);

@@ -78,6 +78,7 @@ public class MultiInstanceService extends MorphPluginObject
     @Initializer
     private void load(MorphConfigManager configManager)
     {
+        configManager.bind(enabled, ConfigOption.ENABLE_MULTIINSTANCE);
         configManager.bind(isMaster, ConfigOption.IS_MASTER);
 
         isMaster.onValueChanged((o, n) ->

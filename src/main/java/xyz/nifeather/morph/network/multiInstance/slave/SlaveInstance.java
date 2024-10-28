@@ -2,6 +2,7 @@ package xyz.nifeather.morph.network.multiInstance.slave;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.bukkit.Bukkit;
+import org.java_websocket.framing.CloseFrame;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.morph.network.commands.C2S.AbstractC2SCommand;
@@ -14,7 +15,6 @@ import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
-import xyz.nifeather.morph.network.ReasonCodes;
 import xyz.nifeather.morph.network.multiInstance.IInstanceService;
 import xyz.nifeather.morph.network.multiInstance.master.MasterInstance;
 import xyz.nifeather.morph.network.multiInstance.protocol.IMasterHandler;
@@ -43,7 +43,7 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
 
         try
         {
-            client.close(ReasonCodes.DISCONNECT);
+            client.close(CloseFrame.NORMAL);
             client = null;
 
             return true;
