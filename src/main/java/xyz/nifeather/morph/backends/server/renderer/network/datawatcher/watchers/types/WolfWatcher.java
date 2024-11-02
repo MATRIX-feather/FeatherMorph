@@ -16,6 +16,7 @@ import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
+import xyz.nifeather.morph.backends.server.renderer.utilties.HolderUtils;
 import xyz.nifeather.morph.misc.AnimationNames;
 import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
@@ -40,14 +41,7 @@ public class WolfWatcher extends TameableAnimalWatcher
     {
         var bukkitKey = bukkitVariant.getKey();
 
-        var world = ((CraftWorld) Bukkit.getWorlds().stream().findFirst().get()).getHandle();
-        var registry = world.registryAccess().registryOrThrow(Registries.WOLF_VARIANT);
-
-        var holder = registry.getHolder(ResourceLocation.parse(bukkitKey.asString()));
-        if (holder.isPresent())
-            return holder.get();
-        else
-            throw new NullDependencyException("Null wolf variant for id '%s'('%s')".formatted(bukkitVariant, bukkitVariant));
+        return HolderUtils.getHolderOrThrow(ResourceLocation.parse(bukkitKey.asString()), Registries.WOLF_VARIANT);
     }
 
     @Override
@@ -112,17 +106,15 @@ public class WolfWatcher extends TameableAnimalWatcher
 
     private Holder<WolfVariant> getVariant(ResourceKey<WolfVariant> key)
     {
-        var world = ((CraftWorld) Bukkit.getWorlds().stream().findFirst().get()).getHandle();
-        var registry = world.registryAccess().registryOrThrow(Registries.WOLF_VARIANT);
-
-        var holder = registry.getHolder(key);
-        if (holder.isEmpty())
+        try
         {
-            logger.warn("No suitable Holder for wolf variant " + key);
+            return HolderUtils.getHolderOrThrow(key, Registries.WOLF_VARIANT);
+        }
+        catch (Throwable t)
+        {
+            logger.warn("Can't find Holder for key '%s', trying default value...".formatted(key));
             return ValueIndex.WOLF.WOLF_VARIANT.defaultValue();
         }
-
-        return holder.get();
     }
 
     private Wolf.Variant getBukkitVariant(Holder<WolfVariant> holder)

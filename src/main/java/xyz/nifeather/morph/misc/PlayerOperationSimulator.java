@@ -311,7 +311,7 @@ public class PlayerOperationSimulator extends MorphPluginObject
             var manager = record.interactManager();
 
             //ServerPlayerGameMode.useItem()
-            return manager.useItem(record.nmsPlayer(), record.nmsWorld(), CraftItemStack.asNMSCopy(bukkitItem), hand).indicateItemUse();
+            return manager.useItem(record.nmsPlayer(), record.nmsWorld(), CraftItemStack.asNMSCopy(bukkitItem), hand).consumesAction();
         }
 
         return false;
@@ -335,7 +335,7 @@ public class PlayerOperationSimulator extends MorphPluginObject
         ServerPlayerGameMode manager = record.interactManager();
 
         //ServerPlayerGameMode里已经调用了PlayerInteractEvent，因此不需要再重复调用一遍
-        return manager.useItemOn(record.nmsPlayer(), record.nmsWorld(), CraftItemStack.asNMSCopy(bukkitItem), nmsHand, moving).indicateItemUse();
+        return manager.useItemOn(record.nmsPlayer(), record.nmsWorld(), CraftItemStack.asNMSCopy(bukkitItem), nmsHand, moving).consumesAction();
     }
 
     /**
@@ -373,9 +373,9 @@ public class PlayerOperationSimulator extends MorphPluginObject
             var vec = new Vec3(hitPos.getX(), hitPos.getY(), hitPos.getZ());
 
             assert entityHandle != null;
-            return entityHandle.interactAt(playerHandle, vec, hand).indicateItemUse()
-                    || playerHandle.interactOn(entityHandle, hand).indicateItemUse()
-                    || manager.useItem(playerHandle, worldHandle, CraftItemStack.asNMSCopy(bukkitItem), hand).indicateItemUse();
+            return entityHandle.interactAt(playerHandle, vec, hand).consumesAction()
+                    || playerHandle.interactOn(entityHandle, hand).consumesAction()
+                    || manager.useItem(playerHandle, worldHandle, CraftItemStack.asNMSCopy(bukkitItem), hand).consumesAction();
         }
 
         return false;

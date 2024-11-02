@@ -195,18 +195,18 @@ public class DefaultConfigGenerator
         this.getConfiguration(EntityType.HORSE)
                 .addAbilityIdentifier(AbilityType.ATTRIBUTE)
                 .appendOption(AbilityType.ATTRIBUTE, AttributeModifyOption
-                        .from(Attribute.GENERIC_MOVEMENT_SPEED, AttributeModifyOption.OperationType.multiply_base, 0.5d)
-                        .with(Attribute.GENERIC_STEP_HEIGHT, AttributeModifyOption.OperationType.add, 0.4d));
+                        .from(Attribute.MOVEMENT_SPEED, AttributeModifyOption.OperationType.multiply_base, 0.5d)
+                        .with(Attribute.STEP_HEIGHT, AttributeModifyOption.OperationType.add, 0.4d));
 
         this.getConfiguration(EntityType.IRON_GOLEM)
                 .addAbilityIdentifier(AbilityType.ATTRIBUTE)
                 .appendOption(
                         AbilityType.ATTRIBUTE,
                         AttributeModifyOption
-                                .from(Attribute.GENERIC_MOVEMENT_SPEED, AttributeModifyOption.OperationType.multiply_base, -0.6)
-                                .with(Attribute.GENERIC_KNOCKBACK_RESISTANCE, AttributeModifyOption.OperationType.add, 1d)
-                                .with(Attribute.GENERIC_ATTACK_DAMAGE, AttributeModifyOption.OperationType.add, 15)
-                                .with(Attribute.GENERIC_ATTACK_SPEED, AttributeModifyOption.OperationType.multiply_base, -0.55d)
+                                .from(Attribute.MOVEMENT_SPEED, AttributeModifyOption.OperationType.multiply_base, -0.6)
+                                .with(Attribute.KNOCKBACK_RESISTANCE, AttributeModifyOption.OperationType.add, 1d)
+                                .with(Attribute.ATTACK_DAMAGE, AttributeModifyOption.OperationType.add, 15)
+                                .with(Attribute.ATTACK_SPEED, AttributeModifyOption.OperationType.multiply_base, -0.55d)
                 )
                 .addAbilityIdentifier(AbilityType.EXTRA_KNOCKBACK)
                 .appendOption(
@@ -219,10 +219,10 @@ public class DefaultConfigGenerator
                 .appendOption(
                         AbilityType.ATTRIBUTE,
                         AttributeModifyOption
-                                .from(Attribute.GENERIC_MOVEMENT_SPEED, AttributeModifyOption.OperationType.multiply_base, -0.6)
-                                .with(Attribute.GENERIC_KNOCKBACK_RESISTANCE, AttributeModifyOption.OperationType.add, 1d)
-                                .with(Attribute.GENERIC_ATTACK_DAMAGE, AttributeModifyOption.OperationType.add, 30)
-                                .with(Attribute.GENERIC_ATTACK_SPEED, AttributeModifyOption.OperationType.multiply_base, -0.6d)
+                                .from(Attribute.MOVEMENT_SPEED, AttributeModifyOption.OperationType.multiply_base, -0.6)
+                                .with(Attribute.KNOCKBACK_RESISTANCE, AttributeModifyOption.OperationType.add, 1d)
+                                .with(Attribute.ATTACK_DAMAGE, AttributeModifyOption.OperationType.add, 30)
+                                .with(Attribute.ATTACK_SPEED, AttributeModifyOption.OperationType.multiply_base, -0.6d)
                 )
                 .addAbilityIdentifier(AbilityType.WARDEN);
 

@@ -109,7 +109,7 @@ public class BossbarAbility extends MorphAbility<BossbarOption>
             if (playerGameMode == GameMode.SPECTATOR)
                 playersToShow.removeIf(p -> p.getGameMode() != playerGameMode);
 
-            bossbar.progress((float) (player.getHealth() / player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()));
+            bossbar.progress((float) (player.getHealth() / player.getAttribute(Attribute.MAX_HEALTH).getValue()));
             //bossbar.name(this.getBossbarName(state, option));
 
             if (state.canDisplayBossbar())

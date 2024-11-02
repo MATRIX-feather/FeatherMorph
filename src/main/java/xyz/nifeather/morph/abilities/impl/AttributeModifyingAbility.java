@@ -12,6 +12,7 @@ import xyz.nifeather.morph.abilities.AbilityType;
 import xyz.nifeather.morph.abilities.MorphAbility;
 import xyz.nifeather.morph.abilities.options.AttributeModifyOption;
 import xyz.nifeather.morph.misc.DisguiseState;
+import xyz.nifeather.morph.utilities.CommonUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -102,7 +103,7 @@ public class AttributeModifyingAbility extends MorphAbility<AttributeModifyOptio
             return null;
         }
 
-        var attribute = Arrays.stream(Attribute.values())
+        var attribute = Arrays.stream(CommonUtils.getAvailableAttributes())
                 .filter(a -> a.getKey().equals(NamespacedKey.fromString(option.attributeName)))
                 .findFirst().orElse(null); //(option.attributeName);
 

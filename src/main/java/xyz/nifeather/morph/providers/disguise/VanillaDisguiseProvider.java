@@ -248,8 +248,8 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
             if (!(entity instanceof LivingEntity living)) return;
 
             var craftLiving = (net.minecraft.world.entity.LivingEntity) ((CraftLivingEntity)living).getHandleRaw();
-            var mobMaxHealth = craftLiving.craftAttributes.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue();
-            var playerAttribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+            var mobMaxHealth = craftLiving.craftAttributes.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
+            var playerAttribute = player.getAttribute(Attribute.MAX_HEALTH);
 
             if (mobMaxHealth <= 0d)
             {
@@ -382,7 +382,7 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
 
     private void removeAllHealthModifiers(Player player)
     {
-        var attribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+            var attribute = player.getAttribute(Attribute.MAX_HEALTH);
         assert attribute != null;
 
         this.executeThenScaleHealth(player, attribute, () -> attribute.removeModifier(healthModifierKey));

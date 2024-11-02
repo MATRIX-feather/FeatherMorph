@@ -94,7 +94,7 @@ public class EntityProcessor extends MorphPluginObject implements Listener
         addAvoidEntityGoal(goalSelector, pathfinderMob);
 
         // 添加TargetGoal
-        nmsMob.goalSelector.addGoal(-1, new FeatherMorphNearestAttackableGoal(manager, nmsMob, Player.class, true, le -> true));
+        nmsMob.goalSelector.addGoal(-1, new FeatherMorphNearestAttackableGoal(manager, nmsMob, Player.class, true, (living, world) -> true));
     }
 
     private void addAvoidEntityGoal(GoalSelector goalSelector, PathfinderMob sourceMob)
@@ -234,7 +234,7 @@ public class EntityProcessor extends MorphPluginObject implements Listener
 
         public FeatherMorphNearestAttackableGoal(MorphManager morphManager,
                                                  net.minecraft.world.entity.Mob mob, Class<Player> targetClass,
-                                                 boolean checkVisibility, Predicate<LivingEntity> targetPredicate)
+                                                 boolean checkVisibility, TargetingConditions.Selector targetPredicate)
         {
             super(mob, targetClass, checkVisibility, targetPredicate);
 
@@ -400,24 +400,25 @@ public class EntityProcessor extends MorphPluginObject implements Listener
             return this.path != null;
         }
 
+        private void testPlayer()
+        {
+        }
+
         private void findEntityToAvoid()
         {
-            var entityFound = this.mob
-                    .level()
-                    .getNearestEntity(
-                            this.mob.level().getEntitiesOfClass(this.avoidClass,
-                                    this.mob.getBoundingBox().inflate(this.maxDist, 3.0, this.maxDist),
-                                    living -> true),
+            var entities = mob.level()
+                    .getEntitiesOfClass(avoidClass, mob.getBoundingBox().inflate(maxDist, 3.0, maxDist), living -> true);
 
-                            TargetingConditions.forCombat()
-                                    .range(this.distance)
-                                    .selector(EntitySelector.NO_CREATIVE_OR_SPECTATOR::test),
+            Player entityFound = null;
+            double currentDistance = Double.MAX_VALUE;
+            for (Player entity : entities)
+            {
+                if (!EntitySelector.NO_SPECTATORS.test(entity)) continue;
 
-                            this.mob,
-                            this.mob.getX(),
-                            this.mob.getY(),
-                            this.mob.getZ()
-                    );
+                var distance = entity.distanceToSqr(mob);
+                if (distance < currentDistance)
+                    entityFound = entity;
+            }
 
             if (entityFound == null) return;
 

@@ -8,8 +8,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -65,7 +65,7 @@ public class EntityTypeUtils
     {
         var serverWorld = ((CraftWorld) world).getHandle();
 
-        return nmsType.create(serverWorld, EntityTypeUtils::scheduleEntityDiscard, BlockPos.ZERO, MobSpawnType.COMMAND, false, false);
+        return nmsType.create(serverWorld, EntityTypeUtils::scheduleEntityDiscard, BlockPos.ZERO, EntitySpawnReason.COMMAND, false, false);
     }
 
     @NotNull

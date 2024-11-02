@@ -8,6 +8,7 @@ import com.comphenix.protocol.injector.GamePhase;
 import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
+import net.minecraft.util.Mth;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -65,7 +66,7 @@ public class PlayerLookPacketListener extends ProtocolListener
     private void onTeleport(ClientboundTeleportEntityPacket packet, PacketEvent event)
     {
         //获取此包的来源实体
-        var sourceNmsEntity = getNmsPlayerFrom(packet.getId());
+        var sourceNmsEntity = getNmsPlayerFrom(packet.id());
         if (sourceNmsEntity == null)
             return;
 
@@ -82,21 +83,19 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (!isDragon && !isPhantom)
             return;
 
-        var yaw = packet.getyRot();
-        var pitch = packet.getxRot();
+        var yaw = packet.change().yRot();
+        var pitch = packet.change().xRot();
 
         var playerYaw = isDragon ? (sourcePlayer.getYaw() + 180f) : sourcePlayer.getYaw();
-        var finalYaw = (playerYaw / 360f) * 256f;
-        yaw = (byte)finalYaw;
+        yaw = (playerYaw / 360f) * 256f;
 
         var playerPitch = isPhantom ? -sourcePlayer.getPitch() : sourcePlayer.getPitch();
 
-        var finalPitch = (playerPitch / 360f) * 256f;
-        pitch = (byte)finalPitch;
+        pitch = (playerPitch / 360f) * 256f;
 
         var container = event.getPacket();
-        container.getBytes().write(0, yaw);
-        container.getBytes().write(1, pitch);
+        container.getBytes().write(0, Mth.packDegrees(yaw));
+        container.getBytes().write(1, Mth.packDegrees(pitch));
     }
 
     private void onHeadRotation(ClientboundRotateHeadPacket packet, PacketEvent event)
@@ -161,7 +160,7 @@ public class PlayerLookPacketListener extends ProtocolListener
         {
             newPacket = new ClientboundMoveEntityPacket.Rot(
                     sourcePlayer.getEntityId(),
-                    yaw, pitch,
+                    Mth.packDegrees(yaw), Mth.packDegrees(pitch),
                     packet.isOnGround()
             );
         }
@@ -178,7 +177,7 @@ public class PlayerLookPacketListener extends ProtocolListener
             newPacket = new ClientboundMoveEntityPacket.PosRot(
                     sourcePlayer.getEntityId(),
                     packet.getXa(), packet.getYa(), packet.getZa(),
-                    yaw, pitch,
+                    Mth.packDegrees(yaw), Mth.packDegrees(pitch),
                     packet.isOnGround()
             );
         }

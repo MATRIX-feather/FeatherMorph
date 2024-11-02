@@ -7,18 +7,16 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.animal.FrogVariant;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Player;
-import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
+import xyz.nifeather.morph.backends.server.renderer.utilties.HolderUtils;
 import xyz.nifeather.morph.misc.AnimationNames;
 import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
@@ -33,23 +31,14 @@ public class FrogWatcher extends LivingEntityWatcher
 
     private Holder<FrogVariant> getFrogVariant(ResourceKey<FrogVariant> key)
     {
-        var world = ((CraftWorld) Bukkit.getWorlds().stream().findFirst().get()).getHandle();
-
-        return world.registryAccess().registryOrThrow(Registries.FROG_VARIANT).getHolderOrThrow(key);
+        return HolderUtils.getHolderOrThrow(key, Registries.FROG_VARIANT);
     }
 
     public Holder<FrogVariant> getFrogVariant(Frog.Variant bukkitVariant)
     {
         var bukkitKey = bukkitVariant.getKey();
 
-        var world = ((CraftWorld) Bukkit.getWorlds().stream().findFirst().get()).getHandle();
-        var registry = world.registryAccess().registryOrThrow(Registries.FROG_VARIANT);
-
-        var holder = registry.getHolder(ResourceLocation.parse(bukkitKey.asString()));
-        if (holder.isPresent())
-            return holder.get();
-        else
-            throw new NullDependencyException("Null frog variant for id '%s'('%s')".formatted(bukkitVariant, bukkitVariant));
+        return HolderUtils.getHolderOrThrow(ResourceLocation.parse(bukkitKey.asString()), Registries.FROG_VARIANT);
     }
 
     public Frog.Variant getBukkitFrogVariant()

@@ -3,10 +3,13 @@ package xyz.nifeather.morph.events;
 import com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent;
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import de.themoep.inventorygui.InventoryGui;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -43,6 +46,7 @@ import xyz.nifeather.morph.misc.playerList.PlayerListHandler;
 import xyz.nifeather.morph.network.server.MorphClientHandler;
 import xyz.nifeather.morph.network.server.ServerSetEquipCommand;
 import xyz.nifeather.morph.skills.MorphSkillHandler;
+import xyz.nifeather.morph.utilities.CommonUtils;
 import xyz.nifeather.morph.utilities.EntityTypeUtils;
 import xyz.nifeather.morph.utilities.ItemUtils;
 
@@ -403,7 +407,7 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
                 }, 20 * 3);
         }
 
-        for (var attribute : Attribute.values())
+        for (var attribute : CommonUtils.getAvailableAttributes())
         {
             var instance = player.getAttribute(attribute);
 

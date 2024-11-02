@@ -2,6 +2,7 @@ package xyz.nifeather.morph.skills.impl;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.Potions;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
@@ -55,7 +56,12 @@ public class SplashPotionSkill extends MorphSkill<NoOpConfiguration>
         var potionEffect = new PotionEffect(info.type, info.duration, info.amplifier, false, true);
         meta.addCustomEffect(potionEffect, true);
 
-        var targetPotion = BuiltInRegistries.POTION.get(ResourceLocation.parse(info.type.getKey().asString()));
+        Potion targetPotion = null;
+        var potionRef = BuiltInRegistries.POTION.get(ResourceLocation.parse(info.type.getKey().asString()))
+                .orElse(null);
+
+        if (potionRef != null && potionRef.isBound())
+            targetPotion = potionRef.value();
 
         if (info.type == PotionEffectType.INSTANT_HEALTH)
             targetPotion = Potions.HEALING.value();
