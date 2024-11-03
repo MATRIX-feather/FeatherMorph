@@ -94,7 +94,12 @@ public class UpdateHandler extends MorphPluginObject
                     + "?"
                     + "game_versions=[\"%s\"]";
 
-            var uri = new URI(URLDecoder.decode(urlString, StandardCharsets.UTF_8));
+            urlString = urlString.formatted(Bukkit.getMinecraftVersion())
+                    .replace("[", "%5B") // Make URI happy
+                    .replace("]", "%5D")
+                    .replace("\"", "%22");
+
+            var uri = new URI(urlString);
 
             var request = HttpRequest.newBuilder()
                     .GET()
