@@ -7,10 +7,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HolderUtils
 {
+    private static final Logger log = LoggerFactory.getLogger(HolderUtils.class);
     private static ServerLevel level;
 
     private static void setupLevel()
@@ -20,18 +22,18 @@ public class HolderUtils
         level = ((CraftWorld)Bukkit.getWorlds().stream().findFirst().get()).getHandle();
     }
 
-    private static <T> Registry<T> getRegistry(ResourceKey<Registry<T>> registryKey)
+    private static <T> Registry<T> lookupRegistryOrThrow(ResourceKey<Registry<T>> registryKey)
     {
         setupLevel();
 
-        return level.registryAccess().get(registryKey).orElseThrow().value();
+        return level.registryAccess().lookup(registryKey).orElseThrow();
     }
 
     public static <T> Holder<T> getHolderOrThrow(ResourceLocation location, ResourceKey<Registry<T>> registryKey)
     {
         setupLevel();
 
-        var registry = getRegistry(registryKey);
+        var registry = lookupRegistryOrThrow(registryKey);
 
         var ref = registry.get(location).orElse(null);
         if (ref == null)
@@ -47,7 +49,7 @@ public class HolderUtils
     {
         setupLevel();
 
-        var registry = getRegistry(registryKey);
+        var registry = lookupRegistryOrThrow(registryKey);
 
         var ref = registry.get(key).orElse(null);
         if (ref == null)
