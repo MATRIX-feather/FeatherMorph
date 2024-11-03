@@ -21,10 +21,12 @@ import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.messages.UpdateStrings;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-import java.net.URL;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
@@ -83,6 +85,8 @@ public class UpdateHandler extends MorphPluginObject
 
         var reqId = requestId.addAndGet(1);
 
+        HttpClient httpClient = null;
+
         try
         {
             var urlString = "https://api.modrinth.com"
@@ -90,25 +94,20 @@ public class UpdateHandler extends MorphPluginObject
                     + "?"
                     + "game_versions=[\"%s\"]";
 
-            urlString = urlString.formatted(Bukkit.getMinecraftVersion())
-                    .replace("[", "%5B") // Make URI happy
-                    .replace("]", "%5D")
-                    .replace("\"", "%22");
-
-            var url = new URL(urlString).toURI();
+            var uri = new URI(URLDecoder.decode(urlString, StandardCharsets.UTF_8));
 
             var request = HttpRequest.newBuilder()
                     .GET()
-                    .uri(url)
+                    .uri(uri)
                     .timeout(Duration.ofSeconds(10))
                     .header("User-Agent", "feathermorph")
                     .build();
 
-            var client = HttpClient.newBuilder()
+            httpClient = HttpClient.newBuilder()
                             .followRedirects(HttpClient.Redirect.ALWAYS)
                             .build();
 
-            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200)
             {
                 logger.error("Failed to check update: Server returned HTTP code {}", response.statusCode());
@@ -128,6 +127,11 @@ public class UpdateHandler extends MorphPluginObject
 
             if (onFinish != null)
                 onFinish.accept(CheckResult.FAIL);
+        }
+        finally
+        {
+            if (httpClient != null)
+                httpClient.close();
         }
     }
 

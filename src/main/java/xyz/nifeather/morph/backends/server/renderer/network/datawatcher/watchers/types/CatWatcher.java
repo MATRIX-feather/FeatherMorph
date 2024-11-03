@@ -59,9 +59,9 @@ public class CatWatcher extends TameableAnimalWatcher
         }
         catch (Throwable t)
         {
-            logger.warn("Bukkit type '%s' is not in the registries, trying Tabby...".formatted(bukkitType));
+            logger.warn("Bukkit type '%s' is not in the registries, trying default value...".formatted(bukkitType));
 
-            return HolderUtils.getHolderOrThrow(CatVariant.TABBY, Registries.CAT_VARIANT);
+            return ValueIndex.CAT.CAT_VARIANT.defaultValue();
         }
     }
 
