@@ -130,8 +130,8 @@ public final class MorphPlugin extends XiaMoJavaPlugin
         pluginManager = Bukkit.getPluginManager();
         var bukkitVersion = Bukkit.getMinecraftVersion();
 
-        String primaryVersion = "1.21.1";
-        String[] compatVersions = new String[] { primaryVersion, "1.21" };
+        String primaryVersion = "1.21.3";
+        String[] compatVersions = new String[] { primaryVersion };
         if (Arrays.stream(compatVersions).noneMatch(bukkitVersion::equals))
         {
             printStartupWarning(

@@ -1,12 +1,16 @@
 package xyz.nifeather.morph.storage;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.nifeather.morph.MorphPluginObject;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.List;
 
 public class DirectoryStorage extends MorphPluginObject
 {
@@ -57,26 +61,58 @@ public class DirectoryStorage extends MorphPluginObject
         this.initializeFailed = false;
     }
 
+    public File getRootDirectory()
+    {
+        return Path.of(this.absoluteDirectoryPath).toFile();
+    }
+
     public File[] getFiles(String pattern)
     {
-        var path = Path.of(this.absoluteDirectoryPath).toFile();
-        return path.listFiles(f -> f.isFile() && f.getName().matches(pattern));
+        return getFilesUnder(getRootDirectory(), f -> f.isFile() && f.getName().matches(pattern)).toArray(new File[]{});
+    }
+
+    @NotNull
+    public List<File> getFilesUnder(File rootDirectory, @Nullable FileFilter filter)
+    {
+        if (!rootDirectory.isDirectory()) return new ObjectArrayList<>();
+
+        var fileList = new ObjectArrayList<File>();
+
+        var subFiles = rootDirectory.listFiles(file -> true);
+        if (subFiles == null) return new ObjectArrayList<>();
+
+        for (File file : subFiles)
+        {
+            if (file.isDirectory())
+            {
+                fileList.addAll(getFilesUnder(file, filter));
+            }
+            else
+            {
+                if (filter != null && !filter.accept(file))
+                    continue;
+
+                fileList.add(file);
+            }
+        }
+
+        return fileList;
     }
 
     public File[] getFiles()
     {
-        return Path.of(this.absoluteDirectoryPath).toFile().listFiles(File::isFile);
+        return getFilesUnder(getRootDirectory(), null).toArray(new File[]{});
     }
 
     public File[] getDirectories(String pattern)
     {
-        var path = Path.of(this.absoluteDirectoryPath).toFile();
+        var path = getRootDirectory();
         return path.listFiles(f -> f.isDirectory() && f.getName().matches(pattern));
     }
 
     public File[] getDirectories()
     {
-        return Path.of(this.absoluteDirectoryPath).toFile().listFiles(File::isDirectory);
+        return getRootDirectory().listFiles(File::isDirectory);
     }
 
     public File getDirectory(String relativePath, boolean createIfNotExist)
@@ -115,7 +151,7 @@ public class DirectoryStorage extends MorphPluginObject
     @Nullable
     public File getFile(String fileName, boolean createIfNotExist)
     {
-        var file = new File(this.getAbsoulteURI(absoluteDirectoryPath.getPath() + separator + fileName));
+        var file = new File(getRootDirectory(), fileName);
 
         if (!file.toPath().toUri().getPath().startsWith(absoluteDirectoryPath.getPath()))
         {

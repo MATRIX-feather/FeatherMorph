@@ -136,7 +136,12 @@ public class AbilityManager extends MorphPluginObject
             var abilityInstance = this.getAbility(idKey);
             if (abilityInstance == null) return;
 
-            optionMap.put(idKey, configuration.getAbilityOptions(abilityInstance));
+            var options = configuration.getAbilityOptions(abilityInstance);
+
+            if (options != null)
+                optionMap.put(idKey, options);
+            else
+                logger.warn("Null option for ability %s under %s, is everything correct?".formatted(abilityInstance.getIdentifier(), disguiseIdentifier));
         });
 
         return optionMap;

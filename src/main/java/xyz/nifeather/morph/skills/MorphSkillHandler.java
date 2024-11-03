@@ -150,7 +150,7 @@ public class MorphSkillHandler extends MorphPluginObject
      * @return 对应的技能和技能配置，如果没找到则是null
      */
     @Nullable
-    public Pair<SkillAbilityConfiguration, IMorphSkill<?>> getSkillEntry(String identifier)
+    public Pair<SkillAbilityConfiguration, IMorphSkill<?>> getSkillEntry(@Nullable String identifier)
     {
         if (identifier == null) return null;
 

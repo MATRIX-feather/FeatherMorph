@@ -4,12 +4,13 @@ import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Initializer;
+import xyz.nifeather.morph.abilities.impl.AttributeModifyingAbility;
+import xyz.nifeather.morph.abilities.options.AttributeModifyOption;
 import xyz.nifeather.morph.skills.DefaultConfigGenerator;
 import xyz.nifeather.morph.storage.DirectoryJsonBasedStorage;
 import xyz.nifeather.morph.storage.MorphJsonBasedStorage;
 
 import java.io.File;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<SkillAbilityConfiguration>
@@ -28,7 +29,7 @@ public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<Skill
             update(packageVersion);
     }
 
-    private static final int TARGET_PACKAGE_VERSION = PackageVersions.INITIAL;
+    private static final int TARGET_PACKAGE_VERSION = PackageVersions.ATTRIBUTE_NAME_CHANGED;
 
     private void update(int currentVersion)
     {
@@ -42,7 +43,45 @@ public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<Skill
                 saveDefaultGeneratedConfigurations();
         }
 
+        if (currentVersion < PackageVersions.ATTRIBUTE_NAME_CHANGED)
+            migrate_attribute();
+
         setPackageVersion(TARGET_PACKAGE_VERSION);
+    }
+
+    private void migrate_attribute()
+    {
+        logger.info("Migrating attribute names...");
+        var files = directoryStorage.getFiles(".*\\.json$");
+
+        var abilityInstance = new AttributeModifyingAbility();
+
+        for (File file : files)
+        {
+            var config = this.loadFrom(file);
+            if (config == null)
+            {
+                logger.warn("Can't load SkillAbilityConfiguration from '%s', see errors above.".formatted(file.toString()));
+                continue;
+            }
+
+            var targetOption = config.getAbilityOptions(abilityInstance);
+
+            if (targetOption == null) continue;
+
+            var key = getKeyFromFile(file);
+            config.legacy_MobID = key;
+            logger.info("Migrating " + key);
+
+            for (AttributeModifyOption.AttributeInfo attributeInfo : targetOption.modifiers)
+                attributeInfo.attributeName = attributeInfo.attributeName.replace("generic.", "");
+
+            config.setOption(abilityInstance.getIdentifier().asString(), targetOption);
+
+            this.save(config);
+        }
+
+        logger.info("Done.");
     }
 
     private void migrateFromLegacyStorage()
@@ -166,5 +205,6 @@ public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<Skill
     public static class PackageVersions
     {
         public static final int INITIAL = 1;
+        public static final int ATTRIBUTE_NAME_CHANGED = 2;
     }
 }
