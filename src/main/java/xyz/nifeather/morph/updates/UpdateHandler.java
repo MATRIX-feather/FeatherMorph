@@ -222,6 +222,9 @@ public class UpdateHandler extends MorphPluginObject
                 return;
             }
 
+            if (compare == VersionHandling.CompareResult.NOT_ON_SAME_CHANNEL)
+                logger.info("We are not on the same channel with the latest release, assuming there is a new update!");
+
             // 提醒服务器关于更新的消息
             var serverOps = Bukkit.getOperators();
             var sendTargets = new ObjectArrayList<CommandSender>();
