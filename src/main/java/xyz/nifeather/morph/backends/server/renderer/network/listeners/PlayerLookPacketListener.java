@@ -83,15 +83,11 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (!isDragon && !isPhantom)
             return;
 
-        var yaw = packet.change().yRot();
-        var pitch = packet.change().xRot();
+        float yaw = packet.change().yRot();
+        float pitch = packet.change().xRot();
 
-        var playerYaw = isDragon ? (sourcePlayer.getYaw() + 180f) : sourcePlayer.getYaw();
-        yaw = (playerYaw / 360f) * 256f;
-
-        var playerPitch = isPhantom ? -sourcePlayer.getPitch() : sourcePlayer.getPitch();
-
-        pitch = (playerPitch / 360f) * 256f;
+        yaw = isDragon ? (yaw + 180f) : yaw;
+        pitch = isPhantom ? -pitch : pitch;
 
         var container = event.getPacket();
         container.getBytes().write(0, Mth.packDegrees(yaw));
@@ -111,9 +107,9 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (watcher == null || watcher.getEntityType() != EntityType.ENDER_DRAGON)
             return;
 
-        var newHeadYaw = (byte)(((sourcePlayer.getYaw() + 180f) / 360f) * 256f);
+        var newHeadYaw = packet.getYHeadRot() + 180f;
 
-        var newPacket = new ClientboundRotateHeadPacket(sourceNmsEntity, newHeadYaw);
+        var newPacket = new ClientboundRotateHeadPacket(sourceNmsEntity, Mth.packDegrees(newHeadYaw));
         var finalPacket = PacketContainer.fromPacket(newPacket);
         getFactory().markPacketOurs(finalPacket);
 
@@ -140,17 +136,11 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (!isDragon && !isPhantom)
             return;
 
-        var yaw = packet.getyRot();
-        var pitch = packet.getxRot();
+        float yaw = packet.getyRot();
+        float pitch = packet.getxRot();
 
-        var playerYaw = isDragon ? (sourcePlayer.getYaw() + 180f) : sourcePlayer.getYaw();
-        var finalYaw = (playerYaw / 360f) * 256f;
-        yaw = (byte)finalYaw;
-
-        var playerPitch = isPhantom ? -sourcePlayer.getPitch() : sourcePlayer.getPitch();
-
-        var finalPitch = (playerPitch / 360f) * 256f;
-        pitch = (byte)finalPitch;
+        yaw = isDragon ? (yaw + 180f) : yaw;
+        pitch = isPhantom ? -pitch : pitch;
 
         ClientboundMoveEntityPacket newPacket;
 
