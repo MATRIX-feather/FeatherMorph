@@ -42,6 +42,7 @@ import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 import xyz.nifeather.morph.misc.playerList.PlayerListHandler;
 import xyz.nifeather.morph.network.server.MorphClientHandler;
 import xyz.nifeather.morph.network.server.ServerSetEquipCommand;
+import xyz.nifeather.morph.providers.disguise.VanillaDisguiseProvider;
 import xyz.nifeather.morph.skills.MorphSkillHandler;
 import xyz.nifeather.morph.utilities.EntityTypeUtils;
 import xyz.nifeather.morph.utilities.ItemUtils;
@@ -410,6 +411,9 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
             if (instance == null) continue;
 
             instance.removeModifier(AttributeModifyingAbility.modifierKey);
+            instance.removeModifier(VanillaDisguiseProvider.healthModifierKeyLegacy);
+            instance.removeModifier(VanillaDisguiseProvider.healthModifierKey);
+            instance.removeModifier(VanillaDisguiseProvider.healthModifierKeyVanilla);
         }
 
         this.addSchedule(() -> PlayerListHandler.instance().handle(player));

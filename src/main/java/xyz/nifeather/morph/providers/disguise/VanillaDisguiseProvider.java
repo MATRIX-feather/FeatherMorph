@@ -88,7 +88,7 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
     }
 
     private final Bindable<Boolean> armorStandShowArms = new Bindable<>(false);
-    private final Bindable<Boolean> doHealthScale = new Bindable<>(true);
+    private final Bindable<Boolean> doHealthScale = new Bindable<>(false);
     private final Bindable<Integer> healthCap = new Bindable<>(60);
     private final Bindable<Boolean> modifyBoundingBoxes = new Bindable<>(false);
     private final Bindable<Boolean> checkSpaceBoundingBox = new Bindable<>(true);
@@ -245,7 +245,11 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
 
             var entity = NmsUtils.spawnEntity(state.getEntityType(), state.getPlayer().getWorld(), loc);
 
-            if (!(entity instanceof LivingEntity living)) return;
+            if (!(entity instanceof LivingEntity living))
+            {
+                entity.remove();
+                return;
+            }
 
             var craftLiving = (net.minecraft.world.entity.LivingEntity) ((CraftLivingEntity)living).getHandleRaw();
             var mobMaxHealth = craftLiving.craftAttributes.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue();
@@ -265,12 +269,18 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
                 diff = healthCap.get() - playerAttribute.getBaseValue();
 
             //缩放生命值
-            double finalDiff = diff;
+            double diffFinal = diff;
             this.executeThenScaleHealth(player, playerAttribute, () ->
             {
-                var modifier = new AttributeModifier(healthModifierKey, finalDiff, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
+                var modifier = new AttributeModifier(healthModifierKey, diffFinal, AttributeModifier.Operation.ADD_NUMBER);
 
+                // In case some data sync plugins not processing correctly, also check for minecraft namespace.
+                playerAttribute.removeModifier(healthModifierKeyVanilla);
                 playerAttribute.removeModifier(healthModifierKey);
+
+                // Also handle legacy keys
+                playerAttribute.removeModifier(healthModifierKeyLegacy);
+
                 playerAttribute.addModifier(modifier);
             });
 
@@ -284,7 +294,13 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
     }
 
     @NotNull
-    public static final NamespacedKey healthModifierKey = Objects.requireNonNull(NamespacedKey.fromString("feathermorph:health_modifier"), "How?!");
+    public static final NamespacedKey healthModifierKeyLegacy = Objects.requireNonNull(NamespacedKey.fromString("feathermorph:health_modifier"), "How?!");
+
+    @NotNull
+    public static final NamespacedKey healthModifierKey = Objects.requireNonNull(NamespacedKey.fromString("feathermorph:fm_health_modifier"), "How?!");
+
+    @NotNull
+    public static final NamespacedKey healthModifierKeyVanilla = Objects.requireNonNull(NamespacedKey.fromString("minecraft:fm_health_modifier"), "How?!");
 
     private void resetPlayerDimensions(Player player)
     {
