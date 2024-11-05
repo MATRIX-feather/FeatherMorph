@@ -258,9 +258,12 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
             }
 
             assert playerAttribute != null;
+
+            // 获取生物最大生命和玩家最大生命的差异
             var diff = mobMaxHealth - playerAttribute.getBaseValue();
 
-            //确保血量不会超过上限
+            // 如果玩家的基值加上差异大于限制
+            // 确保血量不会超过上限
             if (playerAttribute.getBaseValue() + diff > healthCap.get())
                 diff = healthCap.get() - playerAttribute.getBaseValue();
 
@@ -268,7 +271,11 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
             double finalDiff = diff;
             this.executeThenScaleHealth(player, playerAttribute, () ->
             {
-                var modifier = new AttributeModifier(healthModifierKey, finalDiff, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
+                var modifier = new AttributeModifier(healthModifierKey, finalDiff, AttributeModifier.Operation.ADD_NUMBER);
+
+                // Workaround: Some server experienced modifiers not being removed or changed to `minecraft:health_modifier`
+                // But How?
+                playerAttribute.removeModifier(healthModifierKeyVanilla);
 
                 playerAttribute.removeModifier(healthModifierKey);
                 playerAttribute.addModifier(modifier);
@@ -284,7 +291,10 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
     }
 
     @NotNull
-    public static final NamespacedKey healthModifierKey = Objects.requireNonNull(NamespacedKey.fromString("feathermorph:health_modifier"), "How?!");
+    public static final NamespacedKey healthModifierKey = Objects.requireNonNull(NamespacedKey.fromString("feathermorph:fm_health_modifier"), "How?!");
+
+    @NotNull
+    public static final NamespacedKey healthModifierKeyVanilla = Objects.requireNonNull(NamespacedKey.fromString("minecraft:fm_health_modifier"), "How?!");
 
     private void resetPlayerDimensions(Player player)
     {
