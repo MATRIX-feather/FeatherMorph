@@ -43,17 +43,28 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
 
         try
         {
-            client.close(CloseFrame.NORMAL);
+            client.close(CloseFrame.GOING_AWAY, "noRetry");
+            client.dispose();
             client = null;
 
             return true;
         }
         catch (Throwable t)
         {
-            logger.warn("Can't close client! " + t.getMessage());
+            logSlaveWarn("Can't close client! " + t.getMessage());
             t.printStackTrace();
             return false;
         }
+    }
+
+    private void logSlaveInfo(String message)
+    {
+        logger.info("[Slave@%s] %s".formatted(Integer.toHexString(this.hashCode()), message));
+    }
+
+    private void logSlaveWarn(String message)
+    {
+        logger.warn("[Slave@%s] %s".formatted(Integer.toHexString(this.hashCode()), message));
     }
 
     @Resolved
@@ -95,7 +106,7 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
         }
         catch (Throwable t)
         {
-            logger.warn("Error occurred setting up client: " + t.getMessage());
+            logSlaveWarn("Error occurred setting up client: " + t.getMessage());
             t.printStackTrace();
 
             return false;
@@ -112,7 +123,7 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
     @Initializer
     private void load()
     {
-        logger.info("Preparing multi-instance client...");
+        logSlaveInfo("Preparing multi-instance client...");
 
         config.bind(secret, ConfigOption.MASTER_SECRET);
 
@@ -127,7 +138,7 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
 
         if (!prepareClient())
         {
-            logger.warn("Can't setup client, this instance will stay offline from the instance network!");
+            logSlaveWarn("Can't setup client, this instance will stay offline from the instance network!");
             return;
         }
     }
@@ -168,20 +179,20 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
     {
         if (!currentState.get().loggedIn())
         {
-            logger.warn("Bad server implementation? They are trying to sync meta before we login!");
+            logSlaveWarn("Bad server implementation? They are trying to sync meta before we login!");
             return;
         }
 
         var meta = metaCommand.getMeta();
         if (meta == null)
         {
-            logger.warn("Bad server implementation? Get DisguiseMeta command but meta is null!");
+            logSlaveWarn("Bad server implementation? Get DisguiseMeta command but meta is null!");
             return;
         }
 
         if (!meta.isValid())
         {
-            logger.warn("Bad server implementation? The meta is invalid!");
+            logSlaveWarn("Bad server implementation? The meta is invalid!");
             return;
         }
 
@@ -242,11 +253,17 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
     {
         if (currentState.get() != ProtocolState.LOGIN)
         {
-            logger.warn("[C] Bad server implementation? They sent a login result at when we are not in a login process!");
+            logSlaveWarn("Bad server implementation? They sent a login result at when we are not in a login process!");
             return;
         }
 
-        if (!cLoginResultCommand.isAllowed()) return;
+        if (!cLoginResultCommand.isAllowed())
+        {
+            logSlaveWarn("Server refused the login");
+            return;
+        }
+
+        logSlaveInfo("Done logging in, now sending our disguise data...");
 
         var cmds = new ObjectArrayList<MIC2SDisguiseMetaCommand>();
         var disguises = morphManager.listAllPlayerMeta();
@@ -279,14 +296,14 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
     public void onStateCommand(MIS2CStateCommand cStateCommand)
     {
         if (cStateCommand.getState() == ProtocolState.INVALID)
-            logger.warn("[C] Bad server implementation? The new session state is invalid!");
+            logSlaveWarn("Bad server implementation? The new session state is invalid!");
 
         switchState(cStateCommand.getState());
     }
 
     private void switchState(ProtocolState newState)
     {
-        logger.info("[C] Client networking state switched to " + newState);
+        logSlaveInfo("Client networking state switched to " + newState);
         currentState.set(newState);
     }
 
@@ -329,13 +346,13 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
         var cmd = registries.createS2CCommand(text[0], text.length == 2 ? text[1] : "");
         if (cmd == null)
         {
-            logger.warn("[C] Unknown command: " + text[0]);
+            logSlaveWarn("Unknown command: " + text[0]);
             return;
         }
 
         if (!(cmd instanceof MIS2CCommand<?> mis2c))
         {
-            logger.warn("[C] Command '%s' is not a MIS2C instance!".formatted(cmd));
+            logSlaveWarn("Command '%s' is not a MIS2C instance!".formatted(cmd));
             return;
         }
 
