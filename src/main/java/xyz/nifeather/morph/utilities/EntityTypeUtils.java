@@ -11,8 +11,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Enemy;
 import org.bukkit.entity.EntityType;
@@ -61,15 +63,25 @@ public class EntityTypeUtils
 
     // Hope this will work with Folia
     // I guess it will...
-    public static <T extends Entity> T createEntityThenDispose(net.minecraft.world.entity.EntityType<T> nmsType, World world)
+    //
+    // Requiring spawn location because Folia has a bug where loading chunks will stuck the whole region thread...
+    // So we require a specific value that matches the player's current location, hopefully could prevent chunk loading.
+    @Nullable
+    public static <T extends Entity> T createEntityThenDispose(net.minecraft.world.entity.EntityType<T> nmsType, World world, Location spawnLocation)
     {
-        var serverWorld = ((CraftWorld) world).getHandle();
+        spawnLocation = spawnLocation.clone();
 
-        return nmsType.create(serverWorld, EntityTypeUtils::scheduleEntityDiscard, BlockPos.ZERO, MobSpawnType.COMMAND, false, false);
+        var serverWorld = ((CraftWorld) world).getHandle();
+        spawnLocation.setY(-4096);
+
+        var locationBlock = spawnLocation.toBlockLocation();
+        var spawnBlockLocation = new BlockPos(locationBlock.getBlockX(), locationBlock.getBlockY(), locationBlock.getBlockZ());
+
+        return nmsType.create(serverWorld, EntityTypeUtils::scheduleEntityDiscard, spawnBlockLocation, MobSpawnType.COMMAND, false, false);
     }
 
     @NotNull
-    public static SoundInfo getAmbientSound(EntityType bukkitType, World tickingWorld)
+    public static SoundInfo getAmbientSound(EntityType bukkitType, World tickingWorld, Location tickingLocation)
     {
         if (bukkitType == EntityType.UNKNOWN)
             return new SoundInfo(null, SoundSource.PLAYERS, Integer.MAX_VALUE, 1);
@@ -77,7 +89,7 @@ public class EntityTypeUtils
         var cache = typeSoundMap.getOrDefault(bukkitType, null);
         if (cache != null) return cache;
 
-        var entity = createEntityThenDispose(getNmsType(bukkitType), tickingWorld);
+        var entity = createEntityThenDispose(getNmsType(bukkitType), tickingWorld, tickingLocation);
 
         if (entity instanceof Mob mob)
         {
@@ -113,7 +125,7 @@ public class EntityTypeUtils
     }
 
     @Nullable
-    public static Class<? extends Entity> getNmsClass(@NotNull EntityType type, World tickingWorld)
+    public static Class<? extends Entity> getNmsClass(@NotNull EntityType type, World tickingWorld, Location tickingLocation)
     {
         var cache = nmsClassMap.getOrDefault(type, null);
         if (cache != null) return cache;
@@ -127,7 +139,7 @@ public class EntityTypeUtils
             return null;
         }
 
-        var entity = createEntityThenDispose(nmsType, tickingWorld);
+        var entity = createEntityThenDispose(nmsType, tickingWorld, tickingLocation);
 
         if (entity == null)
         {
