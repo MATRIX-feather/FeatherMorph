@@ -25,7 +25,7 @@ import xyz.nifeather.morph.messages.SkinCacheStrings;
 import xyz.nifeather.morph.misc.CapeURL;
 import xyz.nifeather.morph.misc.DisguiseTypes;
 import xyz.nifeather.morph.misc.MorphGameProfile;
-import xyz.nifeather.morph.misc.MorphParameters;
+import xyz.nifeather.morph.api.v0.disguise.MorphParameters;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 import xyz.nifeather.morph.misc.skins.PlayerSkinProvider;
 

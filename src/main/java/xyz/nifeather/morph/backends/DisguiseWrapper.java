@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.api.v0.disguise.backends.IDisguiseWrapper;
 import xyz.nifeather.morph.misc.CollisionBoxRecord;
 import xyz.nifeather.morph.misc.DisguiseState;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
@@ -29,7 +30,7 @@ import java.util.function.Consumer;
  * A wrapper that holds the underlying disguise instance
  * @param <TInstance> Type of the disguise instance
  */
-public abstract class DisguiseWrapper<TInstance>
+public abstract class DisguiseWrapper<TInstance> implements IDisguiseWrapper<TInstance>
 {
     private static final Logger log = LoggerFactory.getLogger(DisguiseWrapper.class);
     protected TInstance instance;
@@ -44,6 +45,7 @@ public abstract class DisguiseWrapper<TInstance>
      * Gets the underlying disguise instance
      * @return The underlying disguise instance
      */
+    @Override
     public TInstance getInstance()
     {
         return instance;
@@ -51,6 +53,7 @@ public abstract class DisguiseWrapper<TInstance>
 
     private final DisguiseBackend<TInstance, ? extends DisguiseWrapper<TInstance>> backend;
 
+    @Override
     public DisguiseBackend<TInstance, ? extends DisguiseWrapper<TInstance>> getBackend()
     {
         return backend;

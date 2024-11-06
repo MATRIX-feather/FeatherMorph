@@ -10,7 +10,7 @@ import xiamomc.pluginbase.Messages.MessageStore;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.config.MorphConfigManager;
-import xyz.nifeather.morph.events.api.lifecycle.ConfigurationReloadEvent;
+import xyz.nifeather.morph.api.v0.events.lifecycle.ConfigurationReloadEvent;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;

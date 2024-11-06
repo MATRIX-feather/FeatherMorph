@@ -1,4 +1,4 @@
-package xyz.nifeather.morph.events.api.lifecycle;
+package xyz.nifeather.morph.api.v0.events.lifecycle;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;

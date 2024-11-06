@@ -15,17 +15,20 @@ import org.bukkit.profile.PlayerTextures;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.nifeather.morph.api.v0.disguise.DisguiseValidateResult;
+import xyz.nifeather.morph.api.v0.disguise.IMorphManager;
+import xyz.nifeather.morph.api.v0.disguise.MorphParameters;
 import xyz.nifeather.morph.backends.DisguiseBackend;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
 import xyz.nifeather.morph.backends.WrapperProperties;
 import xyz.nifeather.morph.backends.fallback.NilBackend;
 import xyz.nifeather.morph.backends.server.ServerBackend;
-import xyz.nifeather.morph.events.api.gameplay.*;
+import xyz.nifeather.morph.api.v0.events.gameplay.*;
 import xyz.nifeather.morph.misc.*;
 import xyz.nifeather.morph.misc.playerList.PlayerListHandler;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
-import xyz.nifeather.morph.events.api.lifecycle.ManagerFinishedInitializeEvent;
+import xyz.nifeather.morph.api.v0.events.lifecycle.ManagerFinishedInitializeEvent;
 import xyz.nifeather.morph.interfaces.IManagePlayerData;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.HintStrings;
@@ -66,7 +69,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MorphManager extends MorphPluginObject implements IManagePlayerData
+public class MorphManager extends MorphPluginObject implements IManagePlayerData, IMorphManager
 {
     private final List<DisguiseState> activeDisguises = ObjectLists.synchronize(new ObjectArrayList<>());
 
@@ -240,7 +243,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         config.bind(useClientRenderer, ConfigOption.USE_CLIENT_RENDERER);
         config.bind(hideDisguisedPlayers, ConfigOption.HIDE_DISGUISED_PLAYERS_IN_TAB);
 
-        registerProviders(ObjectList.of(
+        registerDisguiseProviders(ObjectList.of(
                 new VanillaDisguiseProvider(),
                 new PlayerDisguiseProvider(),
                 //new ItemDisplayProvider(),
@@ -339,6 +342,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
      * @param uuid 玩家UUID
      * @return 是否可以伪装
      */
+    @Override
     public boolean canMorph(UUID uuid)
     {
         var val = uuidMoprhTimeMap.get(uuid);
@@ -352,7 +356,13 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
      */
     public void updateLastPlayerMorphOperationTime(Player player)
     {
-        uuidMoprhTimeMap.put(player.getUniqueId(), plugin.getCurrentTick());
+        this.updateLastPlayerMorphOperationTime(player.getUniqueId());
+    }
+
+    @Override
+    public void updateLastPlayerMorphOperationTime(UUID uuid)
+    {
+        uuidMoprhTimeMap.put(uuid, plugin.getCurrentTick());
     }
 
     private BindableList<String> bannedDisguises;
@@ -364,6 +374,12 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
     public BindableList<String> getBannedDisguises()
     {
         return bannedDisguises;
+    }
+
+    @Override
+    public List<String> getBannedDisguisesCopy()
+    {
+        return new ObjectArrayList<>(bannedDisguises);
     }
 
     //region 伪装提供器
@@ -391,12 +407,19 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         return providers.stream().filter(p -> p.getNameSpace().equals(splitedId[0])).findFirst().orElse(fallbackProvider);
     }
 
+    @Override
+    @NotNull
+    public DisguiseProvider getDisguiseProvider(String namespaceIdentifier)
+    {
+        return getProvider(namespaceIdentifier);
+    }
+
     /**
      * 注册一个DisguiseProvider
      * @param provider 目标Provider
      * @return 操作是否成功
      */
-    public boolean registerProvider(DisguiseProvider provider)
+    public boolean registerDisguiseProvider(DisguiseProvider provider)
     {
         //logger.info("Registering disguise provider: " + provider.getNameSpace());
 
@@ -421,11 +444,11 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
      * @param providers Provider列表
      * @return 所有操作是否成功
      */
-    public boolean registerProviders(List<DisguiseProvider> providers)
+    public boolean registerDisguiseProviders(List<DisguiseProvider> providers)
     {
         AtomicBoolean success = new AtomicBoolean(false);
 
-        providers.forEach(p -> success.set(registerProvider(p) || success.get()));
+        providers.forEach(p -> success.set(registerDisguiseProvider(p) || success.get()));
 
         return success.get();
     }
@@ -588,11 +611,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
     public boolean morph(CommandSender source, Player player,
                          String key, @Nullable Entity targetEntity)
     {
-        var parameters = MorphParameters.create(player, key)
-                .setSource(source)
-                .setTargetedEntity(targetEntity);
-
-        return this.doDisguise(parameters);
+        return this.morph(source, player, key, targetEntity, false);
     }
 
     /**
@@ -638,16 +657,16 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
             var validateResult = validateDisguise(meta);
             switch (validateResult)
             {
-                case VALIDATE_NO_ISSUE -> {}
+                case DisguiseValidateResult.VALIDATE_NO_ISSUE -> {}
 
-                case VALIDATE_NO_PROVIDER ->
+                case DisguiseValidateResult.VALIDATE_NO_PROVIDER ->
                 {
                     logger.error("Unable to find any provider that matches the identifier '%s'".formatted(parameters.targetDisguiseIdentifier()));
                     source.sendMessage(MessageUtils.prefixes(source, MorphStrings.disguiseBannedOrNotSupportedString()));
                     return false;
                 }
 
-                case VALIDATE_PROVIDER_FAIL ->
+                case DisguiseValidateResult.VALIDATE_PROVIDER_FAIL ->
                 {
                     source.sendMessage(MessageUtils.prefixes(source, MorphStrings.invalidIdentityString()));
                     return false;
@@ -761,25 +780,25 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         return info;
     }
 
-    public static final int VALIDATE_NO_ISSUE = 0;
-    public static final int VALIDATE_NO_PROVIDER = 1;
-    public static final int VALIDATE_PROVIDER_FAIL = 2;
-
-    public int validateDisguise(DisguiseMeta meta)
+    @Override
+    public int validateDisguise(String disguiseIdentifier)
     {
-        var disguiseIdentifier = meta.getIdentifier();
-
         // 查找provider
         var strippedKey = disguiseIdentifier.split(":", 2);
 
         var provider = getProvider(strippedKey[0]);
 
         if (provider == MorphManager.fallbackProvider) // 如果没找到provider
-            return VALIDATE_NO_PROVIDER;
+            return DisguiseValidateResult.VALIDATE_NO_PROVIDER;
         else if (!provider.isValid(disguiseIdentifier)) // 如果provider不认识这个ID
-            return VALIDATE_PROVIDER_FAIL;
+            return DisguiseValidateResult.VALIDATE_PROVIDER_FAIL;
 
-        return VALIDATE_NO_ISSUE;
+        return DisguiseValidateResult.VALIDATE_NO_ISSUE;
+    }
+
+    public int validateDisguise(DisguiseMeta meta)
+    {
+        return validateDisguise(meta.getIdentifier());
     }
 
     /**
@@ -1218,6 +1237,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
      *
      * @param player 目标玩家
      */
+    @Override
     public void unMorph(Player player)
     {
         this.unMorph(player, player, false, false);
@@ -1229,6 +1249,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
      * @param player 目标玩家
      * @param bypassPermission 是否绕过权限检查（强制取消伪装）
      */
+    @Override
     public void unMorph(Player player, boolean bypassPermission)
     {
         this.unMorph(player, player, bypassPermission, false);
@@ -1249,6 +1270,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
      *
      * @apiNote 如果 forceUnmorph 不为 true，则此操作可以被其他来源取消
      */
+    @Override
     public void unMorph(@Nullable CommandSender source, Player player, boolean bypassPermission, boolean forceUnmorph)
     {
         // 确保source不为null
@@ -1362,6 +1384,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
      * @param player 目标玩家
      * @return 正在伪装时返回客户端预览是否可用并已启用，没在伪装时返回玩家的客户端设置
      */
+    @Override
     public boolean clientViewAvailable(Player player)
     {
         var state = this.getDisguiseStateFor(player);
@@ -1377,11 +1400,13 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         return playerOption.isClientSideSelfView() && state.getProvider().validForClient(state);
     }
 
+    @Override
     public void setSelfDisguiseVisible(Player player, boolean val, boolean saveToConfig)
     {
         this.setSelfDisguiseVisible(player, val, saveToConfig, clientHandler.getPlayerOption(player, true).isClientSideSelfView(), false);
     }
 
+    @Override
     public void setSelfDisguiseVisible(Player player, boolean value, boolean saveToConfig, boolean dontSetServerSide, boolean noClientCommand)
     {
         var state = getDisguiseStateFor(player);
@@ -1413,6 +1438,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
      * @param player 目标玩家
      * @return 伪装状态，如果为null则表示玩家没有通过插件伪装
      */
+    @Override
     @Nullable
     public DisguiseState getDisguiseStateFor(@Nullable Player player)
     {

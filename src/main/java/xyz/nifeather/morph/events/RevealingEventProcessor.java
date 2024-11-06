@@ -19,8 +19,8 @@ import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.RevealingHandler;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
-import xyz.nifeather.morph.events.api.gameplay.PlayerMorphEvent;
-import xyz.nifeather.morph.events.api.gameplay.PlayerUnMorphEvent;
+import xyz.nifeather.morph.api.v0.events.gameplay.PlayerMorphEvent;
+import xyz.nifeather.morph.api.v0.events.gameplay.PlayerUnMorphEvent;
 import xyz.nifeather.morph.misc.DisguiseTypes;
 import xyz.nifeather.morph.misc.NmsRecord;
 

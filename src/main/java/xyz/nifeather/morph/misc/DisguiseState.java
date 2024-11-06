@@ -11,7 +11,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.morph.network.PlayerOptions;
@@ -23,8 +22,8 @@ import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.abilities.AbilityUpdater;
+import xyz.nifeather.morph.api.v0.disguise.IDisguiseState;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
-import xyz.nifeather.morph.backends.WrapperProperties;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.EmoteStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
@@ -47,7 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static xyz.nifeather.morph.utilities.DisguiseUtils.itemOrAir;
 
-public class DisguiseState extends MorphPluginObject
+public class DisguiseState extends MorphPluginObject implements IDisguiseState
 {
     public DisguiseState(Player player, @NotNull String identifier, @NotNull String skillIdentifier,
                          @NotNull DisguiseWrapper<?> wrapper, @NotNull DisguiseProvider provider,
@@ -283,6 +282,7 @@ public class DisguiseState extends MorphPluginObject
     private Player cachedPlayer;
 
     @Nullable
+    @Override
     public Player tryGetPlayer()
     {
         // 如果缓存的玩家实例在线，那么返回缓存
@@ -314,6 +314,7 @@ public class DisguiseState extends MorphPluginObject
      * @throws NullDependencyException If the player was not found. For nullable method, check {@link DisguiseState#tryGetPlayer()}
      */
     @NotNull
+    @Override
     public Player getPlayer() throws NullDependencyException
     {
         var player = tryGetPlayer();
@@ -338,6 +339,7 @@ public class DisguiseState extends MorphPluginObject
         return playerOptions.isClientSideSelfView();
     }
 
+    @Override
     public boolean isSelfViewing()
     {
         return playerOptions.isClientSideSelfView() ? morphConfiguration.showDisguiseToSelf : serverSideSelfVisible;
@@ -363,6 +365,7 @@ public class DisguiseState extends MorphPluginObject
      * @apiNote 对于要显示到服务器公屏上的内容，请使用 {@link DisguiseState#getServerDisplay()}
      */
     @NotNull
+    @Override
     public Component getPlayerDisplay()
     {
         return playerDisplay == null ? fallbackDisplay : playerDisplay;
@@ -385,16 +388,19 @@ public class DisguiseState extends MorphPluginObject
      * @apiNote 对于要显示给玩家自己的内容，请使用 {@link DisguiseState#getPlayerDisplay()}
      */
     @NotNull
+    @Override
     public Component getServerDisplay()
     {
         return serverDisplay == null ? fallbackDisplay : serverDisplay;
     }
 
+    @Override
     public void setServerDisplay(@NotNull Component newName)
     {
         serverDisplay = newName;
     }
 
+    @Override
     public void setCustomDisplayName(Component newName)
     {
         setPlayerDisplay(newName);

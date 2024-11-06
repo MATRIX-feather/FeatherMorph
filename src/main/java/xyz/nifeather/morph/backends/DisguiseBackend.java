@@ -8,10 +8,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.api.v0.disguise.backends.IDisguiseBackend;
 
 import java.util.Collection;
 
-public abstract class DisguiseBackend<TInstance, TWrapper extends DisguiseWrapper<TInstance>> extends MorphPluginObject
+public abstract class DisguiseBackend<TInstance, TWrapper extends DisguiseWrapper<TInstance>> extends MorphPluginObject implements IDisguiseBackend<TInstance, TWrapper>
 {
     /**
      * Gets the identifier of this backend.

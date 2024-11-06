@@ -13,7 +13,7 @@ import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.messages.CommonStrings;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
-import xyz.nifeather.morph.misc.MorphParameters;
+import xyz.nifeather.morph.api.v0.disguise.MorphParameters;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
 import java.util.List;

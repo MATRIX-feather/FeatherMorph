@@ -1,4 +1,4 @@
-package xyz.nifeather.morph.misc;
+package xyz.nifeather.morph.api.v0.disguise;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;

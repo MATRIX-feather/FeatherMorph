@@ -29,7 +29,7 @@ import xyz.nifeather.morph.RevealingHandler;
 import xyz.nifeather.morph.abilities.impl.AttributeModifyingAbility;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
-import xyz.nifeather.morph.events.api.gameplay.PlayerJoinedWithDisguiseEvent;
+import xyz.nifeather.morph.api.v0.events.gameplay.PlayerJoinedWithDisguiseEvent;
 import xyz.nifeather.morph.messages.HintStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.messages.MorphStrings;
