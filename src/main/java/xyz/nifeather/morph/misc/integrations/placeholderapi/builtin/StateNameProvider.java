@@ -8,7 +8,6 @@ import xiamomc.pluginbase.Annotations.Resolved;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.misc.integrations.placeholderapi.IPlaceholderProvider;
-import xyz.nifeather.morph.misc.integrations.placeholderapi.MatchMode;
 
 public class StateNameProvider extends MorphPluginObject implements IPlaceholderProvider
 {
@@ -22,30 +21,32 @@ public class StateNameProvider extends MorphPluginObject implements IPlaceholder
     private MorphManager morphs;
 
     @Override
-    public @Nullable String resolvePlaceholder(Player player, String params)
+    public @Nullable String resolvePlaceholder(Player player, String param)
     {
-        var type = params.replace(getPlaceholderIdentifier(), "");
         var state = morphs.getDisguiseStateFor(player);
 
-        if (type.equalsIgnoreCase("_id"))
+        switch (param)
         {
-            return state != null
-                    ? state.getDisguiseIdentifier()
-                    : "???";
-        }
-        else if (type.equalsIgnoreCase("_name"))
-        {
-            return state != null
+            case "id" ->
+            {
+                return state != null
+                        ? state.getDisguiseIdentifier()
+                        : "???";
+            }
+
+            case "name" ->
+            {
+                return state != null
                     ? PlainTextComponentSerializer.plainText().serialize(state.getServerDisplay())
                     : "???";
+            }
+
+            case "status" ->
+            {
+                return state != null ? "true" : "false";
+            }
         }
 
         return null;
-    }
-
-    @Override
-    public MatchMode getMatchMode()
-    {
-        return MatchMode.Prefixes;
     }
 }

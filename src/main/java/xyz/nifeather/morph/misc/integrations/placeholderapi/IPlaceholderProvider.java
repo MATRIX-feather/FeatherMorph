@@ -22,10 +22,4 @@ public interface IPlaceholderProvider
      */
     @Nullable
     public String resolvePlaceholder(Player player, String params);
-
-    /**
-     * 获取ID的匹配模式
-     * @return {@link MatchMode}
-     */
-    public MatchMode getMatchMode();
 }
