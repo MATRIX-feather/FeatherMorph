@@ -25,21 +25,6 @@ public class ExtraKnockbackAbility extends OnAttackAbility<ExtraKnockbackOption>
         return AbilityType.EXTRA_KNOCKBACK;
     }
 
-    /*
-    @EventHandler
-    private void onGolemDmg(EntityDamageByEntityEvent e)
-    {
-        if (!(e.getDamager() instanceof CraftIronGolem craftIronGolem)) return;
-        if (!(e.getEntity() instanceof CraftPlayer craftPlayer)) return;
-
-        logger.info("VECTOR: %s".formatted(craftPlayer.getHandle().getDeltaMovement()));
-        this.addSchedule(() ->
-        {
-            logger.info("SCHED VECTOR: %s".formatted(craftPlayer.getHandle().getDeltaMovement()));
-        });
-    }
-    */
-
     @Resolved(shouldSolveImmediately = true)
     private MorphManager manager;
 
