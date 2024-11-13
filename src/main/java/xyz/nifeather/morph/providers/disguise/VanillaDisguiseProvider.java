@@ -253,6 +253,11 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
 
             var craftLiving = (net.minecraft.world.entity.LivingEntity) ((CraftLivingEntity)living).getHandleRaw();
             var mobMaxHealth = craftLiving.craftAttributes.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
+
+            // patch: CREAKING only have half heart, and we don't want that.
+            if (state.getEntityType() == EntityType.CREAKING || state.getEntityType() == EntityType.CREAKING_TRANSIENT)
+                mobMaxHealth = 20;
+
             var playerAttribute = player.getAttribute(Attribute.MAX_HEALTH);
 
             if (mobMaxHealth <= 0d)
