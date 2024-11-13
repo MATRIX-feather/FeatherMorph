@@ -10,6 +10,9 @@ import org.jetbrains.annotations.Nullable;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.abilities.impl.*;
+import xyz.nifeather.morph.abilities.impl.dmgReduce.ReduceFallDamageAbility;
+import xyz.nifeather.morph.abilities.impl.dmgReduce.ReduceMagicDamageAbility;
+import xyz.nifeather.morph.abilities.impl.dmgReduce.ReduceWitherDamageAbility;
 import xyz.nifeather.morph.abilities.impl.potion.*;
 import xyz.nifeather.morph.abilities.impl.onAttack.ExtraKnockbackAbility;
 import xyz.nifeather.morph.abilities.impl.onAttack.PotionOnAttackAbility;
@@ -96,6 +99,7 @@ public class AbilityManager extends MorphPluginObject
                 new NoFallDamageAbility(),
                 new ReduceFallDamageAbility(),
                 new ReduceMagicDamageAbility(),
+                new ReduceWitherDamageAbility(),
                 new SmallJumpBoostAbility(),
                 new SnowyAbility(),
                 new SpeedBoostAbility(),

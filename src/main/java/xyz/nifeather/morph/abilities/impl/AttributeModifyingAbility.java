@@ -62,8 +62,7 @@ public class AttributeModifyingAbility extends MorphAbility<AttributeModifyOptio
                 continue;
             }
 
-            var modifier = new AttributeModifier(modifierKey, modifierOption.value,
-                    operationType, EquipmentSlotGroup.ANY);
+            var modifier = new AttributeModifier(modifierKey, modifierOption.value, operationType);
 
             attributeInstance.removeModifier(modifierKey);
             attributeInstance.addModifier(modifier);
