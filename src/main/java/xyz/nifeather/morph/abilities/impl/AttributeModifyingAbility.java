@@ -57,12 +57,13 @@ public class AttributeModifyingAbility extends MorphAbility<AttributeModifyOptio
             var operationType = modifierOption.operationType.toBukkitOperation();
             if (operationType == null)
             {
-                logger.warn("");
-                return false;
+                logger.warn("Modifier operation not set for attribute %s of disguise %s, ignoring...".formatted(
+                        modifierOption.attributeName, state.getDisguiseIdentifier()
+                ));
+                continue;
             }
 
-            var modifier = new AttributeModifier(modifierKey, modifierOption.value,
-                    operationType, EquipmentSlotGroup.ANY);
+            var modifier = new AttributeModifier(modifierKey, modifierOption.value, operationType);
 
             attributeInstance.removeModifier(modifierKey);
             attributeInstance.addModifier(modifier);

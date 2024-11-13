@@ -5,6 +5,8 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import xiamomc.pluginbase.Managers.DependencyManager;
 import xyz.nifeather.morph.misc.integrations.placeholderapi.builtin.AvaliableDisguisesProvider;
 import xyz.nifeather.morph.misc.integrations.placeholderapi.builtin.StateNameProvider;
@@ -14,6 +16,7 @@ import java.util.List;
 public class PlaceholderIntegration extends PlaceholderExpansion
 {
     private static final List<IPlaceholderProvider> providers = new ObjectArrayList<>();
+    private static final Logger log = LoggerFactory.getLogger(PlaceholderIntegration.class);
 
     public PlaceholderIntegration(DependencyManager depManager)
     {
@@ -26,7 +29,7 @@ public class PlaceholderIntegration extends PlaceholderExpansion
     @Override
     public @NotNull String getIdentifier()
     {
-        return "morph";
+        return "feathermorph";
     }
 
     @Override
@@ -38,7 +41,7 @@ public class PlaceholderIntegration extends PlaceholderExpansion
     @Override
     public @NotNull String getVersion()
     {
-        return "1.0.10";
+        return "1.4.0";
     }
 
     private void addPlaceholders(List<IPlaceholderProvider> providerList)
@@ -56,7 +59,7 @@ public class PlaceholderIntegration extends PlaceholderExpansion
         if (providers.stream().anyMatch(p -> providerEquals(p, provider)))
             return false;
 
-        providers.add(0, provider);
+        providers.addFirst(provider);
         return true;
     }
 
@@ -64,26 +67,28 @@ public class PlaceholderIntegration extends PlaceholderExpansion
     {
         if (source == null || target == null) return false;
 
-        return source.getMatchMode() == target.getMatchMode()
-                && source.getPlaceholderIdentifier().equals(target.getPlaceholderIdentifier());
+        return source.getPlaceholderIdentifier().equals(target.getPlaceholderIdentifier());
     }
 
-    private final String defaultString = "???";
+    private static final String defaultString = "???";
 
     @Override
-    public @Nullable String onPlaceholderRequest(Player player, @NotNull String params)
+    public @Nullable String onPlaceholderRequest(Player player, @NotNull String param)
     {
         if (player == null) return defaultString;
 
+        param = param.replaceFirst(getIdentifier() + "_", "");
+        var paramSpilt = param.split("_", 2);
+
+        if (paramSpilt.length != 2)
+            return null;
+
         var provider = providers.stream()
-                .filter(p -> p.getMatchMode() == MatchMode.Exact
-                            ? params.equalsIgnoreCase(p.getPlaceholderIdentifier())
-                            : params.startsWith(p.getPlaceholderIdentifier()))
+                .filter(p -> p.getPlaceholderIdentifier().equalsIgnoreCase(paramSpilt[0]))
                 .findFirst().orElse(null);
 
         if (provider == null) return defaultString;
 
-        var val = provider.resolvePlaceholder(player, params);
-        return val == null ? defaultString : val;
+        return provider.resolvePlaceholder(player, paramSpilt[1]);
     }
 }

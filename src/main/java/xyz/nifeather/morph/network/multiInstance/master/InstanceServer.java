@@ -18,6 +18,16 @@ public final class InstanceServer extends WebSocketServer
 
     private final IClientHandler clientHandler;
 
+    private void logServerInfo(String message)
+    {
+        logger.info("[S@%s] %s".formatted(Integer.toHexString(this.hashCode()), message));
+    }
+
+    private void logServerWarn(String message)
+    {
+        logger.warn("[S@%s] %s".formatted(Integer.toHexString(this.hashCode()), message));
+    }
+
     public InstanceServer(XiaMoJavaPlugin plugin, InetSocketAddress address, IClientHandler iClientHandler)
     {
         super(address);
@@ -42,7 +52,7 @@ public final class InstanceServer extends WebSocketServer
     @Override
     public void onOpen(WebSocket webSocket, ClientHandshake clientHandshake)
     {
-        logger.info("[S] New connection opened: " + webSocket.getRemoteSocketAddress());
+        logServerInfo("New connection opened: " + webSocket.getRemoteSocketAddress());
 
         connectedSockets.add(webSocket);
     }
@@ -52,7 +62,7 @@ public final class InstanceServer extends WebSocketServer
     @Override
     public void stop(int timeout, String closeMessage) throws InterruptedException
     {
-        logger.info("[S] Stopping instance server...");
+        logServerInfo("Stopping instance server...");
         super.stop(timeout, closeMessage);
 
         running = false;
@@ -61,7 +71,7 @@ public final class InstanceServer extends WebSocketServer
     @Override
     public void onClose(WebSocket webSocket, int i, String s, boolean b)
     {
-        logger.info("[S] Connection closed: " + webSocket.getRemoteSocketAddress());
+        logServerInfo("Connection closed: " + webSocket.getRemoteSocketAddress());
 
         connectedSockets.remove(webSocket);
         clientHandler.onConnectionClose(webSocket);
@@ -74,7 +84,7 @@ public final class InstanceServer extends WebSocketServer
     @Override
     public void onMessage(WebSocket webSocket, String msg)
     {
-        //logger.info("%s :: <- :: '%s'".formatted(webSocket.getRemoteSocketAddress(), msg));
+        //logServer("%s :: <- :: '%s'".formatted(webSocket.getRemoteSocketAddress(), msg));
 
         clientHandler.onMessage(new WsRecord(webSocket, msg), this);
     }
@@ -85,14 +95,14 @@ public final class InstanceServer extends WebSocketServer
         String socketAddress = "<unknown socket @ %s>".formatted(webSocket);
         if (webSocket != null) socketAddress = webSocket.getRemoteSocketAddress().toString();
 
-        logger.warn("[S] An error occurred with socket '%s': %s".formatted(socketAddress, e.getMessage()));
+        logServerWarn("An error occurred with socket '%s': %s".formatted(socketAddress, e.getMessage()));
         e.printStackTrace();
     }
 
     @Override
     public void onStart()
     {
-        logger.info("[S] Master websocket server started on " + this.getAddress().toString());
+        logServerInfo("Master websocket server started on " + this.getAddress().toString());
 
         clientHandler.onServerStart(this);
         running = true;

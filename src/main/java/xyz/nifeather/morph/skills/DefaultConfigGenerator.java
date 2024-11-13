@@ -281,8 +281,12 @@ public class DefaultConfigGenerator
 
         this.getConfiguration(EntityType.WITHER_SKELETON)
                 .addAbilityIdentifier(AbilityType.POTION_ON_ATTACK)
+                .addAbilityIdentifier(AbilityType.REDUCES_WITHER_DAMAGE)
+                .addAbilityIdentifier(AbilityType.HAS_FIRE_RESISTANCE)
                 .appendOption(AbilityType.POTION_ON_ATTACK,
-                        PotionEffectOption.from(PotionEffectType.WITHER, 10 * 20, 0));
+                        PotionEffectOption.from(PotionEffectType.WITHER, 10 * 20, 0))
+                .appendOption(AbilityType.REDUCES_WITHER_DAMAGE,
+                        new ReduceDamageOption(1, true));
 
         this.getConfiguration(EntityType.HUSK)
                 .addAbilityIdentifier(AbilityType.POTION_ON_ATTACK)

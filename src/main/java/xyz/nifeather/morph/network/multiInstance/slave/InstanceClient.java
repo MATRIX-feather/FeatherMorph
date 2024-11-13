@@ -9,6 +9,8 @@ import xyz.nifeather.morph.network.multiInstance.protocol.IMasterHandler;
 
 import java.net.ConnectException;
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class InstanceClient extends WebSocketClient
 {
@@ -33,13 +35,32 @@ public class InstanceClient extends WebSocketClient
     {
     }
 
+    private void logClientInfo(String message)
+    {
+        logger.info("[C@%s] %s".formatted(Integer.toHexString(this.hashCode()), message));
+    }
+
+    private void logClientWarn(String message)
+    {
+        logger.warn("[C@%s] %s".formatted(Integer.toHexString(this.hashCode()), message));
+    }
+
+    private final AtomicBoolean disposed = new AtomicBoolean(false);
+    public void dispose()
+    {
+        this.disposed.set(true);
+    }
+
     //region WebSocket stuffs
+
+    private final AtomicBoolean connectionAlive = new AtomicBoolean(false);
 
     @Override
     public void onOpen(ServerHandshake serverHandshake)
     {
-        logger.info("[C] Opened connection to the instance server.");
+        logClientInfo("Opened connection to the instance server.");
         masterHandler.onConnectionOpen();
+        connectionAlive.set(true);
     }
 
     @Override
@@ -52,24 +73,55 @@ public class InstanceClient extends WebSocketClient
     @Override
     public void onClose(int code, String reason, boolean isFromRemote)
     {
-        logger.info("[C] Connection closed with code '%s' and reason '%s'".formatted(code, reason));
+        logClientInfo("Connection closed with code '%s' and reason '%s'".formatted(code, reason));
+        this.connectionAlive.set(false);
 
-        boolean shouldRetry = true;
+        boolean shouldRetry = !reason.equalsIgnoreCase("NORETRY");
 
         var waitingSecond = 20;
         if (shouldRetry)
         {
-            logger.info("[C] Retrying connect after %s seconds...".formatted(waitingSecond));
-            plugin.schedule(this::reconnect, waitingSecond * 20);
+            logClientInfo("Retrying connect after %s seconds...".formatted(waitingSecond));
+
+            var connectionId = this.connectionId.incrementAndGet();
+            plugin.schedule(() -> tryReconnect(connectionId), waitingSecond * 20);
+        }
+        else
+        {
+            logClientInfo("Not reconnecting because either the server or other sources declared NORETRY");
         }
 
         masterHandler.onConnectionClose(code);
     }
 
+    private void tryReconnect(int connectId)
+    {
+        if (connectionId.get() != connectId)
+        {
+            logClientInfo("Not retrying because another connection is ongoing...");
+            return;
+        }
+
+        this.reconnect();
+    }
+
+    private final AtomicInteger connectionId = new AtomicInteger(0);
+
     @Override
     public void connect()
     {
-        logger.info("[C] Connecting to the instance server...");
+        if (disposed.get()) return;
+
+        logClientInfo("Connecting to the instance server...");
+
+        if (this.connectionAlive.get())
+        {
+            logClientWarn("Already connected to the server!");
+            return;
+        }
+
+        connectionId.incrementAndGet();
+
         super.connect();
     }
 
@@ -82,19 +134,18 @@ public class InstanceClient extends WebSocketClient
         }
         catch (Throwable t)
         {
-            logger.warn("[C] Error occurred invoking onClientError(): " + t.getMessage());
+            logClientWarn("Error occurred invoking onClientError(): " + t.getMessage());
             t.printStackTrace();
         }
 
         if (e instanceof ConnectException)
         {
-            logger.info("[C] Can't reach the server, retrying after 30 seconds: " + e.getMessage());
-            plugin.schedule(this::reconnect, 30 * 20);
+            logClientInfo("Can't reach the server: " + e.getMessage());
 
             return;
         }
 
-        logger.error("Unknown error occurred with the client: " + e.getMessage());
+        logger.error("Unknown error occurred with the client %s: %s".formatted(Integer.toHexString(this.hashCode()), e.getMessage()));
         e.printStackTrace();
     }
 

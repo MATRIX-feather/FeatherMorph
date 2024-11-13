@@ -25,12 +25,12 @@ import java.util.List;
 
 public class BossbarAbility extends MorphAbility<BossbarOption>
 {
-    private Bindable<Boolean> allowBossbar;
+    private final Bindable<Boolean> allowBossbar = new Bindable<>(false);
 
     @Initializer
     private void load(MorphConfigManager configManager)
     {
-        allowBossbar = configManager.getBindable(Boolean.class, ConfigOption.DISPLAY_BOSSBAR);
+        configManager.bind(allowBossbar, ConfigOption.DISPLAY_BOSSBAR);
     }
 
     @Override

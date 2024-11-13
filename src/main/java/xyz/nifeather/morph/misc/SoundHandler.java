@@ -112,7 +112,7 @@ public class SoundHandler
 
         soundFrequency = MathUtils.clamp(0, 2, config.getBindable(Double.class, ConfigOption.AMBIENT_FREQUENCY).get());
 
-        var soundEvent = EntityTypeUtils.getAmbientSound(entityType, this.bindingPlayer.getWorld());
+        var soundEvent = EntityTypeUtils.getAmbientSound(entityType, this.bindingPlayer.getWorld(), this.bindingPlayer.getLocation());
 
         var sound = soundEvent.sound();
         if (sound == null) return;

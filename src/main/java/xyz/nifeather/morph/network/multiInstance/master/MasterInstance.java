@@ -42,6 +42,16 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
     @Resolved
     private MorphConfigManager config;
 
+    private void logMasterInfo(String message)
+    {
+        logger.info("[Master@%s] %s".formatted(Integer.toHexString(this.hashCode()), message));
+    }
+
+    private void logMasterWarn(String message)
+    {
+        logger.warn("[Master@%s] %s".formatted(Integer.toHexString(this.hashCode()), message));
+    }
+
     /**
      * @return Success?
      */
@@ -51,8 +61,8 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
         {
             if (bindingServer != null)
             {
+                bindingServer.stop(1000, "Master instance shutting down");
                 bindingServer.dispose();
-                bindingServer.stop(0, "Master instance shutting down");
             }
 
             bindingServer = null;
@@ -64,7 +74,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
         }
         catch (Throwable t)
         {
-            logger.error("[S] Error occurred shutting down socket server: " + t.getMessage());
+            logMasterWarn("Error occurred shutting down socket server: " + t.getMessage());
             t.printStackTrace();
 
             return false;
@@ -99,7 +109,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
         }
         catch (Throwable t)
         {
-            logger.warn("[S] Error occurred while setting up server:" + t.getMessage());
+            logMasterWarn("Error occurred while setting up server:" + t.getMessage());
             t.printStackTrace();
 
             return false;
@@ -150,13 +160,13 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
         var cmd = registries.createC2SCommand(text[0], text.length == 2 ? text[1] : "");
         if (cmd == null)
         {
-            logger.warn("[S] Unknown command: " + text[0]);
+            logMasterWarn("Unknown command: " + text[0]);
             return;
         }
 
         if (!(cmd instanceof MIC2SCommand<?> mic2s))
         {
-            logger.warn("[S] Command is not a MIC2S instance!");
+            logMasterWarn("Command is not a MIC2S instance!");
             return;
         }
 
@@ -183,7 +193,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
     {
         if (!socket.isOpen())
         {
-            logger.warn("[S] Not sending commands to a closed socket! %s".formatted(socket.getRemoteSocketAddress()));
+            logMasterWarn("Not sending commands to a closed socket! %s".formatted(socket.getRemoteSocketAddress()));
             return;
         }
 
@@ -228,7 +238,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
             return;
         }
 
-        logger.info("[S] '%s' is requesting a login".formatted(socket.getRemoteSocketAddress()));
+        logMasterInfo("'%s' is requesting a login".formatted(socket.getRemoteSocketAddress()));
 
         this.switchState(socket, ProtocolState.LOGIN);
 
@@ -237,7 +247,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
 
         if (!this.level.equals(cProtocolCommand.getVersion()))
         {
-            logger.info("[S] Protocol mismatch! Disconnecting...");
+            logMasterInfo("Protocol mismatch! Disconnecting...");
 
             this.disconnect(socket, "Protocol mismatch!");
             return;
@@ -245,13 +255,13 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
 
         if (cProtocolCommand.getSecret() == null || !cProtocolCommand.getSecret().equals(this.secret.get()))
         {
-            logger.info("[S] Invalid secret! Disconnecting...");
+            logMasterInfo("Invalid secret! Disconnecting...");
 
             disconnect(socket, "Invalid secret '%s'".formatted(cProtocolCommand.getSecret()));
             return;
         }
 
-        logger.info("[S] '%s' logged in".formatted(socket.getRemoteSocketAddress()));
+        logMasterInfo("'%s' logged in".formatted(socket.getRemoteSocketAddress()));
 
         sendCommand(socket, new MIS2CLoginResultCommand(true));
         switchState(socket, ProtocolState.SYNC);
@@ -287,7 +297,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
         var meta = cDisguiseMetaCommand.getMeta();
         if (meta == null || !meta.isValid())
         {
-            logger.warn("[S] Bad client implementation? Got invalid meta from '%s'".formatted(socket.getRemoteSocketAddress()));
+            logMasterWarn("Bad client implementation? Got invalid meta from '%s'".formatted(socket.getRemoteSocketAddress()));
             return;
         }
 
@@ -295,7 +305,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
 
         if (!state.loggedIn())
         {
-            logger.warn("[S] Bad client implementation? They sent meta sync before they login! (%s)".formatted(socket.getRemoteSocketAddress()));
+            logMasterWarn("Bad client implementation? They sent meta sync before they login! (%s)".formatted(socket.getRemoteSocketAddress()));
             return;
         }
 
@@ -350,8 +360,6 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
     @Override
     public void onMessage(InstanceServer.WsRecord wsRecord, InstanceServer server)
     {
-        if (!allowedSockets.containsKey(wsRecord.socket())) return;
-
         this.addSchedule(() -> this.onText(wsRecord));
     }
 

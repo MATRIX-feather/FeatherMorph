@@ -137,9 +137,14 @@ public class MultiInstanceService extends MorphPluginObject
 
     private boolean stopAll()
     {
-        if (slaveInstance != null) return slaveInstance.stop();
-        if (masterInstance != null) return masterInstance.stop();
+        boolean success = true;
 
-        return true;
+        if (slaveInstance != null)
+            success = slaveInstance.stop();
+
+        if (masterInstance != null)
+            success = masterInstance.stop() && success;
+
+        return success;
     }
 }
