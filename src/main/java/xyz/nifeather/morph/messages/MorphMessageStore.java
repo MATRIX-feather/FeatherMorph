@@ -152,7 +152,12 @@ public class MorphMessageStore extends MessageStore<MorphPlugin>
 
         for (var store : messageStores)
         {
-            var msg = store.get(key, null, null);
+            var msg = store.get(key, "NIL", null);
+
+            // Since we use ConcurrentHashMap, we no longer can use NULL as the default value
+            // So this might be the only way. Solving this would require a PluginBase update.
+            if (msg.equals("NIL")) msg = null;
+
             if (msg != null) return msg;
         }
 
