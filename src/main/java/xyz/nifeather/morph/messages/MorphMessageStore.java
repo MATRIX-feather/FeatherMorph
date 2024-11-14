@@ -19,6 +19,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MorphMessageStore extends MessageStore<MorphPlugin>
@@ -119,6 +120,13 @@ public class MorphMessageStore extends MessageStore<MorphPlugin>
     protected @NotNull String getFileName()
     {
         return "messages/template.json";
+    }
+
+    @Override
+    protected @NotNull Map<String, String> createDefault()
+    {
+        // Use Object2ObjectAVLTreeMap from fastutil can stuck folia threads... why?
+        return new ConcurrentHashMap<>();
     }
 
     @Override
