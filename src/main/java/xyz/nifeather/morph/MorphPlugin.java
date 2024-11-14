@@ -26,7 +26,6 @@ import xyz.nifeather.morph.misc.gui.IconLookup;
 import xyz.nifeather.morph.misc.integrations.modelengine.ModelEngineHelper;
 import xyz.nifeather.morph.misc.integrations.placeholderapi.PlaceholderIntegration;
 import xyz.nifeather.morph.misc.integrations.residence.ResidenceEventProcessor;
-import xyz.nifeather.morph.misc.skins.PlayerSkinProvider;
 import xyz.nifeather.morph.network.multiInstance.MultiInstanceService;
 import xyz.nifeather.morph.network.server.MorphClientHandler;
 import xyz.nifeather.morph.skills.MorphSkillHandler;
@@ -96,7 +95,7 @@ public final class MorphPlugin extends XiaMoJavaPlugin
     private EntityProcessor entityProcessor;
 
     private static final String noticeHeaderFooter = "- x - x - x - x - x - x - x - x - x - x - x - x -";
-    private void printStartupWarning(boolean critical, String... warnings)
+    private void printImportantWarning(boolean critical, String... warnings)
     {
         if (critical)
         {
@@ -134,7 +133,7 @@ public final class MorphPlugin extends XiaMoJavaPlugin
         String[] compatVersions = new String[] { primaryVersion, "1.21" };
         if (Arrays.stream(compatVersions).noneMatch(bukkitVersion::equals))
         {
-            printStartupWarning(
+            printImportantWarning(
                     true,
                     "This version of Minecraft (%s) is not supported!".formatted(bukkitVersion),
                     "Please use %s instead!".formatted(primaryVersion)
@@ -146,7 +145,7 @@ public final class MorphPlugin extends XiaMoJavaPlugin
 
         if (!bukkitVersion.equals(primaryVersion))
         {
-            printStartupWarning(
+            printImportantWarning(
                     false,
                     "Minecraft %s is not primary supported!".formatted(bukkitVersion),
                     "We suggest to use %s instead!".formatted(primaryVersion)
@@ -269,6 +268,15 @@ public final class MorphPlugin extends XiaMoJavaPlugin
     @Override
     public void onDisable()
     {
+        if (!getServer().isStopping())
+        {
+            printImportantWarning(true,
+                    "HEY, THERE!",
+                    "Are you doing a hot reload?",
+                    "Note that FeatherMorph does NOT support doing such!",
+                    "Before you open any issues, please do a FULL RESTART for your server! We will NOT provide any support after the hot reload!");
+        }
+
         //调用super.onDisable后依赖管理器会被清空
         //需要在调用前先把一些东西处理好
         try
