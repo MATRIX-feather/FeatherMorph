@@ -8,6 +8,7 @@ import xiamomc.pluginbase.Messages.MessageStore;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MorphMessageSubStore extends MessageStore<MorphPlugin>
 {
@@ -22,6 +23,13 @@ public class MorphMessageSubStore extends MessageStore<MorphPlugin>
         var asset = PluginAssetUtils.getFileStrings(path);
 
         assets = createGson().fromJson(asset, this.storingObject.getClass());
+    }
+
+    @Override
+    protected @NotNull Map<String, String> createDefault()
+    {
+        // Use Object2ObjectAVLTreeMap from fastutil can stuck folia threads... why?
+        return new ConcurrentHashMap<>();
     }
 
     private final List<Class<? extends IStrings>> strings;

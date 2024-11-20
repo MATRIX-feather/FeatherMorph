@@ -19,6 +19,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MorphMessageStore extends MessageStore<MorphPlugin>
@@ -122,6 +123,13 @@ public class MorphMessageStore extends MessageStore<MorphPlugin>
     }
 
     @Override
+    protected @NotNull Map<String, String> createDefault()
+    {
+        // Use Object2ObjectAVLTreeMap from fastutil can stuck folia threads... why?
+        return new ConcurrentHashMap<>();
+    }
+
+    @Override
     public String get(String key, @Nullable String defaultValue, @Nullable String locale)
     {
         var serverLanguage = this.serverLanguage.get();
@@ -144,7 +152,12 @@ public class MorphMessageStore extends MessageStore<MorphPlugin>
 
         for (var store : messageStores)
         {
-            var msg = store.get(key, null, null);
+            var msg = store.get(key, "NIL", null);
+
+            // Since we use ConcurrentHashMap, we no longer can use NULL as the default value
+            // So this might be the only way. Solving this would require a PluginBase update.
+            if (msg.equals("NIL")) msg = null;
+
             if (msg != null) return msg;
         }
 
