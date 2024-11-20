@@ -62,7 +62,7 @@ public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<Skill
 
     private void migrate_attribute()
     {
-        logger.info("Migrating attribute names...");
+        logger.info("Starting migration of attribute names...");
         var files = directoryStorage.getFiles(".*\\.json$");
 
         var abilityInstance = new AttributeModifyingAbility();
