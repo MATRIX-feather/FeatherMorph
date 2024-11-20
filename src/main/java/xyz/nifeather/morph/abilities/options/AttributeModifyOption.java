@@ -66,7 +66,7 @@ public class AttributeModifyOption implements ISkillOption
     {
         var instance = new AttributeModifyOption();
 
-        var modifiers = tryGet(map, "modifiers", List.class);
+        var modifiers = map == null ? null : tryGet(map, "modifiers", List.class);
         var defaultInfo = new AttributeInfo();
 
         if (modifiers != null) modifiers.forEach(o ->

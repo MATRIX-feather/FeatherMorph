@@ -1,10 +1,12 @@
 package xyz.nifeather.morph.network.server;
 
 import com.google.common.io.ByteStreams;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.text.Component;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
@@ -42,10 +44,7 @@ import xyz.nifeather.morph.misc.NetworkingHelper;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MorphClientHandler extends MorphPluginObject implements BasicClientHandler<Player>
@@ -56,29 +55,45 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     private final Bindable<Boolean> forceClient = new Bindable<>(false);
     private final Bindable<Boolean> forceTargetVersion = new Bindable<>(false);
 
-    private record MorphCustomPacketPayload(ResourceLocation channel, byte[] data) implements CustomPacketPayload
+    private void sendPacket(String channel, Player player, String message)
     {
-        @Override
-        public Type<? extends CustomPacketPayload> type()
-        {
-            return null;
-        }
+        var buffer = new FriendlyByteBuf(Unpooled.buffer()).writeUtf(message);
+
+        if (logOutGoingPackets.get())
+            logPacket(true, player, channel, message, buffer.array().length);
+
+        this.sendPacketRaw(channel, player, buffer, false);
     }
 
-    private void sendPacket(String channel, Player player, byte[] message)
+    private void sendPacket(String channel, Player player, int integer)
     {
-        if (channel == null || player == null || message == null)
+        var buffer = new FriendlyByteBuf(Unpooled.buffer()).writeInt(integer);
+
+        if (logOutGoingPackets.get())
+            logPacket(true, player, channel, "" + integer, buffer.array().length);
+
+        this.sendPacketRaw(channel, player, buffer, false);
+    }
+
+    private void sendPacketRaw(String channel, Player player, ByteBuf buffer)
+    {
+        sendPacketRaw(channel, player, buffer, true);
+    }
+
+    private void sendPacketRaw(String channel, Player player, ByteBuf buffer, boolean logData)
+    {
+        if (channel == null || player == null || buffer == null)
             throw new IllegalArgumentException("Null channel/player/message");
 
         if (!player.isOnline() || !(player instanceof CraftPlayer craftPlayer)) return;
 
-        if (logOutGoingPackets.get())
-            logPacket(true, player, channel, message);
+        if (logData && logOutGoingPackets.get())
+            logPacket(true, player, channel, buffer.array());
 
         try
         {
             var channelLocation = ResourceLocation.parse(channel);
-            var packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(channelLocation, Unpooled.wrappedBuffer(message)));
+            var packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(channelLocation, buffer));
 
             craftPlayer.getHandle().connection.send(packet);
         }
@@ -113,7 +128,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         }
         catch (Throwable t)
         {
-            msg = new String(data, StandardCharsets.UTF_8);
+            msg = "<base64> " + Base64.getEncoder().encodeToString(data);
             //logger.warn("Unable to convert byte data to string: " + t.getMessage());
         }
 
@@ -163,7 +178,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
 
             playerConnectionStates.put(player, InitializeState.HANDSHAKE);
 
-            this.sendPacket(initializeChannel, player, "".getBytes(StandardCharsets.UTF_8));
+            this.sendPacket(initializeChannel, player, "");
         });
 
         // 注册api频道处理
@@ -177,22 +192,33 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
             if (connectionState.worseThan(InitializeState.HANDSHAKE)) return;
 
             //尝试获取API版本
-            int clientVersion = 1;
+            int clientVersion = -1;
+
+            if (logInComingPackets.get())
+                logPacket(false, player, versionChannel, data);
 
             try
             {
-                var clientVersionStr = new String(data, StandardCharsets.UTF_8);
-
-                if (logInComingPackets.get())
-                    logPacket(false, player, versionChannel, clientVersionStr, data.length);
-
-                clientVersion = Integer.parseInt(clientVersionStr);
+                var buf = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
+                clientVersion = buf.readInt();
             }
             catch (Throwable t)
             {
-                logger.error("Failed to decode client version: " + t.getMessage());
-            }
+                logger.error("Failed to decode client version, rejecting client! (%s)".formatted(t.getMessage()));
+                rejectPlayer(player);
 
+                return;
+            }
+/*
+            try
+            {
+                if (clientVersion == -1)
+                    clientVersion = Integer.parseInt(new String(data, StandardCharsets.UTF_8));
+            }
+            catch (Throwable t)
+            {
+            }
+*/
             var minimumApiVersion = this.minimumApiVersion;
 
             if (forceTargetVersion.get()) minimumApiVersion = targetApiVersion;
@@ -223,9 +249,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
             this.getPlayerOption(player, true).clientApiVersion = clientVersion;
             playerConnectionStates.put(player, InitializeState.API_CHECKED);
 
-            var out = ByteStreams.newDataOutput();
-            out.writeInt(targetApiVersion);
-            this.sendPacket(versionChannel, player, out.toByteArray());
+            this.sendPacket(versionChannel, player, targetApiVersion);
         });
 
         // 注册command频道处理
@@ -233,16 +257,41 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         {
             if (!allowClient.get()) return;
 
+            if (logInComingPackets.get())
+                logPacket(false, player, commandChannel, data);
+
             //在API检查完成之前忽略客户端的所有指令
             if (this.getPlayerConnectionState(player).worseThan(InitializeState.API_CHECKED))
             {
                 return;
             }
 
-            if (logInComingPackets.get())
-                logPacket(false, player, commandChannel, data);
+            String input = null;
 
-            var input = new String(data, StandardCharsets.UTF_8);
+            try
+            {
+                var buf = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
+
+                input = buf.readUtf();
+
+                if (buf.readableBytes() > 0)
+                {
+                    logger.error("Malformed buffer: still has readable bytes!");
+                    rejectPlayer(player);
+
+                    return;
+                }
+            }
+            catch (Throwable ignored)
+            {
+                rejectPlayer(player);
+                return;
+            }
+
+            // Assume its legacy
+            // if (input == null)
+            //    input = new String(data, StandardCharsets.UTF_8);
+
             var str = input.split(" ", 2);
 
             if (str.length < 1)
@@ -436,6 +485,14 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         sendReAuth(players);
     }
 
+    private void rejectPlayer(Player player)
+    {
+        logger.info("Rejecting player " + player.getName());
+        player.sendMessage(MessageUtils.prefixes(player, MorphStrings.unsupportedClientBehavior()));
+
+        this.unInitializePlayer(player);
+    }
+
     /**
      * 反初始化玩家
      *
@@ -607,7 +664,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
 
         if ((!allowClient.get() || !this.clientConnected(player)) && !forceSend) return false;
 
-        this.sendPacket(commandChannel, player, cmd.getBytes(StandardCharsets.UTF_8));
+        this.sendPacket(commandChannel, player, cmd);
         return true;
     }
 

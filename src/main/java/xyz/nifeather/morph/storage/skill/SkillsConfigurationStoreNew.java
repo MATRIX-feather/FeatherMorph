@@ -85,7 +85,18 @@ public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<Skill
             logger.info("Migrating " + key);
 
             for (AttributeModifyOption.AttributeInfo attributeInfo : targetOption.modifiers)
+            {
+                if (!attributeInfo.isValid())
+                {
+                    logger.warn("Invalid attribute info for '%s > %s'! Ignoring...".formatted(
+                            config.legacy_MobID,
+                            attributeInfo.attributeName == null ? "<unknown attribute name>" : attributeInfo.attributeName));
+
+                    continue;
+                }
+
                 attributeInfo.attributeName = attributeInfo.attributeName.replace("generic.", "");
+            }
 
             config.setOption(abilityInstance.getIdentifier().asString(), targetOption);
 

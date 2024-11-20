@@ -5,12 +5,10 @@ import org.apache.commons.io.FileUtils;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
-import xiamomc.pluginbase.Annotations.Initializer;
 import xyz.nifeather.morph.interfaces.IManagePlayerData;
 import xyz.nifeather.morph.misc.DisguiseMeta;
 import xyz.nifeather.morph.misc.DisguiseTypes;
 import xyz.nifeather.morph.storage.DirectoryJsonBasedStorage;
-import xyz.nifeather.morph.storage.skill.SkillsConfigurationStoreNew;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -34,7 +32,7 @@ public class PlayerDataStoreNew extends DirectoryJsonBasedStorage<PlayerMeta> im
             update(packageVersion);
     }
 
-    private static final int TARGET_PACKAGE_VERSION = SkillsConfigurationStoreNew.PackageVersions.INITIAL;
+    private static final int TARGET_PACKAGE_VERSION = PackageVersions.INITIAL;
 
     private void update(int currentVersion)
     {
