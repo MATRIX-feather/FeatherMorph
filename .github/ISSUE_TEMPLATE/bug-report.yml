@@ -1,0 +1,69 @@
+name: "🐛 Bug Report / Bug反馈"
+description: |
+  Report issues with FeatherMorph, like something is not working or appear to broken. 
+  反馈一个FeatherMorph的问题，像是有东西不工作或者坏掉了
+title: "🐛 [BUG] - <title>"
+labels: [
+  "bug"
+]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Before you open an issue, please make sure that...
+        1. You're running a supported version of FeatherMorph, either the latest or the latest LTS (If we have one)
+        2. You're running the latest version of Paper/Folia, outdated server software may have missing APIs
+        3. There ISN'T have a hot load/reload for FeatherMorph on the server
+        ---
+        在你开新的issue前，请确保...
+        1. 你正在运行受支持的 FeatherMorph 版本，最新或最新LTS（如果我们有的话）
+        2. 你正在运行最新版 Paper/Folia，过期的服务端可能会存在API缺失
+        3. 你**没有**对FeatherMorph进行过热加载/重载
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description / 描述"
+      description: |
+        Describe the issue you have encountered
+        描述你遇到的问题
+    validations:
+      required: true
+  - type: textarea
+    id: log-file
+    attributes:
+      label: "Log file / 日志文件"
+      description: A log file that's related to this issue / 一个与此问题相关的日志
+      placeholder: We recommend using https://mclo.gs to paste the log file / 我们建议使用 https://mclo.gs 粘贴日志文件
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Reproduction steps / 复现步骤"
+      description: How can we reproduce this issue? 如何复现此问题？
+      value: |
+        1. ...
+        2. ...
+        3. ...
+        4. See error
+      render: bash
+    validations:
+      required: true
+  - type: dropdown
+    id: server-software
+    attributes:
+      label: "Server software / 服务端"
+      description: Which server software do you use? 你正在使用哪个服务端？
+      multiple: true
+      options:
+        - Paper
+        - Folia
+        - Hybrid software (Arclight, Mohist etc.)
+        - Other
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        Please note that we DON'T support hybrid servers like Mohist, issues about running on such servers would likely not get solved!
+        请注意我们不支持Mohist这样的模组端，任何在模组端上运行出现的问题很可能不会得到解决！
