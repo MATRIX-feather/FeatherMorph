@@ -135,6 +135,7 @@
   "hint.skill_hint": "Hint: You can activate skills by using <item> while sneaking",
   "hint.skill_hint_client": "Hint: Press <key:key.morphclient.skill> to activate disguise skill",
   "morph.client_version_mismatch": "<color:red>Client mod version mismatch, not activating enhanced features!",
+  "morph.unsupported_client_behavior": "Detected unsupported client behavior, not activating enhanced features!",
   "morph.client_version_mismatch_kick": "<color:red>Client mod version mismatch",
   "morph.cooling_down": "<color:red>Please wait before disguising again",
   "morph.disguise_banned_or_not_supported": "<color:red>This disguise is not supported or disabled by server",

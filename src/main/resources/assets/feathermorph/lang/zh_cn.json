@@ -135,6 +135,7 @@
   "hint.skill_hint" : "小提示: 手持<item>下蹲使用可以激活当前伪装的主动技能",
   "hint.skill_hint_client" : "小提示：按下<key:key.morphclient.skill>键可以激活当前伪装的主动技能",
   "morph.client_version_mismatch" : "<color:red>客户端模组版本不匹配，将不会启用增强功能！",
+  "morph.unsupported_client_behavior": "<color:red>检测到不支持的客户端行为，将不会启用增强功能！",
   "morph.client_version_mismatch_kick" : "<color:red>客户端模组版本不匹配",
   "morph.cooling_down" : "<color:red>请等一会再进行伪装",
   "morph.disguise_banned_or_not_supported" : "<color:red>服务器不支持或已禁用此伪装",

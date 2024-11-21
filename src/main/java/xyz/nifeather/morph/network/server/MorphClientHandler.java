@@ -151,6 +151,9 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     private final CommandRegistries registries = new CommandRegistries();
     private final Bindable<Boolean> modifyBoundingBoxes = new Bindable<>(false);
     private final Bindable<Boolean> useClientRenderer = new Bindable<>(false);
+    private final Bindable<Boolean> debugOutput = new Bindable<>(false);
+
+    private static final String newProtocolIdentify = "1_21_3_packetbuf";
 
     @Initializer
     private void load(MorphPlugin plugin, MorphConfigManager configManager)
@@ -176,9 +179,37 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
             if (logInComingPackets.get())
                 logPacket(false, player, initializeChannel, data);
 
+            try
+            {
+                var buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
+
+                var utfData = Arrays.stream(buffer.readUtf().split(" ")).toList();
+                if (utfData.stream().noneMatch(s -> s.equals(newProtocolIdentify)))
+                {
+                    logger.info("'%s' is using a legacy client, which is not supported by now。".formatted(player.getName()));
+                    rejectPlayer(player);
+                    return;
+                }
+
+                buffer.clear();
+            }
+            catch (Throwable t)
+            {
+                logger.info("'%s' is using a legacy client, which is not supported by now。".formatted(player.getName()));
+
+                if (debugOutput.get())
+                {
+                    logger.info("Unable to decode packet. Is '%s' using a legacy client? %s".formatted(player.getName(), t.getMessage()));
+                    t.printStackTrace();
+                }
+
+                rejectPlayer(player);
+                return;
+            }
+
             playerConnectionStates.put(player, InitializeState.HANDSHAKE);
 
-            this.sendPacket(initializeChannel, player, "");
+            this.sendPacket(initializeChannel, player, newProtocolIdentify);
         });
 
         // 注册api频道处理
@@ -329,6 +360,8 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         configManager.bind(modifyBoundingBoxes, ConfigOption.MODIFY_BOUNDING_BOX);
 
         configManager.bind(useClientRenderer, ConfigOption.USE_CLIENT_RENDERER);
+
+        configManager.bind(debugOutput, ConfigOption.DEBUG_OUTPUT);
 
         modifyBoundingBoxes.onValueChanged((o, n) ->
         {
