@@ -1,5 +1,6 @@
 package xyz.nifeather.morph.misc.integrations.placeholderapi.builtin;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +48,27 @@ public class StateNameProvider extends MorphPluginObject implements IPlaceholder
             }
         }
 
-        return null;
+        if (param.startsWith("provider_is"))
+        {
+            var spilt = param.split(":", 2);
+            if (spilt.length < 2) return "false";
+
+            var namespace = spilt[1];
+            return state != null
+                    ? namespace.equals(state.getProvider().getNameSpace()) ? "true" : "false"
+                    : "false";
+        }
+
+        if (param.startsWith("id_is"))
+        {
+            var spilt = param.split(":", 2);
+            if (spilt.length < 2) return "false";
+
+            return state != null
+                    ? state.getDisguiseIdentifier().equals(spilt[1]) ? "true" : "false"
+                    : "false";
+        }
+
+        return "not_enough_param";
     }
 }
