@@ -50,7 +50,7 @@ public class StateNameProvider extends MorphPluginObject implements IPlaceholder
 
         if (param.startsWith("provider_is"))
         {
-            var spilt = param.split(":", 2);
+            var spilt = param.split("\\?", 2);
             if (spilt.length < 2) return "false";
 
             var namespace = spilt[1];
@@ -61,7 +61,7 @@ public class StateNameProvider extends MorphPluginObject implements IPlaceholder
 
         if (param.startsWith("id_is"))
         {
-            var spilt = param.split(":", 2);
+            var spilt = param.split("\\?", 2);
             if (spilt.length < 2) return "false";
 
             return state != null
