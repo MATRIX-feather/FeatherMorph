@@ -417,7 +417,6 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
             instance.removeModifier(AttributeModifyingAbility.modifierKey);
             instance.removeModifier(VanillaDisguiseProvider.healthModifierKeyLegacy);
             instance.removeModifier(VanillaDisguiseProvider.healthModifierKey);
-            instance.removeModifier(VanillaDisguiseProvider.healthModifierKeyVanilla);
         }
 
         this.addSchedule(() -> PlayerListHandler.instance().handle(player));

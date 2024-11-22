@@ -9,7 +9,7 @@ labels: [
 body:
   - type: markdown
     attributes:
-      value: >-
+      value: |
         Before you open an issue, please make sure that...
         1. You're running a supported version of FeatherMorph, either the latest or the latest LTS (If we have one)
         2. You're running the latest version of Paper/Folia, outdated server software may have missing APIs
