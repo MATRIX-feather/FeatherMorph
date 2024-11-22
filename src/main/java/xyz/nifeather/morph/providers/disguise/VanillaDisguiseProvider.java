@@ -274,8 +274,6 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
             {
                 var modifier = new AttributeModifier(healthModifierKey, diffFinal, AttributeModifier.Operation.ADD_NUMBER);
 
-                // In case some data sync plugins not processing correctly, also check for minecraft namespace.
-                playerAttribute.removeModifier(healthModifierKeyVanilla);
                 playerAttribute.removeModifier(healthModifierKey);
 
                 // Also handle legacy keys
@@ -298,9 +296,6 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
 
     @NotNull
     public static final NamespacedKey healthModifierKey = Objects.requireNonNull(NamespacedKey.fromString("feathermorph:fm_health_modifier"), "How?!");
-
-    @NotNull
-    public static final NamespacedKey healthModifierKeyVanilla = Objects.requireNonNull(NamespacedKey.fromString("minecraft:fm_health_modifier"), "How?!");
 
     private void resetPlayerDimensions(Player player)
     {
