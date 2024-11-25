@@ -280,9 +280,6 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
             double diffFinal = diff;
             this.executeThenScaleHealth(player, playerAttribute, () ->
             {
-                // Workaround: Some server experienced modifiers not being removed or changed to `minecraft:health_modifier`
-                // But How?
-                playerAttribute.removeModifier(healthModifierKeyVanilla);
                 var modifier = new AttributeModifier(healthModifierKey, diffFinal, AttributeModifier.Operation.ADD_NUMBER);
 
                 playerAttribute.removeModifier(healthModifierKey);
