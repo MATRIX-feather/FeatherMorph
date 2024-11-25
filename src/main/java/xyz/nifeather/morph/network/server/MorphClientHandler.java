@@ -1,10 +1,7 @@
 package xyz.nifeather.morph.network.server;
 
-import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.text.Component;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
@@ -47,6 +44,7 @@ import xyz.nifeather.morph.network.server.handlers.CommandPacketHandler;
 import xyz.nifeather.morph.network.server.handlers.ICommandPacketHandler;
 import xyz.nifeather.morph.network.server.handlers.LegacyCommandPacketHandler;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,12 +67,16 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         return logInComingPackets.get();
     }
 
-    private void sendPacket(String channel, Player player, String message)
+    private void sendPacket(String channel, Player player, String message, boolean legacy)
     {
-        var buffer = new FriendlyByteBuf(Unpooled.buffer()).writeUtf(message);
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        if (!legacy)
+            buffer.writeUtf(message);
+        else
+            buffer.writeBytes(message.getBytes(StandardCharsets.UTF_8));
 
         if (logOutGoingPackets.get())
-            logPacket(true, player, channel, message, buffer.array().length);
+            logPacket(true, player, channel, message, buffer.readableBytes());
 
         this.sendPacketRaw(channel, player, buffer, false);
     }
@@ -192,14 +194,16 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
 
         var messenger = Bukkit.getMessenger();
 
-        // 注册init频道处理
+        // 注册incoming频道
         messenger.registerIncomingPluginChannel(plugin, MessageChannel.initializeChannel, this::handleInitializeMessage);
 
-        // 注册api频道处理
         messenger.registerIncomingPluginChannel(plugin, MessageChannel.versionChannel, this::handleVersionMessage);
-
-        // 注册command频道处理
         messenger.registerIncomingPluginChannel(plugin, MessageChannel.commandChannel, this::handleCommandMessage);
+
+        // Legacy incoming channels
+        // todo: Remove legacy packetbuf support along with 1.23 update
+        messenger.registerIncomingPluginChannel(plugin, MessageChannel.versionChannelLegacy, this::handleVersionMessageLegacy);
+        messenger.registerIncomingPluginChannel(plugin, MessageChannel.commandChannelLegacy, this::handleCommandMessageLegacy);
 
         // 注册outgoing频道
         messenger.registerOutgoingPluginChannel(plugin, MessageChannel.initializeChannel);
@@ -294,17 +298,17 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         session.initializeState = InitializeState.HANDSHAKE;
         session.isLegacyPacketBuf = isLegacyBuf;
 
-        this.sendPacket(MessageChannel.initializeChannel, player, newProtocolIdentify);
+        this.sendPacket(MessageChannel.initializeChannel, player, newProtocolIdentify, isLegacyBuf);
     }
 
-    public void handleVersionMessage(@NotNull String cN, @NotNull Player player, byte @NotNull [] data)
+    private void handleVersionInput(ICommandPacketHandler commandPacketHandler, String sourceChannel, Player player, byte[] data)
     {
         if (!allowClient.get()) return;
 
         if (logInComingPackets.get())
-            logPacket(false, player, cN, data);
+            logPacket(false, player, sourceChannel, data);
 
-        var result = CommandPacketHandler.INSTANCE.handleVersionData(player, data);
+        var result = commandPacketHandler.handleVersionData(player, data);
         if (!result.success())
         {
             logger.info("Packet decode failed for player %s, Rejecting...".formatted(player.getName()));
@@ -346,21 +350,23 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         var session = this.getOrCreateSession(player);
         session.initializeState = InitializeState.API_CHECKED;
 
-        this.sendPacket(MessageChannel.versionChannel, player, targetApiVersion);
+        if (!session.isLegacyPacketBuf)
+            this.sendPacket(MessageChannel.versionChannel, player, targetApiVersion);
+        else
+            this.sendPacket(MessageChannel.versionChannelLegacy, player, targetApiVersion);
     }
 
-    public void handleCommandMessage(@NotNull String cN, @NotNull Player player, byte @NotNull [] data)
+    private void handleCommandInput(ICommandPacketHandler commandPacketHandler, String sourceChannel, Player player, byte[] data)
     {
         if (!allowClient.get()) return;
 
         if (logInComingPackets.get())
-            logPacket(false, player, cN, data);
+            logPacket(false, player, sourceChannel, data);
 
-        //在API检查完成之前忽略客户端的所有指令
-        if (this.getPlayerConnectionState(player).worseThan(InitializeState.API_CHECKED))
-            return;
+        var session = getSession(player);
+        if (session == null || session.initializeState.worseThan(InitializeState.API_CHECKED)) return;
 
-        var result = CommandPacketHandler.INSTANCE.handleCommandData(player, data);
+        var result = commandPacketHandler.handleCommandData(player, data);
         if (!result.success())
         {
             logger.info("Packet decode failed for player %s, Rejecting...".formatted(player.getName()));
@@ -368,7 +374,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
             return;
         }
 
-        var input = result.result();
+        String input = result.result();
 
         var str = input.split(" ", 2);
 
@@ -388,17 +394,38 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         }
         else
         {
-            logger.warn("Unknown server command: " + baseCommand);
+            logger.warn("Unknown server command '%s', rejecting...".formatted(baseCommand));
+            rejectPlayer(player);
         }
     }
 
-    private final Map<UUID, PlayerSession> playerSessionMap = new ConcurrentHashMap<>();
+    private void handleCommandMessageLegacy(@NotNull String cN, @NotNull Player player, @NotNull byte[] data)
+    {
+        this.handleCommandInput(LegacyCommandPacketHandler.INSTANCE, cN, player, data);
+    }
+
+    private void handleVersionMessageLegacy(@NotNull String cN, @NotNull Player player, @NotNull byte[] data)
+    {
+        this.handleVersionInput(LegacyCommandPacketHandler.INSTANCE, cN, player, data);
+    }
+
+    public void handleVersionMessage(@NotNull String cN, @NotNull Player player, byte @NotNull [] data)
+    {
+        this.handleVersionInput(CommandPacketHandler.INSTANCE, cN, player, data);
+    }
+
+    public void handleCommandMessage(@NotNull String cN, @NotNull Player player, byte @NotNull [] data)
+    {
+        this.handleCommandInput(CommandPacketHandler.INSTANCE, cN, player, data);
+    }
+
+    private final Map<Player, PlayerSession> playerSessionMap = new ConcurrentHashMap<>();
 
     private PlayerSession createSession(Player player, boolean isUsingLegacyBuf)
     {
         var uuid = player.getUniqueId();
 
-        var cached = playerSessionMap.getOrDefault(uuid, null);
+        var cached = playerSessionMap.getOrDefault(player, null);
 
         if (cached != null)
             return cached;
@@ -408,14 +435,14 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
                 .isLegacy(isUsingLegacyBuf)
                 .build();
 
-        playerSessionMap.put(uuid, instance);
+        playerSessionMap.put(player, instance);
         return instance;
     }
 
     @Nullable
     public PlayerSession getSession(Player player)
     {
-        return playerSessionMap.getOrDefault(player.getUniqueId(), null);
+        return playerSessionMap.getOrDefault(player, null);
     }
 
     @NotNull
@@ -689,14 +716,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     @Override
     public List<Player> getConnectedPlayers()
     {
-        var list = new ObjectArrayList<Player>();
-        for (UUID uuid : this.playerSessionMap.keySet())
-        {
-            var player = Bukkit.getPlayer(uuid);
-            if (player != null) list.add(player);
-        }
-
-        return list;
+        return playerSessionMap.keySet().stream().toList();
     }
 
     //endregion Player Status/Option
@@ -714,7 +734,14 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
 
         if ((!allowClient.get() || !this.clientConnected(player)) && !forceSend) return false;
 
-        this.sendPacket(MessageChannel.commandChannel, player, cmd);
+        var session = this.getSession(player);
+        var isLegacy = session == null || session.isLegacyPacketBuf;
+
+        if (!isLegacy)
+            this.sendPacket(MessageChannel.commandChannel, player, cmd, false);
+        else
+            this.sendPacket(MessageChannel.commandChannelLegacy, player, cmd, true);
+
         return true;
     }
 
@@ -737,47 +764,44 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         if (session.connectionState != ConnectionState.JOINED)
             session.connectionState = ConnectionState.CONNECTING;
 
-        this.waitUntilReady(player, () ->
+        //再检查一遍玩家有没有初始化完成
+        if (clientInitialized(player))
+            return;
+
+        var config = manager.getPlayerMeta(player);
+        var list = config.getUnlockedDisguiseIdentifiers();
+        refreshPlayerClientMorphs(list, player);
+
+        var state = manager.getDisguiseStateFor(player);
+
+        if (state != null)
+            manager.refreshClientState(state);
+
+        sendCommand(player, new S2CSetSelfViewingCommand(config.showDisguiseToSelf));
+        sendCommand(player, new S2CSetModifyBoundingBoxCommand(modifyBoundingBoxes.get()));
+
+        if (player.hasPermission(CommonPermissions.DISGUISE_REVEALING))
+            sendCommand(player, manager.genMapCommand());
+
+        //TODO: 独立客户端渲染器
+        if (state != null && state.getDisguiseWrapper().getBackend().dependsClientRenderer())
         {
-            //再检查一遍玩家有没有初始化完成
-            if (clientInitialized(player))
-                return;
+            sendCommand(player, manager.genRenderSyncCommand());
 
-            var config = manager.getPlayerMeta(player);
-            var list = config.getUnlockedDisguiseIdentifiers();
-            refreshPlayerClientMorphs(list, player);
-
-            var state = manager.getDisguiseStateFor(player);
-
-            if (state != null)
-                manager.refreshClientState(state);
-
-            sendCommand(player, new S2CSetSelfViewingCommand(config.showDisguiseToSelf));
-            sendCommand(player, new S2CSetModifyBoundingBoxCommand(modifyBoundingBoxes.get()));
-
-            if (player.hasPermission(CommonPermissions.DISGUISE_REVEALING))
-                sendCommand(player, manager.genMapCommand());
-
-            //TODO: 独立客户端渲染器
-            if (state != null && state.getDisguiseWrapper().getBackend().dependsClientRenderer())
+            var disguises = manager.getActiveDisguises();
+            for (DisguiseState bindingState : disguises)
             {
-                sendCommand(player, manager.genRenderSyncCommand());
+                var bindingPlayer = bindingState.getPlayer();
 
-                var disguises = manager.getActiveDisguises();
-                for (DisguiseState bindingState : disguises)
-                {
-                    var bindingPlayer = bindingState.getPlayer();
+                var packet = networkingHelper.prepareMeta(bindingPlayer)
+                        .forDisguiseState(bindingState)
+                        .build();
 
-                    var packet = networkingHelper.prepareMeta(bindingPlayer)
-                            .forDisguiseState(bindingState)
-                            .build();
-
-                    this.sendCommand(player, packet);
-                }
+                this.sendCommand(player, packet);
             }
+        }
 
-            session.initializeState = InitializeState.DONE;
-        });
+        session.initializeState = InitializeState.DONE;
     }
 
     @Override
