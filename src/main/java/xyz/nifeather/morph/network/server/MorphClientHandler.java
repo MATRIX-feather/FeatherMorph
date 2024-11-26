@@ -201,7 +201,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         messenger.registerIncomingPluginChannel(plugin, MessageChannel.commandChannel, this::handleCommandMessage);
 
         // Legacy incoming channels
-        // todo: Remove legacy packetbuf support along with 1.23 update
+        // todo: Remove legacy packetbuf support along with 1.22 update
         messenger.registerIncomingPluginChannel(plugin, MessageChannel.versionChannelLegacy, this::handleVersionMessageLegacy);
         messenger.registerIncomingPluginChannel(plugin, MessageChannel.commandChannelLegacy, this::handleCommandMessageLegacy);
 
