@@ -618,6 +618,12 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         if (entity instanceof Player targetPlayer)
             morphs.grantMorphToPlayer(player, DisguiseTypes.PLAYER.toId(targetPlayer.getName()));
         else
-            morphs.grantMorphToPlayer(player, entity.getType().getKey().asString());
+        {
+            var type = entity.getType();
+            if (type == EntityType.CREAKING_TRANSIENT)
+                type = EntityType.CREAKING;
+
+            morphs.grantMorphToPlayer(player, type.getKey().asString());
+        }
     }
 }
