@@ -1,5 +1,6 @@
 package xyz.nifeather.morph.messages.vanilla;
 
+import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 import xyz.nifeather.morph.MorphPlugin;
 import xiamomc.pluginbase.Messages.IStrings;
@@ -41,7 +42,9 @@ public abstract class BasicVanillaMessageStore extends MessageStore<MorphPlugin>
     protected final String langDirUri = plugin.getDataFolder().toURI() + "/mclang";
     protected final File langDir = new File(URI.create(langDirUri));
 
-    private final String urlPattern = "https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19.3/assets/minecraft/lang/";
+    private final String urlPattern = "https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/"
+            + Bukkit.getMinecraftVersion()
+            + "/assets/minecraft/lang/";
 
     @Override
     public void initializeStorage()
@@ -80,6 +83,8 @@ public abstract class BasicVanillaMessageStore extends MessageStore<MorphPlugin>
             {
                 var req = new URL(urlPattern + getLocaleCode() + ".json");
                 var con = (HttpURLConnection) req.openConnection();
+
+                logger.info("Downloading from " + req);
 
                 con.setRequestMethod("GET");
                 con.setInstanceFollowRedirects(true);
