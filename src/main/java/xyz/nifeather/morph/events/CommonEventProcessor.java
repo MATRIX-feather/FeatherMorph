@@ -11,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.block.data.type.CreakingHeart;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -605,6 +606,23 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         }
 
         e.setCancelled(e.isCancelled() || !shouldTarget);
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onAdvancement(BlockBreakEvent event)
+    {
+        var block = event.getBlock();
+
+        if (block.getType() != Material.CREAKING_HEART)
+            return;
+
+        if (!(block.getBlockData() instanceof CreakingHeart creakingHeart))
+            return;
+
+        if (creakingHeart.getCreaking() != CreakingHeart.Creaking.ACTIVE)
+            return;
+
+        morphs.grantMorphToPlayer(event.getPlayer(), EntityType.CREAKING.getKey().asString());
     }
 
     private void onPlayerKillEntity(Player player, Entity entity)
