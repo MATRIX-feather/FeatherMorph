@@ -565,7 +565,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     {
         this.sendCommand(player, new S2CUnAuthCommand(), true);
 
-        this.playerSessionMap.remove(player.getUniqueId());
+        this.playerSessionMap.remove(player);
 
         var playerConfig = manager.getPlayerMeta(player);
         var state = manager.getDisguiseStateFor(player);
