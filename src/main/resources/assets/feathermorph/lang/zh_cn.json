@@ -229,6 +229,8 @@
   "emote.morphclient.crawl": "趴下",
   "emote.morphclient.digdown": "掘地",
   "emote.morphclient.appear": "出现",
+  "emote.morphclient.eye_glow": "注视",
+  "emote.morphclient.stop_eye_glow": "熄灭",
   "emote.morphclient.none": "<gray>无</gray>",
   "emote.morphclient.not_available": "技能冷却时不能播放动作",
   "emote.morphclient.unknown": "未知",
