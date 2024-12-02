@@ -21,18 +21,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Bindables.Bindable;
 import xiamomc.pluginbase.Command.IPluginCommand;
 import xyz.nifeather.morph.MorphPluginObject;
-import xyz.nifeather.morph.abilities.AbilityType;
 import xyz.nifeather.morph.abilities.impl.FlyAbility;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
-import xyz.nifeather.morph.events.api.gameplay.PlayerMorphEvent;
-import xyz.nifeather.morph.events.api.gameplay.PlayerUnMorphEvent;
-import xyz.nifeather.morph.misc.NmsRecord;
 
 import java.util.Arrays;
 import java.util.List;
@@ -186,13 +183,19 @@ public class TownyAdapter extends MorphPluginObject implements Listener
     @EventHandler
     public void onTownRemoveResident(TownRemoveResidentEvent e)
     {
-        updatePlayer(e.getResident().getPlayer(), e.getTown());
+        var player = e.getResident().getPlayer();
+
+        if (player != null)
+            updatePlayer(e.getResident().getPlayer(), e.getTown());
     }
 
     @EventHandler
     public void onTownAddResident(TownAddResidentEvent e)
     {
-        updatePlayer(e.getResident().getPlayer(), e.getTown());
+        var player = e.getResident().getPlayer();
+
+        if (player != null)
+            updatePlayer(player, e.getTown());
     }
 
     // Folia没有提供监听玩家改变世界的事件，所以我们只能监听EntityAddToWorldEvent
@@ -223,12 +226,12 @@ public class TownyAdapter extends MorphPluginObject implements Listener
             this.updatePlayer(e.getPlayer(), townyAPI.getTown(e.getTo()));
     }
 
-    public void updatePlayer(Player player, @Nullable Town town)
+    public void updatePlayer(@NotNull Player player, @Nullable Town town)
     {
         this.updatePlayer(player, town, false);
     }
 
-    public void updatePlayer(Player player, @Nullable Town currentTown, boolean noLookup)
+    public void updatePlayer(@NotNull Player player, @Nullable Town currentTown, boolean noTownLookup)
     {
         if (!worldUsingTowny(player.getWorld()))
         {
@@ -236,7 +239,7 @@ public class TownyAdapter extends MorphPluginObject implements Listener
             return;
         }
 
-        if (currentTown == null && !noLookup)
+        if (currentTown == null && !noTownLookup)
             currentTown = townyAPI.getTown(player.getLocation());
 
         if (allowFlightAt(player, currentTown))
