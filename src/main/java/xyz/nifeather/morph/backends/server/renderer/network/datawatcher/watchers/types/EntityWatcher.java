@@ -79,7 +79,7 @@ public class EntityWatcher extends SingleWatcher
     {
         super.onEntryWrite(entry, oldVal, newVal);
 
-        if (entry.equals(CustomEntries.DISGUISE_NAME))
+        if (entry.equals(CustomEntries.DISGUISE_NAME) && this.getEntityType() != EntityType.PLAYER)
         {
             var str = newVal.toString();
             var component = str.isEmpty() ? null : Component.literal(str);
