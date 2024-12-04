@@ -619,7 +619,7 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         if (!(block.getBlockData() instanceof CreakingHeart creakingHeart))
             return;
 
-        if (creakingHeart.getCreaking() != CreakingHeart.Creaking.ACTIVE)
+        if (!creakingHeart.isActive())
             return;
 
         morphs.grantMorphToPlayer(event.getPlayer(), EntityType.CREAKING.getKey().asString());
@@ -638,9 +638,6 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         else
         {
             var type = entity.getType();
-            if (type == EntityType.CREAKING_TRANSIENT)
-                type = EntityType.CREAKING;
-
             morphs.grantMorphToPlayer(player, type.getKey().asString());
         }
     }

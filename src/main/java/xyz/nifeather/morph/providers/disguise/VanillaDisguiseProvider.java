@@ -77,7 +77,7 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
 
         for (var eT : EntityType.values())
         {
-            if (eT == EntityType.UNKNOWN || eT == EntityType.CREAKING_TRANSIENT || !eT.isAlive()) continue;
+            if (eT == EntityType.UNKNOWN || !eT.isAlive()) continue;
 
             list.add(eT.getKey().getKey());
         }
@@ -255,7 +255,7 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
             var mobMaxHealth = craftLiving.craftAttributes.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
 
             // patch: CREAKING only have half heart, and we don't want that.
-            if (state.getEntityType() == EntityType.CREAKING || state.getEntityType() == EntityType.CREAKING_TRANSIENT)
+            if (state.getEntityType() == EntityType.CREAKING)
                 mobMaxHealth = 20;
 
             var playerAttribute = player.getAttribute(Attribute.MAX_HEALTH);

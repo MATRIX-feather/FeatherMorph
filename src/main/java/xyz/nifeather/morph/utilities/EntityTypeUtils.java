@@ -3,6 +3,7 @@ package xyz.nifeather.morph.utilities;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
+import net.kyori.adventure.key.Key;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -12,12 +13,14 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import org.bukkit.Location;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Enemy;
 import org.bukkit.entity.EntityType;
+import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.nifeather.morph.MorphPlugin;
@@ -405,15 +408,15 @@ public class EntityTypeUtils
     }
 
     @Nullable
-    public static String getDamageSound(EntityType type)
+    public static String getDamageSoundKey(EntityType type)
     {
         if (type == EntityType.PLAYER) return null;
 
         if (type == EntityType.ARMOR_STAND)
-            return Sound.ENTITY_ARMOR_STAND_HIT.key().asString();
+            return "entity.armor_stand.hit";
 
         if (type == EntityType.TRADER_LLAMA)
-            return Sound.ENTITY_LLAMA_HURT.key().asString();
+            return "entity.llama.hurt";
 
         return "entity.%s.hurt".formatted(type.getKey().getKey());
     }
