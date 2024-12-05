@@ -1,5 +1,12 @@
 package xyz.nifeather.morph.commands.subcommands.plugin;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.kyori.adventure.text.Component;
@@ -7,27 +14,24 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
-import xiamomc.pluginbase.Command.SubCommandHandler;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.commands.MorphCommandManager;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.commands.subcommands.plugin.helpsections.Entry;
 import xyz.nifeather.morph.commands.subcommands.plugin.helpsections.Section;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class HelpSubCommand extends MorphPluginObject implements ISubCommand
+public class HelpSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
-
     @Override
-    public String getCommandName()
+    public String name()
     {
         return "help";
     }
@@ -57,25 +61,25 @@ public class HelpSubCommand extends MorphPluginObject implements ISubCommand
         commandSections.add(miscCommandSection);
 
         //遍历所有指令
-        for (var c : cmdHelper.getCommands())
+        for (var c : cmdHelper.commands())
         {
             //如果指令拥有子指令，新建section
-            if (c instanceof SubCommandHandler<?> sch)
+            if (!c.children().isEmpty())
             {
                 //此section下所有指令的父级指令
-                var parentCommandName = sch.getCommandName();
+                var parentCommandName = c.name();
 
-                List<FormattableMessage> notes = new ObjectArrayList<>(sch.getNotes());
+                List<FormattableMessage> notes = new ObjectArrayList<>(c.getNotes());
 
                 var section = new Section(parentCommandName,
-                        sch.getHelpMessage(),
+                        c.getHelpMessage(),
                         notes);
 
                 //添加指令到section中
-                for (var sc : sch.getSubCommands())
+                for (var sc : c.children())
                 {
-                    var cmdName = parentCommandName + " " + sc.getCommandName() + " ";
-                    section.add(new Entry(sc.getPermissionRequirement(),
+                    var cmdName = parentCommandName + " " + sc.name();
+                    section.add(new Entry(sc.permission(),
                             cmdName,
                              sc.getHelpMessage(),
                             "/" + cmdName));
@@ -84,10 +88,12 @@ public class HelpSubCommand extends MorphPluginObject implements ISubCommand
                 commandSections.add(section);
             }
             else
-                miscCommandSection.add(new Entry(c.getPermissionRequirement(),
-                        c.getCommandName(),
+            {
+                miscCommandSection.add(new Entry(c.permission(),
+                        c.name(),
                         c.getHelpMessage(),
-                        "/" + c.getCommandName() + " "));
+                        "/" + c.name()));
+            }
         }
     }
 
@@ -123,7 +129,7 @@ public class HelpSubCommand extends MorphPluginObject implements ISubCommand
             }
         }
 
-        if (section.getNotes() != null && section.getNotes().size() >= 1)
+        if (section.getNotes() != null && !section.getNotes().isEmpty())
         {
             list.addAll(ObjectList.of(
                     Component.empty(),
@@ -162,7 +168,7 @@ public class HelpSubCommand extends MorphPluginObject implements ISubCommand
                     .resolve("description", section.getDescription(), null)
                     .toComponent(locale)
                     .decorate(TextDecoration.UNDERLINED)
-                    .clickEvent(ClickEvent.runCommand("/feathermorph " + getCommandName() + " " + section.getCommandBaseName()))
+                    .clickEvent(ClickEvent.runCommand("/feathermorph " + name() + " " + section.getCommandBaseName()))
                     .hoverEvent(HoverEvent.showText(HelpStrings.clickToViewString().toComponent(locale)));
 
             list.add(msg);
@@ -171,56 +177,65 @@ public class HelpSubCommand extends MorphPluginObject implements ISubCommand
         return list;
     }
 
-
     @Override
-    public String getPermissionRequirement()
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
     {
-        return null;
+        parentBuilder.then(
+                Commands.literal(name())
+                        .executes(this::executeNoArgs)
+                        .then(
+                                Commands.argument("section", StringArgumentType.greedyString())
+                                        .suggests(this::suggestSection)
+                                        .executes(this::executeWithArgs)
+                        )
+        );
+    }
+
+    private int executeNoArgs(CommandContext<CommandSourceStack> context)
+    {
+        var sender = context.getSource().getSender();
+
+        for (var s : constructHelpMessage(sender))
+            sender.sendMessage(MessageUtils.prefixes(sender, s));
+
+        return 1;
+    }
+
+    private int executeWithArgs(CommandContext<CommandSourceStack> context)
+    {
+        var sender = context.getSource().getSender();
+
+        var sectionName = StringArgumentType.getString(context, "section");
+        var section = commandSections.stream()
+                .filter(s -> s.getCommandBaseName().equalsIgnoreCase(sectionName)).findFirst().orElse(null);
+
+        if (section != null)
+        {
+            for (var s : constructSectionMessage(sender, section))
+                sender.sendMessage(MessageUtils.prefixes(sender, s));
+        }
+        else
+            sender.sendMessage(MessageUtils.prefixes(sender, HelpStrings.sectionNotFoundString().withLocale(MessageUtils.getLocale(sender))));
+
+        return 1;
+    }
+
+    private CompletableFuture<Suggestions> suggestSection(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
+    {
+        var baseName = suggestionsBuilder.getRemainingLowerCase();
+
+        var matchedSections = commandSections.stream()
+                .filter(s -> s.getCommandBaseName().toLowerCase().startsWith(baseName.toLowerCase())).toList();
+
+        for (var s : matchedSections)
+            suggestionsBuilder.suggest(s.getCommandBaseName());
+
+        return suggestionsBuilder.buildFuture();
     }
 
     @Override
     public FormattableMessage getHelpMessage()
     {
         return HelpStrings.helpDescription();
-    }
-
-    @Override
-    public @Nullable List<String> onTabComplete(List<String> args, CommandSender source)
-    {
-        var baseName = args.size() >= 1 ? args.get(0) : "";
-        var matchedSections = commandSections.stream()
-                .filter(s -> s.getCommandBaseName().toLowerCase().startsWith(baseName.toLowerCase())).toList();
-
-        var list = new ObjectArrayList<String>();
-
-        for (var s : matchedSections)
-            list.add(s.getCommandBaseName());
-
-        return list;
-    }
-
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull String[] args)
-    {
-        if (args.length >= 1)
-        {
-            var section = commandSections.stream()
-                    .filter(s -> s.getCommandBaseName().equalsIgnoreCase(args[0])).findFirst().orElse(null);
-
-            if (section != null)
-            {
-                for (var s : constructSectionMessage(sender, section))
-                    sender.sendMessage(MessageUtils.prefixes(sender, s));
-            }
-            else
-                sender.sendMessage(MessageUtils.prefixes(sender, HelpStrings.sectionNotFoundString().withLocale(MessageUtils.getLocale(sender))));
-
-            return true;
-        }
-
-        for (var s : constructHelpMessage(sender))
-            sender.sendMessage(MessageUtils.prefixes(sender, s));
-
-        return true;
     }
 }

@@ -1,80 +1,77 @@
 package xyz.nifeather.morph.commands.subcommands.request;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.interfaces.IManageRequests;
 import xyz.nifeather.morph.messages.CommonStrings;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class AcceptSubCommand extends MorphPluginObject implements ISubCommand
+public class AcceptSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
-    @Resolved
-    private IManageRequests requests;
-
-    @Override
-    public List<String> onTabComplete(List<String> args, CommandSender source)
-    {
-        var list = new ObjectArrayList<String>();
-
-        if (source instanceof Player player)
-        {
-            var reqs = requests.getAvailableRequestsFor(player);
-
-            reqs.forEach(r -> list.add(r.sourcePlayer.getName()));
-        }
-
-        return list;
-    }
-
-    @Override
-    public String getCommandName()
-    {
-        return "accept";
-    }
-
-    @Override
-    public String getPermissionRequirement()
-    {
-        return null;
-    }
-
     @Override
     public FormattableMessage getHelpMessage()
     {
         return HelpStrings.requestAcceptDescription();
     }
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull String[] args)
+    @Resolved
+    private IManageRequests requests;
+
+    public @NotNull CompletableFuture<Suggestions> suggests(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
     {
-        if (!(sender instanceof Player sourcePlayer))
-            return true;
+        var source = context.getSource().getSender();
 
-        if (args.length < 1)
+        if (!(source instanceof Player player))
+            return CompletableFuture.completedFuture(suggestionsBuilder.build());
+
+        var reqs = requests.getAvailableRequestsFor(player);
+
+        return CompletableFuture.supplyAsync(() ->
         {
-            sender.sendMessage(MessageUtils.prefixes(sender, CommonStrings.playerNotDefinedString()));
-            return true;
-        }
+            reqs.forEach(r -> suggestionsBuilder.suggest(r.sourcePlayer.getName()));
+            return suggestionsBuilder.build();
+        });
+    }
 
-        var targetPlayer = Bukkit.getPlayerExact(args[0]);
+    @Override
+    public String name()
+    {
+        return "accept";
+    }
+
+    public int executes(CommandContext<CommandSourceStack> context)
+    {
+        var sender = context.getSource().getSender();
+
+        if (!(sender instanceof Player sourcePlayer))
+            return Command.SINGLE_SUCCESS;
+
+        var playerName = StringArgumentType.getString(context, "who");
+
+        var targetPlayer = Bukkit.getPlayerExact(playerName);
 
         if (targetPlayer == null)
         {
             sender.sendMessage(MessageUtils.prefixes(sender, CommonStrings.playerNotFoundString()));
-            return true;
+            return Command.SINGLE_SUCCESS;
         }
 
         requests.acceptRequest(sourcePlayer, targetPlayer);
-        return true;
+
+        return Command.SINGLE_SUCCESS;
     }
 }

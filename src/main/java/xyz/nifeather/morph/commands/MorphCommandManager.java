@@ -1,19 +1,16 @@
 package xyz.nifeather.morph.commands;
 
-import it.unimi.dsi.fastutil.objects.ObjectList;
-import org.bukkit.Bukkit;
-import xyz.nifeather.morph.MorphPlugin;
-import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.CommandHelper;
-import xiamomc.pluginbase.Command.IPluginCommand;
-import xiamomc.pluginbase.XiaMoJavaPlugin;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
+import org.jetbrains.annotations.NotNull;
+import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 
 import java.util.List;
-import java.util.Objects;
 
-public class MorphCommandManager extends CommandHelper<MorphPlugin>
+public class MorphCommandManager extends MorphPluginObject
 {
-    private final List<IPluginCommand> commands = ObjectList.of(
+    private final List<IConvertibleBrigadier> commands = List.of(
             new MorphCommand(),
             new MorphPlayerCommand(),
             new UnMorphCommand(),
@@ -21,48 +18,16 @@ public class MorphCommandManager extends CommandHelper<MorphPlugin>
             new MorphPluginCommand(),
             new AnimationCommand());
 
-    @Override
-    public boolean registerCommand(IPluginCommand command)
+    public List<IConvertibleBrigadier> commands()
     {
-        if (Objects.equals(command.getCommandName(), ""))
-            throw new IllegalArgumentException("Trying to register a command with empty basename!");
-
-        var cmd = Bukkit.getPluginCommand(command.getCommandName());
-
-        if (cmd == null)
-            throw new NullPointerException("'%s' doesn't have a command defined in the server.".formatted(command.getCommandName()));
-
-        if (cmd.getExecutor().equals(this.getPlugin()))
-        {
-            cmd.setExecutor(command);
-            cmd.setTabCompleter(new MorphTabCompleter(command));
-            return true;
-        }
-        else
-        {
-            logger.warn("Ignoring command '%s' that doesn't belongs to us.".formatted(command.getCommandName()));
-            return false;
-        }
+        return this.commands;
     }
 
-    @Override
-    public List<IPluginCommand> getCommands()
+    public void register(ReloadableRegistrarEvent<@NotNull Commands> event)
     {
-        return commands;
-    }
+        var registrar = event.registrar();
 
-    @Resolved
-    private MorphPlugin plugin;
-
-    @Override
-    protected XiaMoJavaPlugin getPlugin()
-    {
-        return plugin;
-    }
-
-    @Override
-    protected String getPluginNamespace()
-    {
-        return MorphPlugin.getMorphNameSpace();
+        for (var brigadierConvertable : commands)
+            brigadierConvertable.register(registrar);
     }
 }

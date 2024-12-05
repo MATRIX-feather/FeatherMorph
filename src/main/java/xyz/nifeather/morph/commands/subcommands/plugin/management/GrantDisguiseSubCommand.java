@@ -1,6 +1,12 @@
 package xyz.nifeather.morph.commands.subcommands.plugin.management;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -8,20 +14,20 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.messages.*;
 import xyz.nifeather.morph.misc.DisguiseTypes;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class GrantDisguiseSubCommand extends MorphPluginObject implements ISubCommand
+public class GrantDisguiseSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Override
-    public @NotNull String getCommandName()
+    public @NotNull String name()
     {
         return "grant";
     }
@@ -33,30 +39,53 @@ public class GrantDisguiseSubCommand extends MorphPluginObject implements ISubCo
     }
 
     @Override
-    public @Nullable String getPermissionRequirement()
+    public @Nullable String permission()
     {
         return CommonPermissions.MANAGE_GRANT_DISGUISE;
     }
 
     @Override
-    public List<String> onTabComplete(List<String> args, CommandSender source)
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
     {
-        var list = new ObjectArrayList<String>();
-        if (args.size() > 2) return list;
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .then(
+                                Commands.argument("who", StringArgumentType.string())
+                                        .suggests(this::suggestPlayer)
+                                        .then(
+                                                Commands.argument("what", StringArgumentType.greedyString())
+                                                        .executes(this::execute)
+                                                        .suggests(this::suggestDisguise)
+                                        )
+                        )
+        );
+    }
 
-        var name = args.size() >= 1 ? args.get(0) : "";
-        var target = args.size() == 2 ? args.get(1) : "";
+    private CompletableFuture<Suggestions> suggestPlayer(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
+    {
+        var online = Bukkit.getOnlinePlayers();
 
-        var onlinePlayers = Bukkit.getOnlinePlayers();
-
-        if (args.size() == 1) //size == 1: 补全玩家
+        return CompletableFuture.supplyAsync(() ->
         {
-            for (var p : onlinePlayers)
-                if (p.getName().toLowerCase().contains(name.toLowerCase())) list.add(p.getName());
-        }
-        else if (args.size() == 2) //size == 2: 补全生物和玩家
+            var input = suggestionsBuilder.getRemainingLowerCase();
+
+            online.stream().forEach(player ->
+            {
+                var name = player.getName();
+                if (name.toLowerCase().contains(input))
+                    suggestionsBuilder.suggest(name);
+            });
+
+            return suggestionsBuilder.build();
+        });
+    }
+
+    private CompletableFuture<Suggestions> suggestDisguise(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
+    {
+        return CompletableFuture.supplyAsync(() ->
         {
-            var targetLowerCase = target.toLowerCase();
+            var input = suggestionsBuilder.getRemainingLowerCase();
 
             for (var p : MorphManager.getProviders())
             {
@@ -66,31 +95,30 @@ public class GrantDisguiseSubCommand extends MorphPluginObject implements ISubCo
                 p.getAllAvailableDisguises().forEach(s ->
                 {
                     var str = ns + ":" + s;
-                    if (str.toLowerCase().contains(targetLowerCase)) list.add(str);
+                    if (str.toLowerCase().contains(input))
+                        suggestionsBuilder.suggest(str);
                 });
 
-                list.add(ns + ":" + "@all");
+                suggestionsBuilder.suggest(ns + ":" + "@all");
             }
-        }
 
-        return list;
+            return suggestionsBuilder.build();
+        });
     }
 
     @Resolved
     private MorphManager morphs;
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull String[] strings)
+    private int execute(CommandContext<CommandSourceStack> context)
     {
-        if (strings.length != 2) return false;
-
-        var who = Bukkit.getPlayerExact(strings[0]);
-        var targetName = strings[1];
+        var who = Bukkit.getPlayerExact(StringArgumentType.getString(context, "who"));
+        var targetName = StringArgumentType.getString(context, "what");
+        var commandSender = context.getSource().getSender();
 
         if (who == null || !who.isOnline())
         {
             commandSender.sendMessage(MessageUtils.prefixes(commandSender, CommonStrings.playerNotFoundString()));
-            return false;
+            return 1;
         }
 
         if (!targetName.contains(":"))
@@ -105,17 +133,17 @@ public class GrantDisguiseSubCommand extends MorphPluginObject implements ISubCo
             var allDisg = provider.getAllAvailableDisguises();
             allDisg.forEach(id -> grantDisguise(who, nameType.toId(id), commandSender));
 
-            return true;
+            return 1;
         }
         else if (!provider.isValid(targetName))
         {
             commandSender.sendMessage(MessageUtils.prefixes(commandSender, MorphStrings.invalidIdentityString()));
-            return true;
+            return 1;
         }
 
         grantDisguise(who, targetName, commandSender);
 
-        return true;
+        return 1;
     }
 
     private void grantDisguise(Player who, String targetName, CommandSender commandSender)

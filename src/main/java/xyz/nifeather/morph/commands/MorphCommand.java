@@ -1,57 +1,34 @@
 package xyz.nifeather.morph.commands;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.IPluginCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.messages.MorphStrings;
+import xyz.nifeather.morph.misc.DisguiseMeta;
 import xyz.nifeather.morph.misc.gui.DisguiseSelectScreenWrapper;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class MorphCommand extends MorphPluginObject implements IPluginCommand
+public class MorphCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Resolved
     private MorphManager morphManager;
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args)
-    {
-        if (sender instanceof Player player)
-        {
-            //伪装冷却
-            if (!morphManager.canMorph(player))
-            {
-                sender.sendMessage(MessageUtils.prefixes(player, MorphStrings.disguiseCoolingDownString()));
-
-                return true;
-            }
-
-            if (args.length >= 1)
-            {
-                morphManager.morph(sender, player, args[0], player.getTargetEntity(5));
-            }
-            else
-            {
-                var gui = new DisguiseSelectScreenWrapper(player, 0);
-                gui.show();
-                //sender.sendMessage(MessageUtils.prefixes(sender, MorphStrings.disguiseNotDefinedString()));
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public String getCommandName()
+    public @NotNull String name()
     {
         return "morph";
     }
@@ -60,36 +37,88 @@ public class MorphCommand extends MorphPluginObject implements IPluginCommand
     private MorphManager morphs;
 
     @Override
-    public List<String> onTabComplete(List<String> args, CommandSender source)
+    public boolean register(Commands dispatcher)
     {
-        var list = new ObjectArrayList<String>();
+        dispatcher.register(Commands.literal(name())
+                .requires(this::checkPermission)
+                .executes(this::executeNoArg)
+                        .then(
+                                Commands.argument("id", StringArgumentType.greedyString())
+                                        .suggests(this::suggests)
+                                        .executes(this::execWithArg)
+                        )
+                .build());
 
-        if (args.size() > 1) return list;
-
-        if (source instanceof Player player)
-        {
-            //Logger.warn("BUFFERS: " + Arrays.toString(buffers));
-
-            var arg = args.get(0);
-
-            var infos = morphs.getAvaliableDisguisesFor(player);
-
-            for (var di : infos)
-            {
-                var name = di.getKey();
-                if (!name.toLowerCase().contains(arg.toLowerCase())) continue;
-
-                list.add(name);
-            }
-        }
-
-        return list;
+        return true;
     }
 
-    @Override
-    public String getPermissionRequirement()
+    public @NotNull CompletableFuture<Suggestions> suggests(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
     {
-        return null;
+        var source = context.getSource().getExecutor();
+
+        if (!(source instanceof Player player))
+            return CompletableFuture.completedFuture(suggestionsBuilder.build());
+
+        String input = suggestionsBuilder.getRemainingLowerCase();
+
+        var availableDisguises = morphs.getAvaliableDisguisesFor(player);
+
+        return CompletableFuture.supplyAsync(() ->
+        {
+            for (DisguiseMeta disguiseMeta : availableDisguises)
+            {
+                var name = disguiseMeta.getKey();
+
+                if (!name.toLowerCase().contains(input))
+                    continue;
+
+                suggestionsBuilder.suggest(name);
+            }
+
+            return suggestionsBuilder.build();
+        });
+    }
+
+    public int executeNoArg(CommandContext<CommandSourceStack> context)
+    {
+        var sender = context.getSource().getExecutor();
+
+        if (!(sender instanceof Player player))
+            return Command.SINGLE_SUCCESS;
+
+        //伪装冷却
+        if (!morphManager.canMorph(player))
+        {
+            sender.sendMessage(MessageUtils.prefixes(player, MorphStrings.disguiseCoolingDownString()));
+
+            return Command.SINGLE_SUCCESS;
+        }
+
+        var gui = new DisguiseSelectScreenWrapper(player, 0);
+        gui.show();
+
+        return 1;
+    }
+
+    private int execWithArg(CommandContext<CommandSourceStack> context)
+    {
+        var sender = context.getSource().getExecutor();
+
+        if (!(sender instanceof Player player))
+            return Command.SINGLE_SUCCESS;
+
+        //伪装冷却
+        if (!morphManager.canMorph(player))
+        {
+            sender.sendMessage(MessageUtils.prefixes(player, MorphStrings.disguiseCoolingDownString()));
+
+            return Command.SINGLE_SUCCESS;
+        }
+
+        String inputID = StringArgumentType.getString(context, "id");
+        morphManager.morph(sender, player, inputID, player.getTargetEntity(5));
+
+        return 1;
     }
 
     @Override

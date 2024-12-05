@@ -1,23 +1,22 @@
 package xyz.nifeather.morph.commands.subcommands.plugin;
 
-import org.bukkit.command.CommandSender;
+import com.mojang.brigadier.context.CommandContext;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
-import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.BrigadierCommand;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 import xyz.nifeather.morph.utilities.ItemUtils;
 
-import java.util.List;
-
-public class MakeSkillItemSubCommand extends MorphPluginObject implements ISubCommand
+public class MakeSkillItemSubCommand extends BrigadierCommand
 {
     @Override
-    public @NotNull String getCommandName()
+    public @NotNull String name()
     {
         return "make_disguise_tool";
     }
@@ -34,28 +33,34 @@ public class MakeSkillItemSubCommand extends MorphPluginObject implements ISubCo
         return new FormattableMessage(plugin, "make selected a disguise tool");
     }
 
-    private final List<String> emptyList = List.of();
-
     @Override
-    public @Nullable List<String> onTabComplete(List<String> args, CommandSender source)
+    public boolean register(Commands dispatcher)
     {
-        return emptyList;
+        dispatcher.register(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .executes(this::executes)
+                        .build()
+        );
+
+        return super.register(dispatcher);
     }
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull String[] args)
+    public int executes(CommandContext<CommandSourceStack> context)
     {
+        var sender = context.getSource().getSender();
+
         if (!(sender instanceof Player player))
         {
             sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.noPermissionMessage()));
-            return true;
+            return 1;
         }
 
         var item = player.getEquipment().getItemInMainHand();
         if (item.isEmpty() || item.getType().isAir())
         {
             sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.illegalArgumentString().resolve("detail", "air... :(")));
-            return true;
+            return 1;
         }
 
         item = ItemUtils.buildDisguiseToolFrom(item);
@@ -63,6 +68,6 @@ public class MakeSkillItemSubCommand extends MorphPluginObject implements ISubCo
 
         sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.success()));
 
-        return true;
+        return 1;
     }
 }

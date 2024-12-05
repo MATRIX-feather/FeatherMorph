@@ -1,33 +1,38 @@
 package xyz.nifeather.morph.commands.subcommands.plugin.management;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.messages.CommonStrings;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.misc.MorphParameters;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class ForceMorphSubCommand extends MorphPluginObject implements ISubCommand
+public class ForceMorphSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Override
-    public @NotNull String getCommandName()
+    public @NotNull String name()
     {
         return "morph";
     }
 
     @Override
-    public @Nullable String getPermissionRequirement()
+    public @Nullable String permission()
     {
         return CommonPermissions.MANAGE_MORPH_DISGUISE;
     }
@@ -36,61 +41,87 @@ public class ForceMorphSubCommand extends MorphPluginObject implements ISubComma
     private MorphManager manager;
 
     @Override
-    public @Nullable List<String> onTabComplete(List<String> args, CommandSender source)
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
     {
-        var list = new ObjectArrayList<String>();
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .then(
+                                Commands.argument("who", StringArgumentType.string())
+                                        .suggests(this::suggestPlayer)
+                                        .then(
+                                                Commands.argument("as_what", StringArgumentType.greedyString())
+                                                        .suggests(this::suggestDisguise)
+                                                        .executes(this::execute)
+                                        )
+                        )
+        );
+    }
 
-        if (args.size() == 1)
+    private CompletableFuture<Suggestions> suggestDisguise(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
+    {
+        return CompletableFuture.supplyAsync(() ->
         {
-            var name = args.get(0);
-
-            var onlinePlayers = Bukkit.getOnlinePlayers();
-
-            for (var p : onlinePlayers)
-                if (p.getName().toLowerCase().contains(name.toLowerCase())) list.add(p.getName());
-        }
-        else if (args.size() == 2)
-        {
-            var targetLowerCase = args.get(1).toLowerCase();
+            var input = suggestionsBuilder.getRemainingLowerCase();
 
             for (var p : MorphManager.getProviders())
             {
+                if (p == MorphManager.fallbackProvider) continue;
+
                 var ns = p.getNameSpace();
                 p.getAllAvailableDisguises().forEach(s ->
                 {
                     var str = ns + ":" + s;
-                    if (str.toLowerCase().contains(targetLowerCase)) list.add(str);
+                    if (str.toLowerCase().contains(input))
+                        suggestionsBuilder.suggest(str);
                 });
             }
-        }
 
-        return list;
+            return suggestionsBuilder.build();
+        });
     }
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, String[] strings)
+    private CompletableFuture<Suggestions> suggestPlayer(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
     {
-        if (strings.length != 2) return false;
+        var online = Bukkit.getOnlinePlayers();
 
-        var who = Bukkit.getPlayerExact(strings[0]);
-        var targetName = strings[1];
+        return CompletableFuture.supplyAsync(() ->
+        {
+            var input = suggestionsBuilder.getRemainingLowerCase();
 
+            online.stream().forEach(player ->
+            {
+                var name = player.getName();
+                if (name.toLowerCase().contains(input))
+                    suggestionsBuilder.suggest(name);
+            });
+
+            return suggestionsBuilder.build();
+        });
+    }
+
+    private int execute(CommandContext<CommandSourceStack> context)
+    {
+        var who = Bukkit.getPlayerExact(StringArgumentType.getString(context, "who"));
+        var targetName = StringArgumentType.getString(context, "as_what");
+
+        var commandSender = context.getSource().getSender();
         if (who == null || !who.isOnline())
         {
             commandSender.sendMessage(MessageUtils.prefixes(commandSender, CommonStrings.playerNotFoundString()));
-            return false;
+            return 1;
         }
 
         var parameters = MorphParameters
-                            .create(who, targetName)
-                            .setSource(commandSender)
-                            //.setTargetedEntity(who.getTargetEntity(3))
-                            .setForceExecute(true)
-                            .setBypassAvailableCheck(true)
-                            .setBypassPermission(true);
+                .create(who, targetName)
+                .setSource(commandSender)
+                //.setTargetedEntity(who.getTargetEntity(3))
+                .setForceExecute(true)
+                .setBypassAvailableCheck(true)
+                .setBypassPermission(true);
 
         manager.morph(parameters);
-        return true;
+        return 1;
     }
 
     @Override

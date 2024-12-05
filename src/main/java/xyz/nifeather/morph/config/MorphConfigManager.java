@@ -154,6 +154,7 @@ public class MorphConfigManager extends PluginConfigManager
             bindableLists = new Object2ObjectOpenHashMap<>();
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void reload()
     {
@@ -228,7 +229,6 @@ public class MorphConfigManager extends PluginConfigManager
             if (configVersion < 15)
             {
                 //skill item
-                //noinspection removal
                 var oldSkillItem = get(String.class, ConfigOption.ACTION_ITEM);
 
                 //noinspection removal

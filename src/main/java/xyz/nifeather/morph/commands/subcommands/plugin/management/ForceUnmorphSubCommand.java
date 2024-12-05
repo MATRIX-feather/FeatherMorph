@@ -1,84 +1,75 @@
 package xyz.nifeather.morph.commands.subcommands.plugin.management;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.CommonStrings;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-import java.util.List;
-import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
-public class ForceUnmorphSubCommand extends MorphPluginObject implements ISubCommand
+public class ForceUnmorphSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Override
-    public @NotNull String getCommandName()
+    public @NotNull String name()
     {
         return "unmorph";
     }
 
     @Override
-    public @Nullable String getPermissionRequirement()
+    public @Nullable String permission()
     {
         return CommonPermissions.MANAGE_UNMORPH_DISGUISE;
     }
 
-    @Resolved
-    private MorphManager manager;
-
     @Override
-    public @Nullable List<String> onTabComplete(List<String> args, CommandSender source)
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
     {
-        var list = new ObjectArrayList<String>();
-        if (args.size() != 1) return list;
-
-        var name = args.get(0);
-
-        var onlinePlayers = Bukkit.getOnlinePlayers();
-
-        if (name.isBlank())
-            list.add("*");
-
-        for (var p : onlinePlayers)
-            if (p.getName().toLowerCase().contains(name.toLowerCase())) list.add(p.getName());
-
-        return list;
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .then(
+                                Commands.argument("who", StringArgumentType.greedyString())
+                                        .suggests(this::suggestPlayer)
+                                        .executes(this::execute)
+                        )
+        );
     }
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, String[] args)
+    private int execute(CommandContext<CommandSourceStack> context)
     {
-        if (args.length < 1)
-        {
-            sender.sendMessage(MessageUtils.prefixes(sender, CommonStrings.playerNotDefinedString()));
+        var sender = context.getSource().getSender();
+        var who = StringArgumentType.getString(context, "who");
 
-            return true;
-        }
-
-        if (Objects.equals(args[0], "*"))
+        if (who.equals("*"))
         {
             manager.unMorphAll(true);
             sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.unMorphedAllString()));
 
-            return true;
+            return 1;
         }
 
-        var player = Bukkit.getPlayerExact(args[0]);
+        var player = Bukkit.getPlayerExact(who);
         if (player == null)
         {
             sender.sendMessage(MessageUtils.prefixes(sender, CommonStrings.playerNotFoundString()));
 
-            return true;
+            return 1;
         }
 
         manager.unMorph(sender, player, true, true);
@@ -86,8 +77,32 @@ public class ForceUnmorphSubCommand extends MorphPluginObject implements ISubCom
         sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.unMorphedSomeoneString()
                 .resolve("who", player.getName())));
 
-        return true;
+        return 1;
     }
+
+    private CompletableFuture<Suggestions> suggestPlayer(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
+    {
+        var online = Bukkit.getOnlinePlayers();
+
+        return CompletableFuture.supplyAsync(() ->
+        {
+            var input = suggestionsBuilder.getRemainingLowerCase();
+
+            suggestionsBuilder.suggest("*");
+
+            online.stream().forEach(player ->
+            {
+                var name = player.getName();
+                if (name.toLowerCase().contains(input))
+                    suggestionsBuilder.suggest(name);
+            });
+
+            return suggestionsBuilder.build();
+        });
+    }
+
+    @Resolved
+    private MorphManager manager;
 
     @Override
     public FormattableMessage getHelpMessage()

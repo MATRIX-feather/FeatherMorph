@@ -1,29 +1,42 @@
 package xyz.nifeather.morph.commands;
 
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
+import com.mojang.brigadier.context.CommandContext;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.IPluginCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-public class UnMorphCommand extends MorphPluginObject implements IPluginCommand
+public class UnMorphCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Override
-    public String getCommandName()
+    public String name()
     {
         return "unmorph";
     }
 
     @Override
-    public String getPermissionRequirement()
+    public boolean register(Commands dispatcher)
     {
-        return CommonPermissions.UNMORPH;
+        dispatcher.register(
+                Commands.literal("unmorph")
+                        .requires(this::checkPermission)
+                        .executes(this::executes)
+                        .build()
+        );
+
+        return true;
+    }
+
+    @Override
+    public boolean checkPermission(CommandSourceStack cmdSourceStack)
+    {
+        return cmdSourceStack.getExecutor().hasPermission(CommonPermissions.UNMORPH);
     }
 
     @Override
@@ -35,12 +48,12 @@ public class UnMorphCommand extends MorphPluginObject implements IPluginCommand
     @Resolved
     private MorphManager morphs;
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args)
+    public int executes(CommandContext<CommandSourceStack> context)
     {
-        if (sender instanceof Player player)
-            morphs.unMorph(player);
+        if (!(context.getSource().getExecutor() instanceof Player player))
+            return 1;
 
-        return true;
+        morphs.unMorph(player);
+        return 1;
     }
 }

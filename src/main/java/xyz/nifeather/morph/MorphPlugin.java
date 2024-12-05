@@ -1,6 +1,7 @@
 package xyz.nifeather.morph;
 
 import com.ticxo.modelengine.api.ModelEngineAPI;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
@@ -9,7 +10,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.ApiStatus;
 import xyz.nifeather.morph.abilities.AbilityManager;
-import xyz.nifeather.morph.commands.MorphCommandManager;
+import xyz.nifeather.morph.commands.*;
 import xyz.nifeather.morph.config.MorphConfigManager;
 import xyz.nifeather.morph.events.*;
 import xyz.nifeather.morph.interfaces.IManagePlayerData;
@@ -32,7 +33,6 @@ import xyz.nifeather.morph.skills.MorphSkillHandler;
 import xyz.nifeather.morph.storage.skill.SkillsConfigurationStoreNew;
 import xyz.nifeather.morph.transforms.Transformer;
 import xyz.nifeather.morph.updates.UpdateHandler;
-import xiamomc.pluginbase.Command.CommandHelper;
 import xiamomc.pluginbase.Messages.MessageStore;
 import xiamomc.pluginbase.XiaMoJavaPlugin;
 
@@ -68,7 +68,7 @@ public final class MorphPlugin extends XiaMoJavaPlugin
         return getMorphNameSpace();
     }
 
-    private CommandHelper<MorphPlugin> cmdHelper;
+    private MorphCommandManager cmdHelper;
 
     private MorphManager morphManager;
 
@@ -233,6 +233,11 @@ public final class MorphPlugin extends XiaMoJavaPlugin
         dependencyManager.cache(new RecipeManager());
 
         mirrorProcessor = new InteractionMirrorProcessor();
+
+        // Commands
+        var lifecycleManager = this.getLifecycleManager();
+        lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS, event ->
+                cmdHelper.register(event));
 
         //注册EventProcessor
         this.schedule(() ->

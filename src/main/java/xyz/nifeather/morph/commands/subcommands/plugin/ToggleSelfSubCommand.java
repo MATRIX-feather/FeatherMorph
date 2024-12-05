@@ -1,20 +1,21 @@
 package xyz.nifeather.morph.commands.subcommands.plugin;
 
-import org.bukkit.command.CommandSender;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
-import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.BrigadierCommand;
 import xyz.nifeather.morph.interfaces.IManagePlayerData;
 import xyz.nifeather.morph.messages.HelpStrings;
 
-public class ToggleSelfSubCommand extends MorphPluginObject implements ISubCommand
+public class ToggleSelfSubCommand extends BrigadierCommand
 {
     @Override
-    public String getCommandName()
+    public String name()
     {
         return "toggleself";
     }
@@ -38,12 +39,24 @@ public class ToggleSelfSubCommand extends MorphPluginObject implements ISubComma
     private IManagePlayerData data;
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull String[] args)
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
     {
-        if (sender instanceof Player player)
-        {
-            manager.setSelfDisguiseVisible(player, !data.getPlayerMeta(player).showDisguiseToSelf, true);
-        }
-        return true;
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .executes(this::executes)
+        );
+
+        super.registerAsChild(parentBuilder);
+    }
+
+    public int executes(CommandContext<CommandSourceStack> context)
+    {
+        if (!(context.getSource().getExecutor() instanceof Player player))
+            return 1;
+
+        manager.setSelfDisguiseVisible(player, !data.getPlayerMeta(player).showDisguiseToSelf, true);
+
+        return 1;
     }
 }

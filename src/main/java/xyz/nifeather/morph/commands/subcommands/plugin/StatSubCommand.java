@@ -1,14 +1,16 @@
 package xyz.nifeather.morph.commands.subcommands.plugin;
 
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
-import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.abilities.AbilityManager;
+import xyz.nifeather.morph.commands.brigadier.BrigadierCommand;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.messages.StatStrings;
@@ -16,12 +18,24 @@ import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 import xyz.nifeather.morph.network.server.MorphClientHandler;
 import xyz.nifeather.morph.skills.MorphSkillHandler;
 
-public class StatSubCommand extends MorphPluginObject implements ISubCommand
+public class StatSubCommand extends BrigadierCommand
 {
     @Override
-    public @NotNull String getCommandName()
+    public @NotNull String name()
     {
         return "stat";
+    }
+
+    @Override
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
+    {
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .executes(this::executes)
+        );
+
+        super.registerAsChild(parentBuilder);
     }
 
     /**
@@ -47,13 +61,14 @@ public class StatSubCommand extends MorphPluginObject implements ISubCommand
     @Resolved
     private MorphManager morphManager;
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull String[] args)
+    public int executes(CommandContext<CommandSourceStack> context)
     {
         var disguisesActive = morphManager.getActiveDisguises().stream()
                 .filter(s -> s.getPlayer().isOnline()).toArray().length;
 
         var authors = "MATRIX-feather"; //plugin.getPluginMeta().getAuthors();
+
+        var sender = context.getSource().getSender();
 
         var listString = new StringBuilder();
         var backends = morphManager.listManagedBackends();
@@ -87,10 +102,10 @@ public class StatSubCommand extends MorphPluginObject implements ISubCommand
                                 .resolve("proto", String.valueOf(clientHandler.targetApiVersion)),
 
                         StatStrings.defaultBackendString()
-                                        .resolve("backend", defaultBackendString),
+                                .resolve("backend", defaultBackendString),
 
                         StatStrings.activeBackends()
-                                        .resolve("list", listString.toString()),
+                                .resolve("list", listString.toString()),
 
                         StatStrings.providersString()
                                 .resolve("count", String.valueOf(MorphManager.getProviders().size())),
@@ -115,7 +130,7 @@ public class StatSubCommand extends MorphPluginObject implements ISubCommand
         for (FormattableMessage formattableMessage : msg)
             sender.sendMessage(MessageUtils.prefixes(sender, formattableMessage));
 
-        return true;
+        return 1;
     }
 
     private FormattableMessage getFormattable(String str)
