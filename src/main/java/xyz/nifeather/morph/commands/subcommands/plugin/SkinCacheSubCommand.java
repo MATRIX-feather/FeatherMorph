@@ -64,6 +64,7 @@ public class SkinCacheSubCommand extends MorphPluginObject implements IConvertib
     {
         parentBuilder.then(
                 Commands.literal(name())
+                        .requires(this::checkPermission)
                         .then(
                                 Commands.literal("list")
                                         .executes(ctx -> this.executeList(ctx, null))

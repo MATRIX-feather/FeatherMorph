@@ -52,6 +52,7 @@ public class LookupSubCommand extends BrigadierCommand
     {
         parentBuilder.then(
                 Commands.literal("lookup")
+                        .requires(this::checkPermission)
                         .then(
                                 Commands.argument("who", StringArgumentType.string())
                                         .executes(this::execWithName)
