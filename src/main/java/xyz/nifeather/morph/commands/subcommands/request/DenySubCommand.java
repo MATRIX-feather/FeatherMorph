@@ -68,12 +68,6 @@ public class DenySubCommand extends MorphPluginObject implements IConvertibleBri
     }
 
     @Override
-    public boolean checkPermission(CommandSourceStack cmdSourceStack)
-    {
-        return true;
-    }
-
-    @Override
     public FormattableMessage getHelpMessage()
     {
         return HelpStrings.requestDenyDescription();

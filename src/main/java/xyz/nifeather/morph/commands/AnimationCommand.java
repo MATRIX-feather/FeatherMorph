@@ -140,10 +140,4 @@ public class AnimationCommand extends MorphPluginObject implements IConvertibleB
 
         return Command.SINGLE_SUCCESS;
     }
-
-    @Override
-    public boolean checkPermission(CommandSourceStack cmdSourceStack)
-    {
-        return true;
-    }
 }

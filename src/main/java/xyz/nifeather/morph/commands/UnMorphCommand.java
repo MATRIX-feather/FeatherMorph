@@ -10,7 +10,6 @@ import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.messages.HelpStrings;
-import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
 public class UnMorphCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
@@ -25,18 +24,11 @@ public class UnMorphCommand extends MorphPluginObject implements IConvertibleBri
     {
         dispatcher.register(
                 Commands.literal("unmorph")
-                        .requires(this::checkPermission)
                         .executes(this::executes)
                         .build()
         );
 
         return true;
-    }
-
-    @Override
-    public boolean checkPermission(CommandSourceStack cmdSourceStack)
-    {
-        return cmdSourceStack.getExecutor().hasPermission(CommonPermissions.UNMORPH);
     }
 
     @Override

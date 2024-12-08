@@ -35,7 +35,6 @@ public class MorphPlayerCommand extends MorphPluginObject implements IConvertibl
     {
         dispatcher.register(
                 Commands.literal(name())
-                        .requires(this::checkPermission)
                         .then(
                                 Commands.argument("who",  StringArgumentType.greedyString())
                                         .executes(this::executes)
@@ -80,12 +79,6 @@ public class MorphPlayerCommand extends MorphPluginObject implements IConvertibl
 
             return suggestionsBuilder.build();
         });
-    }
-
-    @Override
-    public boolean checkPermission(CommandSourceStack cmdSourceStack)
-    {
-        return true;
     }
 
     @Override
