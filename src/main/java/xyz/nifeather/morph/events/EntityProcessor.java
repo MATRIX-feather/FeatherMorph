@@ -471,6 +471,7 @@ public class EntityProcessor extends MorphPluginObject implements Listener
             case SPIDER -> targetType == EntityType.ARMADILLO;
             case SKELETON, WITHER_SKELETON -> targetType == EntityType.WOLF;
             case VILLAGER -> targetType == EntityType.ZOMBIE || targetType == EntityType.ZOMBIE_VILLAGER;
+            case PILLAGER, VINDICATOR, EVOKER, ILLUSIONER -> targetType == EntityType.CREAKING;
 
             default -> false;
         };
