@@ -428,4 +428,54 @@ public class EntityTypeUtils
 
         return Enemy.class.isAssignableFrom(type.getEntityClass());
     }
+
+    public static boolean panicsFrom(EntityType sourceType, EntityType targetType)
+    {
+        return switch (sourceType)
+        {
+            case CREEPER -> targetType == EntityType.CAT || targetType == EntityType.OCELOT;
+            case PHANTOM -> targetType == EntityType.CAT;
+            case SPIDER -> targetType == EntityType.ARMADILLO;
+            case SKELETON, WITHER_SKELETON -> targetType == EntityType.WOLF;
+            case VILLAGER -> targetType == EntityType.ZOMBIE || targetType == EntityType.ZOMBIE_VILLAGER;
+            case PILLAGER, VINDICATOR, EVOKER, ILLUSIONER -> targetType == EntityType.CREAKING;
+
+            default -> false;
+        };
+    }
+
+    /**
+     * 检查源生物和目标生物类型是否敌对
+     * @param sourceType 源生物的类型
+     * @param targetType 目标生物的类型
+     */
+    public static boolean hostiles(EntityType sourceType, EntityType targetType)
+    {
+        return switch (sourceType)
+        {
+            case IRON_GOLEM, SNOW_GOLEM -> EntityTypeUtils.isEnemy(targetType) && targetType != EntityType.CREEPER;
+
+            case FOX -> targetType == EntityType.CHICKEN || targetType == EntityType.RABBIT
+                    || targetType == EntityType.COD || targetType == EntityType.SALMON
+                    || targetType == EntityType.TROPICAL_FISH || targetType == EntityType.PUFFERFISH;
+
+            case CAT -> targetType == EntityType.CHICKEN || targetType == EntityType.RABBIT;
+
+            case WOLF -> EntityTypeUtils.isSkeleton(targetType) || targetType == EntityType.RABBIT
+                    || targetType == EntityType.LLAMA || targetType == EntityType.SHEEP
+                    || targetType == EntityType.FOX;
+
+            case GUARDIAN, ELDER_GUARDIAN -> targetType == EntityType.AXOLOTL || targetType == EntityType.SQUID
+                    || targetType == EntityType.GLOW_SQUID;
+
+            // Doesn't work for somehow
+            case AXOLOTL -> targetType == EntityType.SQUID || targetType == EntityType.GLOW_SQUID
+                    || targetType == EntityType.GUARDIAN || targetType == EntityType.ELDER_GUARDIAN
+                    || targetType == EntityType.TADPOLE || targetType == EntityType.DROWNED
+                    || targetType == EntityType.COD || targetType == EntityType.SALMON
+                    || targetType == EntityType.TROPICAL_FISH || targetType == EntityType.PUFFERFISH;
+
+            default -> false;
+        };
+    }
 }
