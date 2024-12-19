@@ -47,11 +47,68 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
                                         .suggests(this::suggests)
                                         .executes(this::execWithArg)
                         )
+                        // Kept as intended
+                        //.then(
+                        //        Commands.literal("testGoal")
+                        //                .executes(this::testGoal)
+                        //)
                 .build());
 
         return true;
     }
+/*
+    private int testGoal(CommandContext<CommandSourceStack> context)
+    {
+        var executor = context.getSource().getExecutor();
+        if (executor == null)
+        {
+            context.getSource().getSender().sendMessage("Executor is null!");
+            return 0;
+        }
 
+        executor.sendMessage("Test rabbit!");
+
+        var world = executor.getWorld();
+        var rabbit = world.spawn(executor.getLocation(), EntityType.RABBIT.getEntityClass());
+        testGoal1(((CraftRabbit) rabbit).getHandle());
+        rabbit.remove();
+
+        executor.sendMessage("Test ocelot!");
+
+        var ocelot = world.spawn(executor.getLocation(), EntityType.OCELOT.getEntityClass());
+        testGoal1(((CraftOcelot) ocelot).getHandle());
+        ocelot.remove();
+
+        executor.sendMessage("Test Panda!");
+
+        var panda = world.spawn(executor.getLocation(), EntityType.PANDA.getEntityClass());
+        testGoal1(((CraftPanda) panda).getHandle());
+        panda.remove();
+
+        executor.sendMessage("Test Cat!");
+
+        var tamable = world.spawn(executor.getLocation(), EntityType.CAT.getEntityClass());
+        var asTamable = (CraftTameableAnimal) tamable;
+        asTamable.setTamed(true);
+        asTamable.setOwner((Player)executor);
+
+        testGoal1(asTamable.getHandle());
+        tamable.remove();
+
+        return 1;
+    }
+
+    private void testGoal1(PathfinderMob pathfinderMob)
+    {
+        var goal = MorphBasicAvoidPlayerGoal.findGoalForEntity(pathfinderMob, morphManager, 0, 1, 2);
+        Bukkit.broadcastMessage("Got goal " + goal.getClass().getSimpleName());
+
+        if (goal.getRecoverGoalOrNull() == null)
+            Bukkit.broadcastMessage("Mob '%s' is null!".formatted(pathfinderMob.getBukkitEntity().getType()));
+        else
+            Bukkit.broadcastMessage("Got recover goal " + goal.getRecoverGoalOrNull().getClass().getSimpleName());
+    }
+*/
     public @NotNull CompletableFuture<Suggestions> suggests(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
     {
         var source = context.getSource().getExecutor();

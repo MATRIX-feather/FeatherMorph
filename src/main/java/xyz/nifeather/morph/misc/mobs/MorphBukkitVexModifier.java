@@ -43,8 +43,8 @@ public class MorphBukkitVexModifier
         for (var wrapped : targetSelectors) if (wrapped != null)
             vex.targetSelector.removeGoal(wrapped.getGoal());
 
-        vex.targetSelector.addGoal(0, new OwnerHurtTargetGoal(vex, this));
-        vex.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(vex, this));
+        vex.targetSelector.addGoal(0, new MorphOwnerHurtTargetGoal(vex, this));
+        vex.targetSelector.addGoal(1, new MorphOwnerHurtByTargetGoal(vex, this));
     }
 
     public Player getPlayerOwner()
@@ -52,7 +52,7 @@ public class MorphBukkitVexModifier
         return owner;
     }
 
-    private static class OwnerHurtByTargetGoal extends TargetGoal
+    private static class MorphOwnerHurtByTargetGoal extends TargetGoal
     {
         @NotNull
         private LivingEntity owner()
@@ -64,7 +64,7 @@ public class MorphBukkitVexModifier
 
         private final MorphBukkitVexModifier wrapper;
 
-        public OwnerHurtByTargetGoal(Vex thisEntity, MorphBukkitVexModifier wrapper)
+        public MorphOwnerHurtByTargetGoal(Vex thisEntity, MorphBukkitVexModifier wrapper)
         {
             super(thisEntity, false);
 
@@ -100,7 +100,7 @@ public class MorphBukkitVexModifier
         }
     }
 
-    private static class OwnerHurtTargetGoal extends TargetGoal
+    private static class MorphOwnerHurtTargetGoal extends TargetGoal
     {
         @NotNull
         private LivingEntity owner()
@@ -112,7 +112,7 @@ public class MorphBukkitVexModifier
 
         private final MorphBukkitVexModifier wrapper;
 
-        public OwnerHurtTargetGoal(Vex thisEntity, MorphBukkitVexModifier wrapper)
+        public MorphOwnerHurtTargetGoal(Vex thisEntity, MorphBukkitVexModifier wrapper)
         {
             super(thisEntity, false);
 
