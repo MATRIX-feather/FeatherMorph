@@ -2,6 +2,7 @@ package xyz.nifeather.morph;
 
 import com.ticxo.modelengine.api.ModelEngineAPI;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
@@ -9,6 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.ApiStatus;
+import xiamomc.pluginbase.ScheduleInfo;
 import xyz.nifeather.morph.abilities.AbilityManager;
 import xyz.nifeather.morph.commands.*;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -63,7 +65,7 @@ public final class MorphPlugin extends XiaMoJavaPlugin
     }
 
     @Override
-    public String getNameSpace()
+    public String getNamespace()
     {
         return getMorphNameSpace();
     }
@@ -122,9 +124,9 @@ public final class MorphPlugin extends XiaMoJavaPlugin
     }
 
     @Override
-    public void onEnable()
+    protected void enable()
     {
-        super.onEnable();
+        super.enable();
 
         pluginManager = Bukkit.getPluginManager();
         var bukkitVersion = Bukkit.getMinecraftVersion();
@@ -261,17 +263,8 @@ public final class MorphPlugin extends XiaMoJavaPlugin
         IconLookup.instance();
     }
 
-    @ApiStatus.Internal
-    public void crash(Throwable t)
-    {
-        logger.error(t.getLocalizedMessage());
-        t.printStackTrace();
-
-        this.onDisable();
-    }
-
     @Override
-    public void onDisable()
+    public void disable()
     {
         if (!getServer().isStopping())
         {
@@ -317,7 +310,7 @@ public final class MorphPlugin extends XiaMoJavaPlugin
             e.printStackTrace();
         }
 
-        super.onDisable();
+        super.disable();
     }
 
     private void registerListeners(Listener[] listeners)
