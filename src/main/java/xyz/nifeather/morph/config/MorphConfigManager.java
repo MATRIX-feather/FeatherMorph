@@ -244,7 +244,7 @@ public class MorphConfigManager extends PluginConfigManager
             // ChatOverride消息的配置从messages迁移到config.yml中
             if (configVersion < 21)
             {
-                var depMgr = DependencyManager.getInstance(plugin.getNameSpace());
+                var depMgr = DependencyManager.getInstance(plugin.getNamespace());
                 var messageStore = depMgr.get(MessageStore.class);
                 boolean requireCache = depMgr.get(this.getClass(), false) == null;
 
