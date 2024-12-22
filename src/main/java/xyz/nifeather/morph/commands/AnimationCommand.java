@@ -4,6 +4,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Command.IPluginCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
@@ -52,6 +53,12 @@ public class AnimationCommand extends MorphPluginObject implements IPluginComman
 
         var arg = args.get(0);
         return animations.stream().filter(id -> id.startsWith(arg)).toList();
+    }
+
+    @Override
+    public @Nullable String getPermissionRequirement()
+    {
+        return null;
     }
 
     @Override
