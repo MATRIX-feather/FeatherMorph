@@ -17,6 +17,7 @@ import net.minecraft.world.entity.animal.Panda;
 import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.player.Player;
 import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftMob;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
@@ -175,43 +176,50 @@ public class EntityProcessor extends MorphPluginObject implements Listener
     {
         Bukkit.getWorlds().forEach(w ->
         {
-            var entities = w.getEntities();
+            // Use NMS cause getEntities() in Bukkit's world will throw an async exception.
+            // I doubt that doing this as a workaround will cause problems
+            var nmsWorld = ((CraftWorld) w).getHandle();
+            var entities = nmsWorld.getEntities().getAll();
 
             entities.forEach(e ->
             {
                 // 只修改Mob类型
-                if (!(e instanceof Mob mob)) return;
+                if (!(e instanceof net.minecraft.world.entity.Mob mob)) return;
 
-                var handle = (net.minecraft.world.entity.Mob) ((CraftMob)mob).getHandleRaw();
-                var availableGoals = new ObjectArrayList<>(handle.goalSelector.getAvailableGoals());
-
-                // 遍历所有Goal
-                for (var wrappedGoal : availableGoals)
-                {
-                    // 只替代我们想替代的
-                    if (!(wrappedGoal.getGoal() instanceof MorphBasicAvoidPlayerGoal)
-                        && !(wrappedGoal.getGoal() instanceof FeatherMorphNearestAttackableGoal))
-                    {
-                        return;
-                    }
-
-                    // 先移除此Goal
-                    handle.goalSelector.removeGoal(wrappedGoal.getGoal());
-
-                    // 如果是AvoidPlayer, 那么重构
-                    if (wrappedGoal.getGoal() instanceof MorphBasicAvoidPlayerGoal avoidPlayerGoal && avoidPlayerGoal.canBeUsedForRecover())
-                    {
-                        var recoverGoal = avoidPlayerGoal.getRecoverGoalOrNull();
-                        var priority = wrappedGoal.getPriority();
-
-                        if (recoverGoal != null)
-                            handle.goalSelector.addGoal(priority, recoverGoal);
-                        else
-                            logger.warn("Null recover goal for entity " + e.getType());
-                    }
-                }
+                this.scheduleOn(e.getBukkitEntity(), () -> recoverSingleMob(mob));
             });
         });
+    }
+
+    private void recoverSingleMob(net.minecraft.world.entity.Mob handle)
+    {
+        var availableGoals = new ObjectArrayList<>(handle.goalSelector.getAvailableGoals());
+
+        // 遍历所有Goal
+        for (var wrappedGoal : availableGoals)
+        {
+            // 只替代我们想替代的
+            if (!(wrappedGoal.getGoal() instanceof MorphBasicAvoidPlayerGoal)
+                    && !(wrappedGoal.getGoal() instanceof FeatherMorphNearestAttackableGoal))
+            {
+                return;
+            }
+
+            // 先移除此Goal
+            handle.goalSelector.removeGoal(wrappedGoal.getGoal());
+
+            // 如果是AvoidPlayer, 那么重构
+            if (wrappedGoal.getGoal() instanceof MorphBasicAvoidPlayerGoal avoidPlayerGoal && avoidPlayerGoal.canBeUsedForRecover())
+            {
+                var recoverGoal = avoidPlayerGoal.getRecoverGoalOrNull();
+                var priority = wrappedGoal.getPriority();
+
+                if (recoverGoal != null)
+                    handle.goalSelector.addGoal(priority, recoverGoal);
+                else
+                    logger.warn("Null recover goal for entity " + handle.getType());
+            }
+        }
     }
 
     public void recoverGoals()
