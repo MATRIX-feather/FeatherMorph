@@ -1,10 +1,10 @@
 package xyz.nifeather.morph.network.server;
 
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 public class MessageChannel
 {
-    private static final String nameSpace = MorphPlugin.getMorphNameSpace();
+    private static final String nameSpace = FeatherMorphMain.getMorphNameSpace();
 
     public static final String initializeChannel = nameSpace + ":init";
     public static final String versionChannel = nameSpace + ":version_v2";

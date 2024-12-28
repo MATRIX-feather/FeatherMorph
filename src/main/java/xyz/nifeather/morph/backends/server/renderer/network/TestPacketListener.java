@@ -8,7 +8,7 @@ import com.comphenix.protocol.injector.GamePhase;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.bukkit.plugin.Plugin;
 import xiamomc.pluginbase.Annotations.Initializer;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 
 public class TestPacketListener extends MorphPluginObject implements PacketListener
@@ -96,7 +96,7 @@ public class TestPacketListener extends MorphPluginObject implements PacketListe
     @Override
     public Plugin getPlugin()
     {
-        return MorphPlugin.getInstance();
+        return FeatherMorphMain.getInstance();
     }
 
 }

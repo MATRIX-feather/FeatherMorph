@@ -1,13 +1,12 @@
 package xyz.nifeather.morph.storage;
 
-import xiamomc.pluginbase.storage.JsonBasedStorage;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
-public abstract class MorphJsonBasedStorage<T> extends xiamomc.pluginbase.storage.JsonBasedStorage<T, MorphPlugin>
+public abstract class MorphJsonBasedStorage<T> extends xiamomc.pluginbase.storage.JsonBasedStorage<T, FeatherMorphMain>
 {
     @Override
     protected String getPluginNamespace()
     {
-        return MorphPlugin.getMorphNameSpace();
+        return FeatherMorphMain.getMorphNameSpace();
     }
 }

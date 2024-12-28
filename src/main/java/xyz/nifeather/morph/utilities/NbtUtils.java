@@ -11,7 +11,7 @@ import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.misc.MorphGameProfile;
 
 import java.util.List;
@@ -68,7 +68,7 @@ public class NbtUtils
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
             logger.warn("Unable to parse GameProfile: " + t.getMessage());
             logger.warn("Raw profile: '%s'".formatted(snbt));
@@ -110,7 +110,7 @@ public class NbtUtils
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
             logger.warn("Can't parse profile properties: " + t.getMessage());
             t.printStackTrace();

@@ -6,12 +6,12 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import xiamomc.morph.network.BasicServerHandler;
 import xiamomc.morph.network.commands.S2C.AbstractS2CCommand;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.network.multiInstance.protocol.IMasterHandler;
 
 public abstract class MIS2CCommand<T> extends AbstractS2CCommand<T>
 {
-    protected final Logger logger = MorphPlugin.getInstance().getSLF4JLogger();
+    protected final Logger logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
     protected final String baseName;
 

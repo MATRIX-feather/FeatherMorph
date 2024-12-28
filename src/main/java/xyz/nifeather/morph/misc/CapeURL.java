@@ -1,7 +1,7 @@
 package xyz.nifeather.morph.misc;
 
 import xiamomc.pluginbase.Messages.FormattableMessage;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.messages.CapeStrings;
 
 public class CapeURL
@@ -45,7 +45,7 @@ public class CapeURL
     public static FormattableMessage findMatching(String url)
     {
         if (url == null || url.isEmpty())
-            return new FormattableMessage(MorphPlugin.getInstance(), "<Nil>");
+            return new FormattableMessage(FeatherMorphMain.getInstance(), "<Nil>");
 
         return switch (url)
         {

@@ -13,7 +13,7 @@ import xiamomc.pluginbase.Configuration.ConfigNode;
 import xiamomc.pluginbase.Configuration.PluginConfigManager;
 import xiamomc.pluginbase.Managers.DependencyManager;
 import xiamomc.pluginbase.Messages.MessageStore;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.messages.CommonStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 
@@ -23,7 +23,7 @@ public class MorphConfigManager extends PluginConfigManager
 {
     private static final Logger log = LoggerFactory.getLogger(MorphConfigManager.class);
 
-    public MorphConfigManager(MorphPlugin plugin)
+    public MorphConfigManager(FeatherMorphMain plugin)
     {
         super(plugin);
 

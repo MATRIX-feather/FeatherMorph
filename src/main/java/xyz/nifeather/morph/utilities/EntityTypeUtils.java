@@ -3,7 +3,6 @@ package xyz.nifeather.morph.utilities;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
-import net.kyori.adventure.key.Key;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -13,17 +12,13 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import org.bukkit.Location;
-import org.bukkit.Registry;
-import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Enemy;
 import org.bukkit.entity.EntityType;
-import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.misc.DisguiseTypes;
 
 import java.util.Arrays;
@@ -158,7 +153,7 @@ public class EntityTypeUtils
     {
         var entity = nmsEntity.getBukkitEntity();
         entity.getScheduler()
-                .run(MorphPlugin.getInstance(), retiredTask -> {}, entity::remove);
+                .run(FeatherMorphMain.getInstance(), retiredTask -> {}, entity::remove);
     }
 
     public static boolean hasBabyVariant(EntityType type)

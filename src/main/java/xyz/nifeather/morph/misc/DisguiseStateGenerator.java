@@ -5,7 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import xiamomc.morph.network.PlayerOptions;
 import xyz.nifeather.morph.MorphManager;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.backends.DisguiseBackend;
 import xyz.nifeather.morph.skills.MorphSkillHandler;
 import xyz.nifeather.morph.skills.SkillType;
@@ -92,7 +92,7 @@ public class DisguiseStateGenerator
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
             logger.error("Unable to parse profile data: " + t.getMessage());
         }
 

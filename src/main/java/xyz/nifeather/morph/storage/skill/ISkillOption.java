@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -52,7 +52,7 @@ public interface ISkillOption
             }
             catch (Throwable t)
             {
-                var logger = MorphPlugin.getInstance().getSLF4JLogger();
+                var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
                 logger.warn("Can't serialize option %s to map: %s".formatted(this, t.getMessage()));
                 t.printStackTrace();
             }
@@ -79,7 +79,7 @@ public interface ISkillOption
                     .filter(f -> f.isAnnotationPresent(Expose.class))
                     .toList();
 
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
             map.forEach((n, v) ->
             {
@@ -172,7 +172,7 @@ public interface ISkillOption
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
             logger.warn("Can't deserialize option %s from map: %s".formatted(this, t.getMessage()));
             t.printStackTrace();
         }
@@ -235,7 +235,7 @@ public interface ISkillOption
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
             logger.warn("Unable to parse key '%s': %s".formatted(key, t.getMessage()));
             t.printStackTrace();
 

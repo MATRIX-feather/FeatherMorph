@@ -11,7 +11,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 public class ItemUtils
 {
@@ -67,7 +67,7 @@ public class ItemUtils
         }
         else
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
             logger.warn("Can't encode item '%s'! Providing without component data...".formatted(stack));
 

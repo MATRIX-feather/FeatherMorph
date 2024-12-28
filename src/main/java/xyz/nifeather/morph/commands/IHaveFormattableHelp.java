@@ -3,7 +3,7 @@ package xyz.nifeather.morph.commands;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Messages.FormattableMessage;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 import java.util.List;
 
@@ -19,6 +19,6 @@ public interface IHaveFormattableHelp
 
     default public List<FormattableMessage> getNotes()
     {
-        return List.of(new FormattableMessage(MorphPlugin.getMorphNameSpace(), "_", "_"));
+        return List.of(new FormattableMessage(FeatherMorphMain.getMorphNameSpace(), "_", "_"));
     }
 }

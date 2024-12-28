@@ -2,7 +2,7 @@ package xyz.nifeather.morph.messages.vanilla;
 
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xiamomc.pluginbase.Messages.IStrings;
 import xiamomc.pluginbase.Messages.MessageStore;
 
@@ -16,7 +16,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class BasicVanillaMessageStore extends MessageStore<MorphPlugin>
+public abstract class BasicVanillaMessageStore extends MessageStore<FeatherMorphMain>
 {
     @NotNull
     protected abstract String getLocaleCode();
@@ -36,7 +36,7 @@ public abstract class BasicVanillaMessageStore extends MessageStore<MorphPlugin>
     @Override
     protected String getPluginNamespace()
     {
-        return MorphPlugin.getMorphNameSpace();
+        return FeatherMorphMain.getMorphNameSpace();
     }
 
     protected final String langDirUri = plugin.getDataFolder().toURI() + "/mclang";

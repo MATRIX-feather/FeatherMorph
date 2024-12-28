@@ -2,7 +2,7 @@ package xyz.nifeather.morph.network.multiInstance.protocol.c2s;
 
 import com.google.gson.GsonBuilder;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.network.multiInstance.protocol.IClientHandler;
 import xyz.nifeather.morph.network.multiInstance.protocol.Operation;
 import xyz.nifeather.morph.network.multiInstance.protocol.SocketDisguiseMeta;
@@ -38,7 +38,7 @@ public class MIC2SDisguiseMetaCommand extends MIC2SCommand<SocketDisguiseMeta>
 
     public static MIC2SDisguiseMetaCommand from(String text)
     {
-        var logger = MorphPlugin.getInstance().getSLF4JLogger();
+        var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
         try
         {
             var gson = new GsonBuilder().disableHtmlEscaping().create();

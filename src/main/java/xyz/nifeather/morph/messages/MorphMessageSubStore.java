@@ -1,7 +1,7 @@
 package xyz.nifeather.morph.messages;
 
 import org.jetbrains.annotations.NotNull;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.utilities.PluginAssetUtils;
 import xiamomc.pluginbase.Messages.IStrings;
 import xiamomc.pluginbase.Messages.MessageStore;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MorphMessageSubStore extends MessageStore<MorphPlugin>
+public class MorphMessageSubStore extends MessageStore<FeatherMorphMain>
 {
     public MorphMessageSubStore(String locale, List<Class<? extends IStrings>> strings, MorphMessageStore parentStore)
     {
@@ -94,6 +94,6 @@ public class MorphMessageSubStore extends MessageStore<MorphPlugin>
     @Override
     protected String getPluginNamespace()
     {
-        return MorphPlugin.getMorphNameSpace();
+        return FeatherMorphMain.getMorphNameSpace();
     }
 }

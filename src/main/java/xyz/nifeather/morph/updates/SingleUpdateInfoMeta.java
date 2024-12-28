@@ -1,7 +1,7 @@
 package xyz.nifeather.morph.updates;
 
 import com.google.gson.annotations.SerializedName;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -83,7 +83,7 @@ public class SingleUpdateInfoMeta
             }
             catch (Throwable t)
             {
-                MorphPlugin.getInstance().getSLF4JLogger().warn("Unable to set '%s' to '%s': %s".formatted(field.getName(), mapValue, t.getMessage()));
+                FeatherMorphMain.getInstance().getSLF4JLogger().warn("Unable to set '%s' to '%s': %s".formatted(field.getName(), mapValue, t.getMessage()));
                 //t.printStackTrace();
             }
         }

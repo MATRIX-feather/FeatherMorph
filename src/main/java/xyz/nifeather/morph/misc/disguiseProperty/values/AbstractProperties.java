@@ -2,7 +2,7 @@ package xyz.nifeather.morph.misc.disguiseProperty.values;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.slf4j.Logger;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public abstract class AbstractProperties
         return SingleProperty.of(name, val);
     }
 
-    protected final Logger logger = MorphPlugin.getInstance().getSLF4JLogger();
+    protected final Logger logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
     protected final List<SingleProperty<?>> values = new ObjectArrayList<>();
 

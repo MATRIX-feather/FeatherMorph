@@ -18,7 +18,7 @@ import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.Unmodifiable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -69,7 +69,7 @@ public class NmsUtils
     @Unmodifiable
     public static List<String> getSyncableAttributeListFor(EntityType bukkitType)
     {
-        var logger = MorphPlugin.getInstance().getSLF4JLogger();
+        var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
         var cached = syncableAttributesMap.getOrDefault(bukkitType, null);
         if (cached != null)
             return cached;

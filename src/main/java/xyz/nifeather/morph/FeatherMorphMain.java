@@ -37,22 +37,25 @@ import xiamomc.pluginbase.XiaMoJavaPlugin;
 
 import java.util.Arrays;
 
-public final class MorphPlugin extends XiaMoJavaPlugin
+public final class FeatherMorphMain extends XiaMoJavaPlugin
 {
-    private static MorphPlugin instance;
+    private static FeatherMorphMain instance;
 
     /**
      * 仅当当前对象无法继承MorphPluginObject或不需要完全继承MorphPluginObject时使用
      * @return 插件的实例
      */
     @Deprecated
-    public static MorphPlugin getInstance()
+    public static FeatherMorphMain getInstance()
     {
         return instance;
     }
 
-    public MorphPlugin()
+    private final FeatherMorphBootstrap bootstrap;
+
+    public FeatherMorphMain(FeatherMorphBootstrap bootstrap)
     {
+        this.bootstrap = bootstrap;
         instance = this;
     }
 
@@ -123,6 +126,15 @@ public final class MorphPlugin extends XiaMoJavaPlugin
     @Override
     protected void enable()
     {
+        if (bootstrap.pluginDisabled.get())
+        {
+            printImportantWarning(true,
+                    "HEY, THERE!",
+                    "Are you doing a hot reload?",
+                    "Note that FeatherMorph does NOT support doing such!",
+                    "Before you open any issues, please do a FULL RESTART for your server! We will NOT provide any support after the hot reload!");
+        }
+
         super.enable();
 
         pluginManager = Bukkit.getPluginManager();
@@ -263,14 +275,7 @@ public final class MorphPlugin extends XiaMoJavaPlugin
     @Override
     public void disable()
     {
-        if (!getServer().isStopping())
-        {
-            printImportantWarning(true,
-                    "HEY, THERE!",
-                    "Are you doing a hot reload?",
-                    "Note that FeatherMorph does NOT support doing such!",
-                    "Before you open any issues, please do a FULL RESTART for your server! We will NOT provide any support after the hot reload!");
-        }
+        bootstrap.pluginDisabled.set(true);
 
         //调用super.onDisable后依赖管理器会被清空
         //需要在调用前先把一些东西处理好

@@ -6,7 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -20,15 +20,15 @@ public class MessageUtils extends MorphPluginObject
     private static void setupConfigManager()
     {
         if (pluginDepMgr == null)
-            pluginDepMgr = DependencyManager.getInstance(MorphPlugin.getMorphNameSpace());
+            pluginDepMgr = DependencyManager.getInstance(FeatherMorphMain.getMorphNameSpace());
 
         config = pluginDepMgr.get(MorphConfigManager.class);
-        plugin = MorphPlugin.getInstance();
+        plugin = FeatherMorphMain.getInstance();
     }
 
     private static DependencyManager pluginDepMgr;
     private static MorphConfigManager config;
-    private static MorphPlugin plugin;
+    private static FeatherMorphMain plugin;
 
     public static Component prefixes(CommandSender sender, Component[] c)
     {
@@ -93,7 +93,7 @@ public class MessageUtils extends MorphPluginObject
     {
         if (configManager != null) return;
 
-        var depMgr = DependencyManager.getInstance(MorphPlugin.getMorphNameSpace());
+        var depMgr = DependencyManager.getInstance(FeatherMorphMain.getMorphNameSpace());
         var config = depMgr.get(MorphConfigManager.class);
 
         if (config != null)

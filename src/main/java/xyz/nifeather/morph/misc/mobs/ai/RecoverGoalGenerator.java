@@ -5,7 +5,7 @@ import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.player.Player;
 import xiamomc.pluginbase.Exceptions.NullDependencyException;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 import java.lang.reflect.Constructor;
 
@@ -14,7 +14,7 @@ public class RecoverGoalGenerator
     public static  <T extends PathfinderMob> AvoidEntityGoal<Player> generateRecover(Class<T> entityClazz, T entity, String className,
                                                                                      double detectDistance, double walkSpeed, double sprintSpeed)
     {
-        var log = MorphPlugin.getInstance().getSLF4JLogger();
+        var log = FeatherMorphMain.getInstance().getSLF4JLogger();
         var declaredClasses = Cat.class.getDeclaredClasses();
 
         for (Class<?> declaredClass : declaredClasses)

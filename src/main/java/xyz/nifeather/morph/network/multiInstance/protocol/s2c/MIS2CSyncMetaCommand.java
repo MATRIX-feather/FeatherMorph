@@ -1,7 +1,7 @@
 package xyz.nifeather.morph.network.multiInstance.protocol.s2c;
 
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.network.multiInstance.protocol.IMasterHandler;
 import xyz.nifeather.morph.network.multiInstance.protocol.Operation;
 import xyz.nifeather.morph.network.multiInstance.protocol.SocketDisguiseMeta;
@@ -42,7 +42,7 @@ public class MIS2CSyncMetaCommand extends MIS2CCommand<SocketDisguiseMeta>
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
             logger.warn("Failed to parse SocketDisguiseMeta from the server command! Leaving empty...");
 
             return new MIS2CSyncMetaCommand(Operation.INVALID, List.of(), UUID.randomUUID());

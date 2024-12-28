@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Bindables.Bindable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.backends.server.renderer.network.PacketFactory;
 import xyz.nifeather.morph.config.ConfigOption;
@@ -39,7 +39,7 @@ public abstract class ProtocolListener extends MorphPluginObject implements Pack
     @Override
     public org.bukkit.plugin.Plugin getPlugin()
     {
-        return MorphPlugin.getInstance();
+        return FeatherMorphMain.getInstance();
     }
 
     private final Bindable<Boolean> debugOutput = new Bindable<>(false);

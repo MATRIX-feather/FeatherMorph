@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -99,7 +99,7 @@ public class MorphChatRenderer extends MorphPluginObject implements ChatRenderer
     {
         var locale = MessageUtils.getLocale(player);
 
-        return new FormattableMessage(MorphPlugin.getMorphNameSpace(), formattable.getKey(), formattable.getDefaultString())
+        return new FormattableMessage(FeatherMorphMain.getMorphNameSpace(), formattable.getKey(), formattable.getDefaultString())
                 .withLocale(locale)
                 .resolve("who", displayName)
                 .resolve("message", msg)

@@ -12,7 +12,7 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.backends.server.renderer.network.PacketFactory;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.types.PlayerWatcher;
@@ -108,6 +108,6 @@ public class ProtocolLibVanishSource extends MorphPluginObject implements IVanis
     @Override
     public org.bukkit.plugin.Plugin getPlugin()
     {
-        return MorphPlugin.getInstance();
+        return FeatherMorphMain.getInstance();
     }
 }

@@ -130,7 +130,8 @@ java.sourceCompatibility = JavaVersion.VERSION_21
 
 paper {
     load = BukkitPluginDescription.PluginLoadOrder.POSTWORLD
-    main = "xyz.nifeather.morph.MorphPlugin"
+    main = "xyz.nifeather.morph.FeatherMorphMain"
+    bootstrapper = "xyz.nifeather.morph.FeatherMorphBootstrap"
     apiVersion = "1.21"
     authors = listOf("MATRIX-feather")
 

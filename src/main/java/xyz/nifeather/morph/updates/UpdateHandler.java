@@ -13,7 +13,7 @@ import xiamomc.pluginbase.Bindables.Bindable;
 import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xiamomc.pluginbase.ScheduleInfo;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -22,11 +22,9 @@ import xyz.nifeather.morph.messages.UpdateStrings;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
 import java.net.URI;
-import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
@@ -36,7 +34,7 @@ import java.util.function.Consumer;
 public class UpdateHandler extends MorphPluginObject
 {
     @Resolved(shouldSolveImmediately = true)
-    private MorphPlugin plugin;
+    private FeatherMorphMain plugin;
 
     private final AtomicInteger requestId = new AtomicInteger(0);
 

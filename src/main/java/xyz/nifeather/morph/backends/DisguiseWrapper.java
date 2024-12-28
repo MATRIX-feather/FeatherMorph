@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.misc.CollisionBoxRecord;
 import xyz.nifeather.morph.misc.DisguiseState;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
@@ -220,7 +220,7 @@ public abstract class DisguiseWrapper<TInstance>
             this.dimensions = nmsType.getDimensions();
         else
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
             logger.warn("Unable to get NMS type for %s, using default...".formatted(this.getEntityType()));
 
             this.dimensions = net.minecraft.world.entity.player.Player.STANDING_DIMENSIONS;

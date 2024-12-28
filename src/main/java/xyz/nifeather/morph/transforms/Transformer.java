@@ -1,7 +1,7 @@
 package xyz.nifeather.morph.transforms;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.transforms.easings.Easing;
 import xiamomc.pluginbase.Annotations.Initializer;
@@ -53,7 +53,7 @@ public class Transformer extends MorphPluginObject
                 }
                 catch (Throwable throwable)
                 {
-                    MorphPlugin.getInstance().getSLF4JLogger().warn(throwable.getMessage());
+                    FeatherMorphMain.getInstance().getSLF4JLogger().warn(throwable.getMessage());
                     throwable.printStackTrace();
                 }
             }

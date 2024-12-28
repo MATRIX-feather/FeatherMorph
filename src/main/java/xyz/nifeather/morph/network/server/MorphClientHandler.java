@@ -29,7 +29,7 @@ import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Bindables.Bindable;
 import xyz.nifeather.morph.MorphManager;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -179,7 +179,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     private static final String newProtocolIdentify = "1_21_3_packetbuf";
 
     @Initializer
-    private void load(MorphPlugin plugin, MorphConfigManager configManager)
+    private void load(FeatherMorphMain plugin, MorphConfigManager configManager)
     {
         // Constants.initialize(true);
 
