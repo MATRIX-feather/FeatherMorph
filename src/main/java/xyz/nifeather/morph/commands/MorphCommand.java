@@ -1,12 +1,19 @@
 package xyz.nifeather.morph.commands;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import net.kyori.adventure.text.Component;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.synchronization.SuggestionProviders;
+import net.minecraft.resources.ResourceLocation;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
@@ -21,6 +28,7 @@ import xyz.nifeather.morph.misc.DisguiseMeta;
 import xyz.nifeather.morph.misc.gui.DisguiseSelectScreenWrapper;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.IntFunction;
 
 public class MorphCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
@@ -43,16 +51,16 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
                 .requires(this::checkPermission)
                 .executes(this::executeNoArg)
                         .then(
-                                Commands.argument("id", StringArgumentType.greedyString())
-                                        .suggests(this::suggests)
-                                        .executes(this::execWithArg)
+                                Commands.argument("id", ResourceLocationArgument.id())
+                                        .suggests(this::suggestID)
+                                        .executes(this::execWithID)
                         )
                 .build());
 
         return true;
     }
 
-    public @NotNull CompletableFuture<Suggestions> suggests(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
+    public @NotNull CompletableFuture<Suggestions> suggestID(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
     {
         var source = context.getSource().getExecutor();
 
@@ -100,7 +108,7 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
         return 1;
     }
 
-    private int execWithArg(CommandContext<CommandSourceStack> context)
+    private int execWithID(CommandContext<CommandSourceStack> context)
     {
         var sender = context.getSource().getExecutor();
 
@@ -115,7 +123,7 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
             return Command.SINGLE_SUCCESS;
         }
 
-        String inputID = StringArgumentType.getString(context, "id");
+        String inputID = context.getArgument("id", ResourceLocation.class).toString();
         morphManager.morph(sender, player, inputID, player.getTargetEntity(5));
 
         return 1;
