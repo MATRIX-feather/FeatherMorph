@@ -81,6 +81,7 @@ public class ReloadSubCommand extends BrigadierCommand
         parentBuilder.then(
                 Commands.literal("reload")
                         .requires(this::checkPermission)
+                        .executes(this::execNoArg)
                         .then(
                                 Commands.argument("operation", StringArgumentType.greedyString())
                                         .suggests(this::suggests)
@@ -109,21 +110,17 @@ public class ReloadSubCommand extends BrigadierCommand
         });
     }
 
-    public int executes(CommandContext<CommandSourceStack> context)
+    private int execNoArg(CommandContext<CommandSourceStack> context)
     {
-        var reloadsData = false;
-        var reloadsMessage = false;
-        var reloadOverwriteNonDefMsg = false;
-        String option = StringArgumentType.getString(context, "operation");
+        this.doReload(context, true, true, false);
+        return 1;
+    }
 
-        switch (option)
-        {
-            case "data" -> reloadsData = true;
-            case "message" -> reloadsMessage = true;
-            case "update_message" -> reloadsMessage = reloadOverwriteNonDefMsg = true;
-            default -> reloadsMessage = reloadsData = true;
-        }
-
+    private void doReload(CommandContext<CommandSourceStack> context,
+                          boolean reloadsData,
+                          boolean reloadsMessage,
+                          boolean reloadOverwriteNonDefMsg)
+    {
         if (reloadsData)
         {
             config.reload();
@@ -152,6 +149,24 @@ public class ReloadSubCommand extends BrigadierCommand
 
         var sender = context.getSource().getSender();
         sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.reloadCompleteMessage()));
+    }
+
+    public int executes(CommandContext<CommandSourceStack> context)
+    {
+        var reloadsData = false;
+        var reloadsMessage = false;
+        var reloadOverwriteNonDefMsg = false;
+        String option = StringArgumentType.getString(context, "operation");
+
+        switch (option)
+        {
+            case "data" -> reloadsData = true;
+            case "message" -> reloadsMessage = true;
+            case "update_message" -> reloadsMessage = reloadOverwriteNonDefMsg = true;
+            default -> reloadsMessage = reloadsData = true;
+        }
+
+        this.doReload(context, reloadsData, reloadsMessage, reloadOverwriteNonDefMsg);
 
         return 0;
     }
