@@ -1,19 +1,15 @@
 package xyz.nifeather.morph.commands;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import net.kyori.adventure.text.Component;
-import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
-import net.minecraft.commands.synchronization.SuggestionProviders;
-import net.minecraft.resources.ResourceLocation;
-import org.bukkit.Bukkit;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
@@ -21,6 +17,7 @@ import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
+import xyz.nifeather.morph.commands.brigadier.arguments.ValueMapArgumentType;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.messages.MorphStrings;
@@ -28,8 +25,8 @@ import xyz.nifeather.morph.misc.DisguiseMeta;
 import xyz.nifeather.morph.misc.gui.DisguiseSelectScreenWrapper;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.IntFunction;
 
+@SuppressWarnings("UnstableApiUsage")
 public class MorphCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Resolved
@@ -51,13 +48,29 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
                 .requires(this::checkPermission)
                 .executes(this::executeNoArg)
                         .then(
-                                Commands.argument("id", ResourceLocationArgument.id())
+                                Commands.argument("id", ArgumentTypes.key())
                                         .suggests(this::suggestID)
                                         .executes(this::execWithID)
+                                        //.then(
+                                        //        Commands.argument("properties", new ValueMapArgumentType())
+                                        //                .executes(this::execExperimental)
+                                        //)
                         )
                 .build());
 
         return true;
+    }
+
+    private int execExperimental(CommandContext<CommandSourceStack> context)
+    {
+        var input = ValueMapArgumentType.get("properties", context);
+
+        input.forEach((k, v) ->
+        {
+            context.getSource().getSender().sendMessage("Key '%s', Value '%s'".formatted(k, v));
+        });
+
+        return 1;
     }
 
     public @NotNull CompletableFuture<Suggestions> suggestID(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
@@ -123,7 +136,7 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
             return Command.SINGLE_SUCCESS;
         }
 
-        String inputID = context.getArgument("id", ResourceLocation.class).toString();
+        String inputID = context.getArgument("id", Key.class).toString();
         morphManager.morph(sender, player, inputID, player.getTargetEntity(5));
 
         return 1;
