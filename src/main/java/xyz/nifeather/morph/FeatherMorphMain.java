@@ -126,15 +126,6 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
     @Override
     protected void enable()
     {
-        if (bootstrap.pluginDisabled.get())
-        {
-            printImportantWarning(true,
-                    "HEY, THERE!",
-                    "Are you doing a hot reload?",
-                    "Note that FeatherMorph does NOT support doing such!",
-                    "Before you open any issues, please do a FULL RESTART for your server! We will NOT provide any support after the hot reload!");
-        }
-
         super.enable();
 
         pluginManager = Bukkit.getPluginManager();
@@ -275,6 +266,15 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
     @Override
     public void disable()
     {
+        if (!getServer().isStopping())
+        {
+            printImportantWarning(true,
+                    "HEY, THERE!",
+                    "Are you doing a hot reload?",
+                    "Note that FeatherMorph does NOT support doing such!",
+                    "Before you open any issues, please do a FULL RESTART for your server! We will NOT provide any support after the hot reload!");
+        }
+
         bootstrap.pluginDisabled.set(true);
 
         //调用super.onDisable后依赖管理器会被清空
