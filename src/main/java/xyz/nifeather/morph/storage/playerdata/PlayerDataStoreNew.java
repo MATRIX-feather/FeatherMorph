@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.apache.commons.io.FileUtils;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.nifeather.morph.interfaces.IManagePlayerData;
 import xyz.nifeather.morph.misc.DisguiseMeta;
@@ -115,7 +116,7 @@ public class PlayerDataStoreNew extends DirectoryJsonBasedStorage<PlayerMeta> im
      * @apiNote 如果原始ID不是有效ID，则会返回null
      */
     @Override
-    public @Nullable DisguiseMeta getDisguiseMeta(String rawString)
+    public @NotNull DisguiseMeta getDisguiseMeta(String rawString)
     {
         var cached = cachedMetas.getOrDefault(rawString, null);
         if (cached != null) return cached;

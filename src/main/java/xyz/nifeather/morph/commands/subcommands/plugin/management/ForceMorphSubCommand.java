@@ -3,11 +3,11 @@ package xyz.nifeather.morph.commands.subcommands.plugin.management;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import org.bukkit.Bukkit;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Resolved;
@@ -15,13 +15,10 @@ import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
-import xyz.nifeather.morph.messages.CommonStrings;
+import xyz.nifeather.morph.commands.brigadier.arguments.DisguiseIdentifierArgumentType;
 import xyz.nifeather.morph.messages.HelpStrings;
-import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.misc.MorphParameters;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
-
-import java.util.concurrent.CompletableFuture;
 
 public class ForceMorphSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
@@ -47,80 +44,39 @@ public class ForceMorphSubCommand extends MorphPluginObject implements IConverti
                 Commands.literal(name())
                         .requires(this::checkPermission)
                         .then(
-                                Commands.argument("who", StringArgumentType.string())
-                                        .suggests(this::suggestPlayer)
+                                Commands.argument("who", ArgumentTypes.players())
                                         .then(
-                                                Commands.argument("as_what", StringArgumentType.greedyString())
-                                                        .suggests(this::suggestDisguise)
+                                                Commands.argument("as_what", DisguiseIdentifierArgumentType.ALL_AVAILABLE)
                                                         .executes(this::execute)
                                         )
                         )
         );
     }
 
-    private CompletableFuture<Suggestions> suggestDisguise(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
+    private int execute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException
     {
-        return CompletableFuture.supplyAsync(() ->
+        var players = context.getArgument("who", PlayerSelectorArgumentResolver.class)
+                .resolve(context.getSource());
+
+        players.forEach(who ->
         {
-            var input = suggestionsBuilder.getRemainingLowerCase();
+            var targetName = StringArgumentType.getString(context, "as_what");
 
-            for (var p : MorphManager.getProviders())
-            {
-                if (p == MorphManager.fallbackProvider) continue;
+            var commandSender = context.getSource().getSender();
+            if (!who.isOnline())
+                return;
 
-                var ns = p.getNameSpace();
-                p.getAllAvailableDisguises().forEach(s ->
-                {
-                    var str = ns + ":" + s;
-                    if (str.toLowerCase().contains(input))
-                        suggestionsBuilder.suggest(str);
-                });
-            }
+            var parameters = MorphParameters
+                    .create(who, targetName)
+                    .setSource(commandSender)
+                    //.setTargetedEntity(who.getTargetEntity(3))
+                    .setForceExecute(true)
+                    .setBypassAvailableCheck(true)
+                    .setBypassPermission(true);
 
-            return suggestionsBuilder.build();
+            manager.morph(parameters);
         });
-    }
 
-    private CompletableFuture<Suggestions> suggestPlayer(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
-    {
-        var online = Bukkit.getOnlinePlayers();
-
-        return CompletableFuture.supplyAsync(() ->
-        {
-            var input = suggestionsBuilder.getRemainingLowerCase();
-
-            online.stream().forEach(player ->
-            {
-                var name = player.getName();
-                if (name.toLowerCase().contains(input))
-                    suggestionsBuilder.suggest(name);
-            });
-
-            return suggestionsBuilder.build();
-        });
-    }
-
-    private int execute(CommandContext<CommandSourceStack> context)
-    {
-        var who = Bukkit.getPlayerExact(StringArgumentType.getString(context, "who"));
-        var targetName = StringArgumentType.getString(context, "as_what");
-
-        var commandSender = context.getSource().getSender();
-        if (who == null || !who.isOnline())
-        {
-            commandSender.sendMessage(MessageUtils.prefixes(commandSender, CommonStrings.playerNotFoundString()));
-            return 1;
-        }
-
-        var parameters = MorphParameters
-                .create(who, targetName)
-                .setSource(commandSender)
-                //.setTargetedEntity(who.getTargetEntity(3))
-                .setForceExecute(true)
-                .setBypassAvailableCheck(true)
-                .setBypassPermission(true);
-
-        manager.morph(parameters);
         return 1;
     }
 

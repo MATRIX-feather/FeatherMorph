@@ -1541,7 +1541,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
     //region Implementation of IManagePlayerData
 
     @Override
-    @Nullable
+    @NotNull
     public DisguiseMeta getDisguiseMeta(String rawString)
     {
         return data.getDisguiseMeta(rawString);

@@ -3,10 +3,15 @@ package xyz.nifeather.morph.commands.subcommands.plugin;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import net.minecraft.network.chat.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -48,8 +53,7 @@ public class QuerySubCommand extends BrigadierCommand
                 Commands.literal(name())
                         .requires(this::checkPermission)
                         .then(
-                                Commands.argument("who", StringArgumentType.greedyString())
-                                        .suggests(this::suggests)
+                                Commands.argument("who", ArgumentTypes.player())
                                         .executes(this::executes)
                         )
         );
@@ -57,29 +61,14 @@ public class QuerySubCommand extends BrigadierCommand
         super.registerAsChild(parentBuilder);
     }
 
-    public @NotNull CompletableFuture<Suggestions> suggests(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
-    {
-        return CompletableFuture.supplyAsync(() ->
-        {
-            var name = suggestionsBuilder.getRemainingLowerCase();
-
-            for (Player onlinePlayer : Bukkit.getOnlinePlayers())
-            {
-                var playerName = onlinePlayer.getName();
-                if (playerName.toLowerCase().startsWith(name.toLowerCase()))
-                    suggestionsBuilder.suggest(playerName);
-            }
-
-            return suggestionsBuilder.build();
-        });
-    }
-
     @Resolved
     private MorphManager manager;
 
-    public int executes(CommandContext<CommandSourceStack> context)
+    public int executes(CommandContext<CommandSourceStack> context) throws CommandSyntaxException
     {
-        var targetPlayer = Bukkit.getPlayerExact(StringArgumentType.getString(context, "who"));
+        var players = context.getArgument("who", PlayerSelectorArgumentResolver.class)
+                .resolve(context.getSource());
+
         String locale = null;
 
         var commandSender = context.getSource().getSender();
@@ -87,29 +76,33 @@ public class QuerySubCommand extends BrigadierCommand
         if (commandSender instanceof Player player)
             locale = MessageUtils.getLocale(player);
 
-        if (targetPlayer != null)
+        if (players.isEmpty())
         {
-            var state = manager.getDisguiseStateFor(targetPlayer);
+            return 0;
+        }
 
-            if (state != null)
-            {
-                commandSender.sendMessage(MessageUtils.prefixes(commandSender,
-                        CommandStrings.qDisguisedString()
-                                .withLocale(locale)
-                                .resolve("who", targetPlayer.getName())
-                                .resolve("what", state.getDisguiseIdentifier())
-                                .resolve("storage_status",
-                                        state.showingDisguisedItems()
-                                                ? CommandStrings.qaShowingDisguisedItemsString()
-                                                : CommandStrings.qaNotShowingDisguisedItemsString(),
-                                        null)
-                ));
-            }
-            else
-            {
-                commandSender.sendMessage(MessageUtils.prefixes(commandSender,
-                        CommandStrings.qNotDisguisedString().resolve("who", targetPlayer.getName())));
-            }
+        var targetPlayer = players.getFirst();
+
+        var state = manager.getDisguiseStateFor(targetPlayer);
+
+        if (state != null)
+        {
+            commandSender.sendMessage(MessageUtils.prefixes(commandSender,
+                    CommandStrings.qDisguisedString()
+                            .withLocale(locale)
+                            .resolve("who", targetPlayer.getName())
+                            .resolve("what", state.getDisguiseIdentifier())
+                            .resolve("storage_status",
+                                    state.showingDisguisedItems()
+                                            ? CommandStrings.qaShowingDisguisedItemsString()
+                                            : CommandStrings.qaNotShowingDisguisedItemsString(),
+                                    null)
+            ));
+        }
+        else
+        {
+            commandSender.sendMessage(MessageUtils.prefixes(commandSender,
+                    CommandStrings.qNotDisguisedString().resolve("who", targetPlayer.getName())));
         }
 
         return 1;

@@ -3,12 +3,12 @@ package xyz.nifeather.morph.commands.subcommands.plugin.management;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -18,11 +18,10 @@ import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
+import xyz.nifeather.morph.commands.brigadier.arguments.DisguiseIdentifierArgumentType;
 import xyz.nifeather.morph.messages.*;
 import xyz.nifeather.morph.misc.DisguiseTypes;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
-
-import java.util.concurrent.CompletableFuture;
 
 public class GrantDisguiseSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
@@ -51,97 +50,60 @@ public class GrantDisguiseSubCommand extends MorphPluginObject implements IConve
                 Commands.literal(name())
                         .requires(this::checkPermission)
                         .then(
-                                Commands.argument("who", StringArgumentType.string())
-                                        .suggests(this::suggestPlayer)
+                                Commands.argument("who", ArgumentTypes.players())
                                         .then(
-                                                Commands.argument("what", StringArgumentType.greedyString())
+                                                Commands.argument("what", DisguiseIdentifierArgumentType.ALL_AVAILABLE)
                                                         .executes(this::execute)
-                                                        .suggests(this::suggestDisguise)
                                         )
                         )
         );
     }
 
-    private CompletableFuture<Suggestions> suggestPlayer(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
-    {
-        var online = Bukkit.getOnlinePlayers();
-
-        return CompletableFuture.supplyAsync(() ->
-        {
-            var input = suggestionsBuilder.getRemainingLowerCase();
-
-            online.stream().forEach(player ->
-            {
-                var name = player.getName();
-                if (name.toLowerCase().contains(input))
-                    suggestionsBuilder.suggest(name);
-            });
-
-            return suggestionsBuilder.build();
-        });
-    }
-
-    private CompletableFuture<Suggestions> suggestDisguise(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
-    {
-        return CompletableFuture.supplyAsync(() ->
-        {
-            var input = suggestionsBuilder.getRemainingLowerCase();
-
-            for (var p : MorphManager.getProviders())
-            {
-                if (p == MorphManager.fallbackProvider) continue;
-
-                var ns = p.getNameSpace();
-                p.getAllAvailableDisguises().forEach(s ->
-                {
-                    var str = ns + ":" + s;
-                    if (str.toLowerCase().contains(input))
-                        suggestionsBuilder.suggest(str);
-                });
-
-                suggestionsBuilder.suggest(ns + ":" + "@all");
-            }
-
-            return suggestionsBuilder.build();
-        });
-    }
-
     @Resolved
     private MorphManager morphs;
 
-    private int execute(CommandContext<CommandSourceStack> context)
+    private int execute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException
     {
-        var who = Bukkit.getPlayerExact(StringArgumentType.getString(context, "who"));
-        var targetName = StringArgumentType.getString(context, "what");
+        var players = context.getArgument("who", PlayerSelectorArgumentResolver.class)
+                .resolve(context.getSource());
+
         var commandSender = context.getSource().getSender();
 
-        if (who == null || !who.isOnline())
+        if (players.isEmpty())
         {
             commandSender.sendMessage(MessageUtils.prefixes(commandSender, CommonStrings.playerNotFoundString()));
             return 1;
         }
 
-        if (!targetName.contains(":"))
-            targetName = "minecraft:" + targetName;
-
-        //检查是否已知
-        var provider = MorphManager.getProvider(targetName);
-
-        var nameType = DisguiseTypes.fromId(targetName);
-        if (nameType.toStrippedId(targetName).equals("@all"))
+        players.forEach(who ->
         {
-            var allDisg = provider.getAllAvailableDisguises();
-            allDisg.forEach(id -> grantDisguise(who, nameType.toId(id), commandSender));
+            var targetName = StringArgumentType.getString(context, "what");
 
-            return 1;
-        }
-        else if (!provider.isValid(targetName))
-        {
-            commandSender.sendMessage(MessageUtils.prefixes(commandSender, MorphStrings.invalidIdentityString()));
-            return 1;
-        }
+            if (!who.isOnline())
+                return;
 
-        grantDisguise(who, targetName, commandSender);
+            if (!targetName.contains(":"))
+                targetName = "minecraft:" + targetName;
+
+            //检查是否已知
+            var provider = MorphManager.getProvider(targetName);
+
+            var nameType = DisguiseTypes.fromId(targetName);
+            if (nameType.toStrippedId(targetName).equals("@all"))
+            {
+                var allDisg = provider.getAllAvailableDisguises();
+                allDisg.forEach(id -> grantDisguise(who, nameType.toId(id), commandSender));
+
+                return;
+            }
+            else if (!provider.isValid(targetName))
+            {
+                commandSender.sendMessage(MessageUtils.prefixes(commandSender, MorphStrings.invalidIdentityString()));
+                return;
+            }
+
+            grantDisguise(who, targetName, commandSender);
+        });
 
         return 1;
     }
