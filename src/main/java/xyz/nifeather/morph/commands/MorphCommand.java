@@ -3,6 +3,7 @@ package xyz.nifeather.morph.commands;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -54,6 +55,10 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
                                         //.then(
                                         //        Commands.argument("properties", new ValueMapArgumentType())
                                         //                .executes(this::execExperimental)
+                                        //                .then(
+                                        //                        Commands.argument("extra", IntegerArgumentType.integer())
+                                        //                                .executes(this::execExperimentala)
+                                        //                )
                                         //)
                         )
                 .build());
@@ -69,6 +74,27 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
         {
             context.getSource().getSender().sendMessage("Key '%s', Value '%s'".formatted(k, v));
         });
+
+        return 1;
+    }
+
+    private int execExperimentala(CommandContext<CommandSourceStack> context)
+    {
+        var input = ValueMapArgumentType.get("properties", context);
+
+        input.forEach((k, v) ->
+        {
+            context.getSource().getSender().sendMessage("Key '%s', Value '%s'".formatted(k, v));
+        });
+
+        try
+        {
+            context.getSource().getSender().sendPlainMessage("Extra is " + IntegerArgumentType.getInteger(context, "extra"));
+        }
+        catch (Throwable t)
+        {
+            context.getSource().getSender().sendPlainMessage("No extra: " + t.getMessage());
+        }
 
         return 1;
     }
