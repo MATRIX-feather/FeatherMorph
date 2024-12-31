@@ -13,6 +13,7 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
@@ -25,6 +26,7 @@ import xyz.nifeather.morph.messages.MorphStrings;
 import xyz.nifeather.morph.misc.DisguiseMeta;
 import xyz.nifeather.morph.misc.gui.DisguiseSelectScreenWrapper;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -42,6 +44,8 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
     @Resolved
     private MorphManager morphs;
 
+    private final ValueMapArgumentType propertyArgument = new ValueMapArgumentType();
+
     @Override
     public boolean register(Commands dispatcher)
     {
@@ -53,17 +57,20 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
                                         .suggests(this::suggestID)
                                         .executes(this::execWithID)
                                         //.then(
-                                        //        Commands.argument("properties", new ValueMapArgumentType())
+                                        //        Commands.argument("properties", propertyArgument)
                                         //                .executes(this::execExperimental)
-                                        //                .then(
-                                        //                        Commands.argument("extra", IntegerArgumentType.integer())
-                                        //                                .executes(this::execExperimentala)
-                                        //                )
                                         //)
                         )
                 .build());
 
         return true;
+    }
+
+    @Initializer
+    private void load()
+    {
+        this.propertyArgument.setProperty("morph:frog_variant", List.of("cold", "warm"));
+        this.propertyArgument.setProperty("morph:cat_variant", List.of("tabby", "black"));
     }
 
     private int execExperimental(CommandContext<CommandSourceStack> context)
@@ -74,27 +81,6 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
         {
             context.getSource().getSender().sendMessage("Key '%s', Value '%s'".formatted(k, v));
         });
-
-        return 1;
-    }
-
-    private int execExperimentala(CommandContext<CommandSourceStack> context)
-    {
-        var input = ValueMapArgumentType.get("properties", context);
-
-        input.forEach((k, v) ->
-        {
-            context.getSource().getSender().sendMessage("Key '%s', Value '%s'".formatted(k, v));
-        });
-
-        try
-        {
-            context.getSource().getSender().sendPlainMessage("Extra is " + IntegerArgumentType.getInteger(context, "extra"));
-        }
-        catch (Throwable t)
-        {
-            context.getSource().getSender().sendPlainMessage("No extra: " + t.getMessage());
-        }
 
         return 1;
     }
