@@ -29,6 +29,7 @@ repositories {
         content {
             includeGroup("com.github.XiaMoZhiShi")
             includeGroup("com.github.NiFeather")
+            includeGroup("com.github.MATRIX-feather")
         }
     }
 
@@ -103,7 +104,7 @@ dependencies {
         exclude("org.slf4j")
     }
 
-    implementation("de.themoep:inventorygui:1.6.4-SNAPSHOT")
+    implementation("com.github.MATRIX-feather:InventoryGui:791e7bdd65")
 
     //compileOnly("dev.majek:hexnicks:3.1.1")
 
