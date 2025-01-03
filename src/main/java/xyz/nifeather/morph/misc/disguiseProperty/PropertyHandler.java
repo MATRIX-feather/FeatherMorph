@@ -24,16 +24,22 @@ public class PropertyHandler
     @Nullable
     private AbstractProperties properties;
 
-    public void setProperties(AbstractProperties properties)
+    public void initProperties(AbstractProperties properties)
     {
         reset();
 
         this.properties = properties;
         validProperties.addAll(properties.getValues());
-        properties.getValues().forEach(this::addProperty);
+        properties.getValues().forEach(this::initProperty);
     }
 
-    private void addProperty(SingleProperty<?> property)
+    public void updateFromPropertiesInput(Map<String, String> input)
+    {
+        var results = this.properties.readFromPropertiesInput(input);
+        results.forEach(this::writeGeneric);
+    }
+
+    private void initProperty(SingleProperty<?> property)
     {
         var random = property.getRandomValues();
         if (!random.isEmpty())

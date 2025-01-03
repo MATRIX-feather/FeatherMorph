@@ -1,9 +1,6 @@
 package xyz.nifeather.morph.commands;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -11,8 +8,10 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.kyori.adventure.key.Key;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Messages.FormattableMessage;
@@ -24,9 +23,13 @@ import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.messages.MorphStrings;
 import xyz.nifeather.morph.misc.DisguiseMeta;
+import xyz.nifeather.morph.misc.MorphParameters;
+import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
+import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
 import xyz.nifeather.morph.misc.gui.DisguiseSelectScreenWrapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -56,10 +59,10 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
                                 Commands.argument("id", ArgumentTypes.key())
                                         .suggests(this::suggestID)
                                         .executes(this::execWithID)
-                                        //.then(
-                                        //        Commands.argument("properties", propertyArgument)
-                                        //                .executes(this::execExperimental)
-                                        //)
+                                        .then(
+                                                Commands.argument("properties", propertyArgument)
+                                                        .executes(this::execWithProperties)
+                                        )
                         )
                 .build());
 
@@ -69,20 +72,16 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
     @Initializer
     private void load()
     {
-        this.propertyArgument.setProperty("morph:frog_variant", List.of("cold", "warm"));
-        this.propertyArgument.setProperty("morph:cat_variant", List.of("tabby", "black"));
-    }
-
-    private int execExperimental(CommandContext<CommandSourceStack> context)
-    {
-        var input = ValueMapArgumentType.get("properties", context);
-
-        input.forEach((k, v) ->
+        DisguiseProperties.INSTANCE.getAll().forEach((type, properties) ->
         {
-            context.getSource().getSender().sendMessage("Key '%s', Value '%s'".formatted(k, v));
-        });
+            for (SingleProperty<?> property : properties.getValues())
+            {
+                var name = property.id();
+                var values = property.validInputs();
 
-        return 1;
+                propertyArgument.setProperty(name, values);
+            }
+        });
     }
 
     public @NotNull CompletableFuture<Suggestions> suggestID(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
@@ -136,20 +135,56 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
     private int execWithID(CommandContext<CommandSourceStack> context)
     {
         var sender = context.getSource().getExecutor();
+        var executor = context.getSource().getExecutor();
 
-        if (!(sender instanceof Player player))
-            return Command.SINGLE_SUCCESS;
-
-        //伪装冷却
-        if (!morphManager.canMorph(player))
+        if (!(executor instanceof Player player))
         {
-            sender.sendMessage(MessageUtils.prefixes(player, MorphStrings.disguiseCoolingDownString()));
+            sender.sendMessage(MessageUtils.prefixes(sender, "Only players can execute disguise command"));
 
             return Command.SINGLE_SUCCESS;
         }
 
         String inputID = context.getArgument("id", Key.class).toString();
-        morphManager.morph(sender, player, inputID, player.getTargetEntity(5));
+        this.doDisguise(context.getSource().getSender(), player, inputID, null);
+
+        return 1;
+    }
+
+    private void doDisguise(CommandSender sender, Player who, String id, @Nullable Map<String, String> properties)
+    {
+        //伪装冷却
+        if (!morphManager.canMorph(who))
+        {
+            sender.sendMessage(MessageUtils.prefixes(sender, MorphStrings.disguiseCoolingDownString()));
+            return;
+        }
+
+        var parameters = MorphParameters.create(who, id)
+                .setSource(sender)
+                .setTargetedEntity(who.getTargetEntity(5));
+
+        if (properties != null)
+            parameters.withProperties(properties);
+
+        morphManager.morph(parameters);
+    }
+
+    private int execWithProperties(CommandContext<CommandSourceStack> context)
+    {
+        var sender = context.getSource().getSender();
+        var executor = context.getSource().getExecutor();
+
+        if (!(executor instanceof Player player))
+        {
+            sender.sendMessage(MessageUtils.prefixes(sender, "Only players can execute disguise command"));
+
+            return Command.SINGLE_SUCCESS;
+        }
+
+        var propertiesInput = ValueMapArgumentType.get("properties", context);
+        var disguiseInput = context.getArgument("id", Key.class).toString();
+
+        this.doDisguise(sender, player, disguiseInput, propertiesInput);
 
         return 1;
     }

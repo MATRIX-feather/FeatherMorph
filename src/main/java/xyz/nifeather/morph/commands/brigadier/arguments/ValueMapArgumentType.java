@@ -225,6 +225,8 @@ public class ValueMapArgumentType implements CustomArgumentType<Map<String, Stri
         // 读完了但是没有遇到闭合括号！
         if (peekReader.peek() != ']')
             throw new SimpleCommandExceptionType(Component.translatable("parsing.expected", "]")).createWithContext(reader);
+        else
+            reader.skip();
 
         for (KeyValuePair pair : values)
         {
@@ -370,7 +372,7 @@ public class ValueMapArgumentType implements CustomArgumentType<Map<String, Stri
             if (next == '=' && isKey)
             {
                 isKey = false;
-                valueCursor = reader.canRead() ? reader.getCursor() + 1 : reader.getCursor();
+                valueCursor = reader.getCursor();
 
                 continue;
             }

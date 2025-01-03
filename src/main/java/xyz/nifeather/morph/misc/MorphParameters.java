@@ -3,7 +3,11 @@ package xyz.nifeather.morph.misc;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 用于传递给morph方法的杂项参数
@@ -32,6 +36,8 @@ public class MorphParameters
 
     @Nullable
     public Entity targetedEntity;
+
+    public final Map<String, String> properties = new ConcurrentHashMap<>();
 
     public MorphParameters setSource(CommandSender sender)
     {
@@ -64,6 +70,20 @@ public class MorphParameters
     public MorphParameters setForceExecute(boolean val)
     {
         this.forceExecute = val;
+
+        return this;
+    }
+
+    public MorphParameters withProperties(Map<String, String> map)
+    {
+        this.properties.putAll(map);
+
+        return this;
+    }
+
+    public MorphParameters withProperties(@NotNull String key, @NotNull String value)
+    {
+        this.properties.put(key, value);
 
         return this;
     }

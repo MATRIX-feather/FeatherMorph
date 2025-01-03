@@ -3,6 +3,7 @@ package xyz.nifeather.morph.misc.disguiseProperty;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 public class SingleProperty<T>
@@ -31,6 +32,26 @@ public class SingleProperty<T>
         this.identifier = identifier;
         this.defaultVal = defaultValue;
         this.type = type;
+    }
+
+    private final List<String> validValues = new ObjectArrayList<>();
+
+    public List<String> validInputs()
+    {
+        return new ObjectArrayList<>(validValues);
+    }
+
+    public SingleProperty<T> withValidInput(Collection<String> input)
+    {
+        this.validValues.addAll(input);
+
+        return this;
+    }
+    public SingleProperty<T> withValidInput(String... input)
+    {
+        this.validValues.addAll(Arrays.stream(input).toList());
+
+        return this;
     }
 
     private final List<T> randomValues = new ObjectArrayList<>();

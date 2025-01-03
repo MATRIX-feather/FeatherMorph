@@ -35,7 +35,7 @@ public class LlamaWatcher extends ChestedHorseWatcher
     {
         var properties = DisguiseProperties.INSTANCE.getOrThrow(LlamaProperties.class);
 
-        if (property.equals(properties.VARIANT))
+        if (property.equals(properties.COLOR))
         {
             var val = (Llama.Color) value;
 

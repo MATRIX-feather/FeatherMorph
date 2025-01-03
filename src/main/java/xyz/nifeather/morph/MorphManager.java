@@ -901,7 +901,10 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         {
             // 同步伪装属性
             var propertyHandler = state.disguisePropertyHandler();
-            propertyHandler.setProperties(disguiseProperties.get(state.getEntityType()));
+            var properties = disguiseProperties.get(state.getEntityType());
+            propertyHandler.initProperties(properties);
+            propertyHandler.updateFromPropertiesInput(parameters.properties);
+
             propertyHandler.getAll().forEach((property, value) ->
             {
                 wrapper.writeProperty((SingleProperty<Object>) property, value);
@@ -909,10 +912,10 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         }
 
         // 初始化nbt
-        var wrapperCompound = provider.getInitialNbtCompound(state, targetEntity, false);
+        var initialNbtCompound = provider.getInitialNbtCompound(state, targetEntity, false);
 
-        if (wrapperCompound != null)
-            state.getDisguiseWrapper().mergeCompound(wrapperCompound);
+        if (initialNbtCompound != null)
+            state.getDisguiseWrapper().mergeCompound(initialNbtCompound);
 
         // 设定显示名称
         if (targetEntity != null && targetEntity.customName() != null)
