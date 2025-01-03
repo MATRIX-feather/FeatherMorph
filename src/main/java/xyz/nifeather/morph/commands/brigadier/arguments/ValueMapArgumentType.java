@@ -358,9 +358,9 @@ public class ValueMapArgumentType implements CustomArgumentType<Map<String, Stri
             if (next == terminator)
                 break;
 
-            char current = next;
-
             reader.skip();
+
+            char current = next;
 
             //log.info("Current: '%s'".formatted(next));
 
@@ -368,11 +368,24 @@ public class ValueMapArgumentType implements CustomArgumentType<Map<String, Stri
 
             var builder = isKey ? keyStringBuilder : valueStringBuilder;
 
-            // 遇到等于号，切换至Value
-            if (next == '=' && isKey)
+            // 遇到等于号，切换至Value模式
+            if (current == '=' && isKey)
             {
                 isKey = false;
-                valueCursor = reader.getCursor();
+
+                // 判断我们值的cursor要从哪里开始
+                if (reader.canRead())
+                {
+                    // 如果等于号后面是引号，那么从那里开始，否则就从这里开始
+                    if (StringReader.isQuotedStringStart(reader.peek()))
+                        valueCursor = reader.getCursor() + 1;
+                    else
+                        valueCursor = reader.getCursor();
+                }
+                else // 以等于号结尾，从这里开始
+                {
+                    valueCursor = reader.getCursor();
+                }
 
                 continue;
             }
@@ -382,7 +395,11 @@ public class ValueMapArgumentType implements CustomArgumentType<Map<String, Stri
 
             //endregion 识别Key
 
-            // 遇到引号了
+            // 忽略开头的空格
+            if (builder.isEmpty() && Character.isWhitespace(current))
+                continue;
+
+            // 遇到引号了，读取到下个引号结束
             if (StringReader.isQuotedStringStart(current))
             {
                 var quoteReader = new StringReader(reader);
@@ -393,7 +410,7 @@ public class ValueMapArgumentType implements CustomArgumentType<Map<String, Stri
                     str = quoteReader.readStringUntil(current);
                     reader.setCursor(quoteReader.getCursor());
                 }
-                catch (Throwable ignored)
+                catch (Throwable ignored) // 在补全过程中，我们可能读不到下一个引号，所以 Just in case
                 {
                     str = reader.readUnquotedString();
                 }
@@ -402,10 +419,6 @@ public class ValueMapArgumentType implements CustomArgumentType<Map<String, Stri
                 builder.append(str);
                 continue;
             }
-
-            // 是空格
-            if (Character.isWhitespace(current))
-                continue;
 
             // 其他情况
             //log.info("APPENDING [%s]".formatted(current));
