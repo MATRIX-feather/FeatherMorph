@@ -29,6 +29,7 @@ public class WolfProperties extends AbstractProperties
 
     public WolfProperties()
     {
+        initMap();
         VARIANT.withValidInput(variantMap.keySet());
 
         registerSingle(VARIANT);

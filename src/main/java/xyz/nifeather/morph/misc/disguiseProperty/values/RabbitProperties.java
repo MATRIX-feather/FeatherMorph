@@ -24,6 +24,9 @@ public class RabbitProperties extends AbstractProperties
 
     public RabbitProperties()
     {
+        initMap();
+        VARIANT.withValidInput(typeMap.keySet());
+
         registerSingle(VARIANT);
     }
 
