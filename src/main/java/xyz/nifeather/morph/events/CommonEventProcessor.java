@@ -369,27 +369,27 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         clientHandler.markPlayerReady(player);
 
         var effectivePermissions = new ObjectOpenHashSet<>(player.getEffectivePermissions());
-        var permissionAttachment = player.addAttachment(plugin);
         List<String> legacyPermissions = new ObjectArrayList<>();
 
         effectivePermissions.forEach(permInfo ->
         {
             var name = permInfo.getPermission();
-            boolean value = permInfo.getValue();
-
             if (!name.startsWith("xiamomc.morph")) return;
 
-            String nameReplaced = name.replace("xiamomc.morph.", "feathermorph.");
-            permissionAttachment.setPermission(nameReplaced, value);
             legacyPermissions.add(name);
         });
 
         if (!legacyPermissions.isEmpty())
         {
-            logger.warn("Found legacy permission set for player '%s'!".formatted(player.getName()));
-            logger.warn("Please migrate to the new prefix 'feathermorph.XXX' rather than 'xiamomc.morph.XXX' as soon as possible, as legacy support will end at 1.5.0!");
-            logger.warn("Permissions found:");
-            legacyPermissions.forEach(p -> logger.warn("  --> %s".formatted(p)));
+            logger.error("- x - x - x - x - x - x - x - x - x - x - x - x -");
+            logger.error("MAY I HAVE YOUR ATTENTION PLEASE!");
+            logger.error("");
+            logger.error("Found legacy permission set for player '%s'!".formatted(player.getName()));
+            logger.error("Please migrate to the new prefix 'feathermorph.XXX' instead of 'xiamomc.morph.XXX', as legacy permission support is now ENDED!");
+            logger.error("Permissions found:");
+            legacyPermissions.forEach(p -> logger.error("  --> %s".formatted(p)));
+            logger.error("");
+            logger.error("- x - x - x - x - x - x - x - x - x - x - x - x -");
         }
 
         //如果玩家是第一次用客户端连接，那么等待3秒向其发送提示
