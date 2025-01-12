@@ -32,14 +32,14 @@ public class StateNameProvider extends MorphPluginObject implements IPlaceholder
             {
                 return state != null
                         ? state.getDisguiseIdentifier()
-                        : "???";
+                        : "not_disguised";
             }
 
             case "name" ->
             {
                 return state != null
                     ? PlainTextComponentSerializer.plainText().serialize(state.getServerDisplay())
-                    : "???";
+                    : "not_disguised";
             }
 
             case "status" ->
@@ -51,7 +51,7 @@ public class StateNameProvider extends MorphPluginObject implements IPlaceholder
         if (param.startsWith("provider_is"))
         {
             var spilt = param.split("\\?", 2);
-            if (spilt.length < 2) return "false";
+            if (spilt.length < 2) return "invalid_provider_param";
 
             var namespace = spilt[1];
             return state != null
@@ -62,13 +62,13 @@ public class StateNameProvider extends MorphPluginObject implements IPlaceholder
         if (param.startsWith("id_is"))
         {
             var spilt = param.split("\\?", 2);
-            if (spilt.length < 2) return "false";
+            if (spilt.length < 2) return "invalid_id_param";
 
             return state != null
                     ? state.getDisguiseIdentifier().equals(spilt[1]) ? "true" : "false"
                     : "false";
         }
 
-        return "not_enough_param";
+        return "invalid_param";
     }
 }

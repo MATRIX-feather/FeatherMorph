@@ -41,7 +41,13 @@ public class PlaceholderIntegration extends PlaceholderExpansion
     @Override
     public @NotNull String getVersion()
     {
-        return "1.3.3";
+        return "1.5.0";
+    }
+
+    @Override
+    public boolean persist()
+    {
+        return true;
     }
 
     private void addPlaceholders(List<IPlaceholderProvider> providerList)
@@ -70,7 +76,7 @@ public class PlaceholderIntegration extends PlaceholderExpansion
         return source.getPlaceholderIdentifier().equals(target.getPlaceholderIdentifier());
     }
 
-    private static final String defaultString = "???";
+    private static final String defaultString = "invalid_placeholder";
 
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String param)
