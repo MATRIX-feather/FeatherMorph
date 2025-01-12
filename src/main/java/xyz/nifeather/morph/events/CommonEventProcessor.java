@@ -1,16 +1,13 @@
 package xyz.nifeather.morph.events;
 
+import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent;
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import de.themoep.inventorygui.InventoryGui;
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.Registry;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.block.data.type.CreakingHeart;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -27,6 +24,7 @@ import xiamomc.morph.network.commands.S2C.map.S2CMapRemoveCommand;
 import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Bindables.Bindable;
+import xiamomc.pluginbase.Bindables.BindableList;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.RevealingHandler;
@@ -104,6 +102,27 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
     }
 
     @EventHandler
+    public void onEntityAddToWorld(EntityAddToWorldEvent e)
+    {
+        if (!(e.getEntity() instanceof Player player))
+            return;
+
+        var world = e.getWorld();
+
+        var state = morphs.getDisguiseStateFor(player);
+        if (state != null && morphs.disguiseDisabledInWorld(world))
+        {
+            this.scheduleOn(player, () ->
+            {
+                if (!player.getWorld().equals(world)) return;
+
+                player.sendMessage(MessageUtils.prefixes(player, MorphStrings.disguiseDisabledInWorldString()));
+                morphs.unMorph(player);
+            });
+        }
+    }
+
+    @EventHandler
     public void onEntityDeath(EntityDeathEvent e)
     {
         var entity = e.getEntity();
@@ -158,18 +177,18 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     public void onPlayerTookDamage(EntityDamageEvent e)
     {
-        if (e.getEntity() instanceof Player player)
+        if (!(e.getEntity() instanceof Player player))
+            return;
+
+        var state = morphs.getDisguiseStateFor(player);
+
+        if (state != null)
         {
-            var state = morphs.getDisguiseStateFor(player);
+            state.getSoundHandler().resetSoundTime();
 
-            if (state != null)
-            {
-                state.getSoundHandler().resetSoundTime();
-
-                //如果伤害是0，那么取消事件
-                if (e.getDamage() > 0d)
-                    state.setSkillCooldown(Math.max(state.getSkillCooldown(), cooldownOnDamage.get()), true);
-            }
+            //如果伤害是0，那么取消事件
+            if (e.getDamage() > 0d)
+                state.setSkillCooldown(Math.max(state.getSkillCooldown(), cooldownOnDamage.get()), true);
         }
     }
 

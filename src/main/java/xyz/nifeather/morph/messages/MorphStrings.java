@@ -211,6 +211,11 @@ public class MorphStrings extends AbstractMorphStrings
                 "<red>操作被其他来源取消");
     }
 
+    public static FormattableMessage disguiseDisabledInWorldString()
+    {
+        return getFormattable(getKey("disguise_disabled"), "[Fallback] 无法伪装，因为此功能在当前世界被禁用");
+    }
+
     public static FormattableMessage revealed()
     {
         return getFormattable(getKey("disguise_revealed"),

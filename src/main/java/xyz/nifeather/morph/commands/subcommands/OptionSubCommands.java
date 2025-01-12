@@ -174,7 +174,7 @@ public class OptionSubCommands
             operationAdd.registerAsChild(thisBuilder);
             operationRemove.registerAsChild(thisBuilder);
 
-            super.registerAsChild(parentBuilder);
+            parentBuilder.then(thisBuilder);
         }
 
 

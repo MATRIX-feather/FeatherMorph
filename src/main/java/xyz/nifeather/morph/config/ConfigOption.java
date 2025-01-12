@@ -126,6 +126,7 @@ public enum ConfigOption
 
     TOWNY_ALLOW_FLY_IN_WILDERNESS(townyNode().append("allow_fly_in_wilderness"), false),
 
+    DISGUISE_DISABLED_WORLDS(worldOptionNode().append("disabled_worlds"), new ArrayList<String>()),
 
     VERSION(ConfigNode.create().append("version"), 0);
 
@@ -211,5 +212,9 @@ public enum ConfigOption
     public static ConfigNode townyNode()
     {
         return integrationNode().append("towny");
+    }
+    private static ConfigNode worldOptionNode()
+    {
+        return ConfigNode.create().append("world_option");
     }
 }

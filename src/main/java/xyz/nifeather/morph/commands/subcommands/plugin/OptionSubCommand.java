@@ -86,18 +86,11 @@ public class OptionSubCommand extends MorphPluginObject implements IConvertibleB
         subCommands.add(getList("nofly_worlds", ConfigOption.NOFLY_WORLDS, null));
         subCommands.add(getList("blacklist_tags", ConfigOption.BLACKLIST_TAGS, null));
         subCommands.add(getList("blacklist_nbt_pattern", ConfigOption.BLACKLIST_PATTERNS, null));
+        //subCommands.add(getList("disabled_worlds", ConfigOption.DISGUISE_DISABLED_WORLDS, null));
 
         subCommands.add(getToggle("ability_check_permissions", ConfigOption.DO_CHECK_ABILITY_PERMISSIONS, null));
 
         subCommands.add(getToggle("towny_allow_flight_in_wilderness", ConfigOption.TOWNY_ALLOW_FLY_IN_WILDERNESS));
-    }
-
-    private CompletableFuture<Suggestions> suggestListOperation(CommandContext<CommandSourceStack> context,
-                                                                SuggestionsBuilder suggestionsBuilder)
-    {
-        suggestionsBuilder.suggest("list").suggest("add").suggest("remove");
-
-        return suggestionsBuilder.buildFuture();
     }
 
     private IConvertibleBrigadier getList(String optionName, ConfigOption option,
@@ -133,16 +126,6 @@ public class OptionSubCommand extends MorphPluginObject implements IConvertibleB
     private IConvertibleBrigadier getToggle(String name, ConfigOption option, @Nullable FormattableMessage displayName)
     {
         return new OptionSubCommands.BooleanOptionCommand(name, config, option);
-    }
-
-    private boolean parseBoolean(String input)
-    {
-        return "true".equalsIgnoreCase(input)
-                || "t".equalsIgnoreCase(input)
-                || "on".equalsIgnoreCase(input)
-                || "1".equalsIgnoreCase(input)
-                || "enable".equalsIgnoreCase(input)
-                || "enabled".equalsIgnoreCase(input);
     }
 
     private final List<IConvertibleBrigadier> subCommands = new ObjectArrayList<>();
