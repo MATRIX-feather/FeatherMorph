@@ -237,10 +237,6 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         bannedDisguises = config.getBindableList(String.class, ConfigOption.BANNED_DISGUISES);
         disabledWorlds = config.getBindableList(String.class, ConfigOption.DISGUISE_DISABLED_WORLDS);
 
-        disabledWorlds.onListChanged((diff, reason) ->
-        {
-        });
-
         config.bind(allowHeadMorph, ConfigOption.ALLOW_HEAD_MORPH);
         config.bind(allowAcquireMorph, ConfigOption.ALLOW_ACQUIRE_MORPHS);
         config.bind(useClientRenderer, ConfigOption.USE_CLIENT_RENDERER);

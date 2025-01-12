@@ -157,6 +157,7 @@
   "morph.no_enough_space" : "<red>空间太过狭小，无法进行伪装！",
   "morph.no_such_local_disguise" : "<color:red>未找到和此ID匹配的本地伪装",
   "morph.operation_cancelled" : "<red>操作被其他来源取消",
+  "morph.disguise_disabled": "<color:red>无法伪装，因为此功能在当前世界被禁用",
   "morph.parse_error" : "<color:red>未能解析<id>",
   "morph.partial_damaged" : "（部分暴露）",
   "morph.self_visible_off" : "<color:red>已切换自身可见",

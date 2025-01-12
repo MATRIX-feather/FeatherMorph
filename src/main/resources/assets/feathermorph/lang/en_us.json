@@ -157,6 +157,7 @@
   "morph.no_enough_space": "<red>There is not enough space to disguise!",
   "morph.no_such_local_disguise": "<color:red>No such disguise",
   "morph.operation_cancelled": "<red>Operation cancelled by other sources",
+  "morph.disguise_disabled": "<color:red>Unable to disguise because this feature is disabled in the current world",
   "morph.parse_error": "<color:red>Invalid disguise identifier: <id>",
   "morph.partial_damaged": " (Partial Revealed)",
   "morph.self_visible_off": "<color:red>Toggled SelfView off",
