@@ -96,8 +96,8 @@ public class TownyAdapter extends MorphPluginObject implements Listener
         var playerTown = resident.getTownOrNull();
 
         // 如果这个town不支持飞行
-        if (MetaDataUtil.hasMeta(town, allowMorphFlight) && !MetaDataUtil.getBoolean(town, allowMorphFlight))
-            return false;
+        if (MetaDataUtil.hasMeta(town, allowMorphFlight))
+            return MetaDataUtil.getBoolean(town, allowMorphFlight);
 
         // MetaDataUtil.setBoolean(town, allowMorphFlight, true, true);
 
