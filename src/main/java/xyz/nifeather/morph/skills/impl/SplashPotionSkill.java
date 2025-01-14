@@ -57,7 +57,7 @@ public class SplashPotionSkill extends MorphSkill<NoOpConfiguration>
         meta.addCustomEffect(potionEffect, true);
 
         Potion targetPotion = null;
-        var potionRef = BuiltInRegistries.POTION.get(ResourceLocation.parse(info.type.getKey().asString()))
+        var potionRef = BuiltInRegistries.POTION.getHolder(ResourceLocation.parse(info.type.getKey().asString()))
                 .orElse(null);
 
         if (potionRef != null && potionRef.isBound())

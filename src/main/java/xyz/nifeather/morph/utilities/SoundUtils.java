@@ -12,7 +12,7 @@ public class SoundUtils
         if (si.sound() == null)
             return null;
 
-        var resLoc = si.sound().location();
+        var resLoc = si.sound().getLocation();
 
         return Sound.sound().source(toAdventureSource(si.source())).volume(si.volume()).pitch(pitch)
                 .type(Key.key(resLoc.getNamespace(), resLoc.getPath())).build();

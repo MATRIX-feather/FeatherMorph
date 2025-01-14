@@ -90,7 +90,7 @@ public class SoundListener extends ProtocolListener
         // 获取正要播放的音效
         AtomicReference<ResourceLocation> resourceLocationRef = new AtomicReference<>(null);
         left.ifPresent(rK -> resourceLocationRef.set(rK.location()));
-        right.ifPresent(se -> resourceLocationRef.set(se.location()));
+        right.ifPresent(se -> resourceLocationRef.set(se.getLocation()));
 
         if (resourceLocationRef.get() == null) return null;
         SoundEvent sound = null;

@@ -26,7 +26,7 @@ public class HolderUtils
     {
         setupLevel();
 
-        return level.registryAccess().lookup(registryKey).orElseThrow();
+        return level.registryAccess().registryOrThrow(registryKey);
     }
 
     public static <T> Holder<T> getHolderOrThrow(ResourceLocation location, ResourceKey<Registry<T>> registryKey)
@@ -35,7 +35,7 @@ public class HolderUtils
 
         var registry = lookupRegistryOrThrow(registryKey);
 
-        var ref = registry.get(location).orElse(null);
+        var ref = registry.getHolder(location).orElse(null);
         if (ref == null)
             throw new NullPointerException("Reference for key '%s' does not found in the registry '%s'.".formatted(location, registry.key()));
 
@@ -51,7 +51,7 @@ public class HolderUtils
 
         var registry = lookupRegistryOrThrow(registryKey);
 
-        var ref = registry.get(key).orElse(null);
+        var ref = registry.getHolder(key).orElse(null);
         if (ref == null)
             throw new NullPointerException("Reference for key '%s' does not found in the registry '%s'.".formatted(key, registry.key()));
 

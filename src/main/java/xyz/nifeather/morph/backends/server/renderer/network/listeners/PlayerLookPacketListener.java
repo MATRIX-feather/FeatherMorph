@@ -66,7 +66,7 @@ public class PlayerLookPacketListener extends ProtocolListener
     private void onTeleport(ClientboundTeleportEntityPacket packet, PacketEvent event)
     {
         //获取此包的来源实体
-        var sourceNmsEntity = getNmsPlayerFrom(packet.id());
+        var sourceNmsEntity = getNmsPlayerFrom(packet.getId());
         if (sourceNmsEntity == null)
             return;
 
@@ -83,15 +83,21 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (!isDragon && !isPhantom)
             return;
 
-        float yaw = packet.change().yRot();
-        float pitch = packet.change().xRot();
+        var yaw = packet.getyRot();
+        var pitch = packet.getxRot();
 
-        yaw = isDragon ? (yaw + 180f) : yaw;
-        pitch = isPhantom ? -pitch : pitch;
+        var playerYaw = isDragon ? (sourcePlayer.getYaw() + 180f) : sourcePlayer.getYaw();
+        var finalYaw = (playerYaw / 360f) * 256f;
+        yaw = (byte)finalYaw;
+
+        var playerPitch = isPhantom ? -sourcePlayer.getPitch() : sourcePlayer.getPitch();
+
+        var finalPitch = (playerPitch / 360f) * 256f;
+        pitch = (byte)finalPitch;
 
         var container = event.getPacket();
-        container.getBytes().write(0, Mth.packDegrees(yaw));
-        container.getBytes().write(1, Mth.packDegrees(pitch));
+        container.getBytes().write(0, yaw);
+        container.getBytes().write(1, pitch);
     }
 
     private void onHeadRotation(ClientboundRotateHeadPacket packet, PacketEvent event)
@@ -107,9 +113,9 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (watcher == null || watcher.getEntityType() != EntityType.ENDER_DRAGON)
             return;
 
-        var newHeadYaw = packet.getYHeadRot() + 180f;
+        var newHeadYaw = (byte)(((sourcePlayer.getYaw() + 180f) / 360f) * 256f);
 
-        var newPacket = new ClientboundRotateHeadPacket(sourceNmsEntity, Mth.packDegrees(newHeadYaw));
+        var newPacket = new ClientboundRotateHeadPacket(sourceNmsEntity, newHeadYaw);
         var finalPacket = PacketContainer.fromPacket(newPacket);
         getFactory().markPacketOurs(finalPacket);
 
@@ -136,11 +142,17 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (!isDragon && !isPhantom)
             return;
 
-        float yaw = packet.getyRot();
-        float pitch = packet.getxRot();
+        var yaw = packet.getyRot();
+        var pitch = packet.getxRot();
 
-        yaw = isDragon ? (yaw + 180f) : yaw;
-        pitch = isPhantom ? -pitch : pitch;
+        var playerYaw = isDragon ? (sourcePlayer.getYaw() + 180f) : sourcePlayer.getYaw();
+        var finalYaw = (playerYaw / 360f) * 256f;
+        yaw = (byte)finalYaw;
+
+        var playerPitch = isPhantom ? -sourcePlayer.getPitch() : sourcePlayer.getPitch();
+
+        var finalPitch = (playerPitch / 360f) * 256f;
+        pitch = (byte)finalPitch;
 
         ClientboundMoveEntityPacket newPacket;
 
@@ -150,7 +162,7 @@ public class PlayerLookPacketListener extends ProtocolListener
         {
             newPacket = new ClientboundMoveEntityPacket.Rot(
                     sourcePlayer.getEntityId(),
-                    Mth.packDegrees(yaw), Mth.packDegrees(pitch),
+                    yaw, pitch,
                     packet.isOnGround()
             );
         }
@@ -167,7 +179,7 @@ public class PlayerLookPacketListener extends ProtocolListener
             newPacket = new ClientboundMoveEntityPacket.PosRot(
                     sourcePlayer.getEntityId(),
                     packet.getXa(), packet.getYa(), packet.getZa(),
-                    Mth.packDegrees(yaw), Mth.packDegrees(pitch),
+                    yaw, pitch,
                     packet.isOnGround()
             );
         }

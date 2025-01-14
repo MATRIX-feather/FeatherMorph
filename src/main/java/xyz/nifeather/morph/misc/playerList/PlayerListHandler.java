@@ -116,7 +116,7 @@ public class PlayerListHandler extends MorphPluginObject
                         disguiseUUID, profile,
                         true,
                         114514, GameType.DEFAULT_MODE,
-                        null, true, 0, null
+                        null, null
                 )
         );
 
@@ -166,7 +166,7 @@ public class PlayerListHandler extends MorphPluginObject
                             disguiseUUID, profile,
                             true,
                             114514, GameType.DEFAULT_MODE,
-                            null, true, 0, null
+                            null, null
                     )
             );
 

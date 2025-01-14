@@ -1,6 +1,7 @@
 package xyz.nifeather.morph.misc.mobs.ai;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -11,6 +12,8 @@ import org.bukkit.event.entity.EntityTargetEvent;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.utilities.EntityTypeUtils;
 
+import java.util.function.Predicate;
+
 /**
  * 此Goal将被添加到生物，作为附加的TargetGoal执行。
  */
@@ -20,7 +23,7 @@ public class FeatherMorphNearestAttackableGoal extends NearestAttackableTargetGo
 
     public FeatherMorphNearestAttackableGoal(MorphManager morphManager,
                                              net.minecraft.world.entity.Mob mob, Class<Player> targetClass,
-                                             boolean checkVisibility, TargetingConditions.Selector targetPredicate)
+                                             boolean checkVisibility, Predicate<LivingEntity> targetPredicate)
     {
         super(mob, targetClass, checkVisibility, targetPredicate);
 

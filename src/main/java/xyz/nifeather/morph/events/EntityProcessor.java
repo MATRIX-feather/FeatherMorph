@@ -97,7 +97,7 @@ public class EntityProcessor extends MorphPluginObject implements Listener
         addAvoidEntityGoal(goalSelector, pathfinderMob);
 
         // 添加TargetGoal
-        nmsMob.goalSelector.addGoal(-1, new FeatherMorphNearestAttackableGoal(manager, nmsMob, Player.class, true, (living, world) -> true));
+        nmsMob.goalSelector.addGoal(-1, new FeatherMorphNearestAttackableGoal(manager, nmsMob, Player.class, true, living -> true));
     }
 
     private void addAvoidEntityGoal(GoalSelector goalSelector, PathfinderMob sourceMob)

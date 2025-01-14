@@ -6,7 +6,6 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.world.phys.Vec3;
@@ -37,7 +36,7 @@ public class NmsUtils
             throw new IllegalArgumentException("No NMS EntityType for bukkit type '%s'".formatted(bukkitType));
 
         var nmsWorld = ((CraftWorld) targetWorld).getHandle();
-        var nmsEntity = nmsType.create(nmsWorld, EntitySpawnReason.COMMAND);
+        var nmsEntity = nmsType.create(nmsWorld);
 
         if (nmsEntity == null)
             throw new IllegalArgumentException("Unable to spawn entity");

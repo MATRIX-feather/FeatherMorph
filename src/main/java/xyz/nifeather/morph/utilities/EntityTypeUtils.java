@@ -8,8 +8,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -75,7 +75,7 @@ public class EntityTypeUtils
         var locationBlock = spawnLocation.toBlockLocation();
         var spawnBlockLocation = new BlockPos(locationBlock.getBlockX(), locationBlock.getBlockY(), locationBlock.getBlockZ());
 
-        return nmsType.create(serverWorld, EntityTypeUtils::scheduleEntityDiscard, spawnBlockLocation, EntitySpawnReason.COMMAND, false, false);
+        return nmsType.create(serverWorld, EntityTypeUtils::scheduleEntityDiscard, spawnBlockLocation, MobSpawnType.COMMAND, false, false);
     }
 
     @NotNull
@@ -433,7 +433,6 @@ public class EntityTypeUtils
             case SPIDER -> targetType == EntityType.ARMADILLO;
             case SKELETON, WITHER_SKELETON -> targetType == EntityType.WOLF;
             case VILLAGER -> targetType == EntityType.ZOMBIE || targetType == EntityType.ZOMBIE_VILLAGER;
-            case PILLAGER, VINDICATOR, EVOKER, ILLUSIONER -> targetType == EntityType.CREAKING;
 
             default -> false;
         };
