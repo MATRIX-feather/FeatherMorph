@@ -1,14 +1,20 @@
 package xyz.nifeather.morph.commands.subcommands.plugin;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import it.unimi.dsi.fastutil.objects.ObjectImmutableList;
-import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xiamomc.pluginbase.Messages.MessageStore;
 import xyz.nifeather.morph.MorphManager;
-import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.BrigadierCommand;
 import xyz.nifeather.morph.config.MorphConfigManager;
 import xyz.nifeather.morph.events.api.lifecycle.ConfigurationReloadEvent;
 import xyz.nifeather.morph.messages.CommandStrings;
@@ -23,19 +29,19 @@ import xyz.nifeather.morph.network.multiInstance.MultiInstanceService;
 import xyz.nifeather.morph.storage.skill.SkillsConfigurationStoreNew;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class ReloadSubCommand extends MorphPluginObject implements ISubCommand
+public class ReloadSubCommand extends BrigadierCommand
 {
     @Override
     @NotNull
-    public String getCommandName()
+    public String name()
     {
         return "reload";
     }
 
     @Override
-    @NotNull
-    public String getPermissionRequirement()
+    public @Nullable String getPermissionRequirement()
     {
         return CommonPermissions.DO_RELOAD;
     }
@@ -70,63 +76,98 @@ public class ReloadSubCommand extends MorphPluginObject implements ISubCommand
     private final List<String> subcommands = ObjectImmutableList.of("data", "message", "update_message");
 
     @Override
-    public List<String> onTabComplete(List<String> args, CommandSender source)
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
     {
-        if (source.hasPermission(getPermissionRequirement()) && args.size() >= 1)
-            return subcommands.stream().filter(s -> s.startsWith(args.get(0))).toList();
-        else
-            return null;
+        parentBuilder.then(
+                Commands.literal("reload")
+                        .requires(this::checkPermission)
+                        .executes(this::execNoArg)
+                        .then(
+                                Commands.argument("operation", StringArgumentType.greedyString())
+                                        .suggests(this::suggests)
+                                        .executes(this::executes)
+                        )
+        );
+
+        super.registerAsChild(parentBuilder);
     }
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull String[] args)
+    public @NotNull CompletableFuture<Suggestions> suggests(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
     {
-        if (sender.hasPermission(getPermissionRequirement()))
+        return CompletableFuture.supplyAsync(() ->
         {
-            var reloadsData = false;
-            var reloadsMessage = false;
-            var reloadOverwriteNonDefMsg = false;
-            String option = args.length >= 1 ? args[0] : "*";
+            suggestionsBuilder.suggest("*");
 
-            switch (option)
-            {
-                case "data" -> reloadsData = true;
-                case "message" -> reloadsMessage = true;
-                case "update_message" -> reloadsMessage = reloadOverwriteNonDefMsg = true;
-                default -> reloadsMessage = reloadsData = true;
-            }
+            var input = suggestionsBuilder.getRemainingLowerCase();
 
-            if (reloadsData)
-            {
-                config.reload();
-                skills.clearCache();
-                morphManager.reloadConfiguration();
+            var target = subcommands.stream()
+                    .filter(s -> s.startsWith(input))
+                    .toList();
 
-                PlayerSkinProvider.getInstance().reload();
+            target.forEach(suggestionsBuilder::suggest);
 
-                multiInstanceService.onReload();
+            return suggestionsBuilder.build();
+        });
+    }
 
-                recipeManager.reload();
-            }
+    private int execNoArg(CommandContext<CommandSourceStack> context)
+    {
+        this.doReload(context, true, true, false);
+        return 1;
+    }
 
-            if (reloadsMessage)
-            {
-                if (reloadOverwriteNonDefMsg && messageStore instanceof MorphMessageStore morphMessageStore)
-                    morphMessageStore.reloadOverwriteNonDefault();
-                else
-                    messageStore.reloadConfiguration();
+    private void doReload(CommandContext<CommandSourceStack> context,
+                          boolean reloadsData,
+                          boolean reloadsMessage,
+                          boolean reloadOverwriteNonDefMsg)
+    {
+        if (reloadsData)
+        {
+            config.reload();
+            skills.clearCache();
+            morphManager.reloadConfiguration();
 
-                vanillaMessageStore.reloadConfiguration();
-            }
+            PlayerSkinProvider.getInstance().reload();
 
-            var event = new ConfigurationReloadEvent(reloadsData, reloadsMessage);
-            event.callEvent();
+            multiInstanceService.onReload();
 
-            sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.reloadCompleteMessage()));
+            recipeManager.reload();
         }
-        else
-            sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.noPermissionMessage()));
 
-        return true;
+        if (reloadsMessage)
+        {
+            if (reloadOverwriteNonDefMsg && messageStore instanceof MorphMessageStore morphMessageStore)
+                morphMessageStore.reloadOverwriteNonDefault();
+            else
+                messageStore.reloadConfiguration();
+
+            vanillaMessageStore.reloadConfiguration();
+        }
+
+        var event = new ConfigurationReloadEvent(reloadsData, reloadsMessage);
+        event.callEvent();
+
+        var sender = context.getSource().getSender();
+        sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.reloadCompleteMessage()));
+    }
+
+    public int executes(CommandContext<CommandSourceStack> context)
+    {
+        var reloadsData = false;
+        var reloadsMessage = false;
+        var reloadOverwriteNonDefMsg = false;
+        String option = StringArgumentType.getString(context, "operation");
+
+        switch (option)
+        {
+            case "data" -> reloadsData = true;
+            case "message" -> reloadsMessage = true;
+            case "update_message" -> reloadsMessage = reloadOverwriteNonDefMsg = true;
+            default -> reloadsMessage = reloadsData = true;
+        }
+
+        this.doReload(context, reloadsData, reloadsMessage, reloadOverwriteNonDefMsg);
+
+        return 0;
     }
 }

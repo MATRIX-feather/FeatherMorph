@@ -1,17 +1,15 @@
 package xyz.nifeather.morph;
 
 import com.ticxo.modelengine.api.ModelEngineAPI;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.scoreboard.Scoreboard;
-import org.jetbrains.annotations.ApiStatus;
-import xiamomc.pluginbase.ScheduleInfo;
 import xyz.nifeather.morph.abilities.AbilityManager;
-import xyz.nifeather.morph.commands.MorphCommandManager;
+import xyz.nifeather.morph.commands.*;
 import xyz.nifeather.morph.config.MorphConfigManager;
 import xyz.nifeather.morph.events.*;
 import xyz.nifeather.morph.interfaces.IManagePlayerData;
@@ -34,28 +32,30 @@ import xyz.nifeather.morph.skills.MorphSkillHandler;
 import xyz.nifeather.morph.storage.skill.SkillsConfigurationStoreNew;
 import xyz.nifeather.morph.transforms.Transformer;
 import xyz.nifeather.morph.updates.UpdateHandler;
-import xiamomc.pluginbase.Command.CommandHelper;
 import xiamomc.pluginbase.Messages.MessageStore;
 import xiamomc.pluginbase.XiaMoJavaPlugin;
 
 import java.util.Arrays;
 
-public final class MorphPlugin extends XiaMoJavaPlugin
+public final class FeatherMorphMain extends XiaMoJavaPlugin
 {
-    private static MorphPlugin instance;
+    private static FeatherMorphMain instance;
 
     /**
      * 仅当当前对象无法继承MorphPluginObject或不需要完全继承MorphPluginObject时使用
      * @return 插件的实例
      */
     @Deprecated
-    public static MorphPlugin getInstance()
+    public static FeatherMorphMain getInstance()
     {
         return instance;
     }
 
-    public MorphPlugin()
+    private final FeatherMorphBootstrap bootstrap;
+
+    public FeatherMorphMain(FeatherMorphBootstrap bootstrap)
     {
+        this.bootstrap = bootstrap;
         instance = this;
     }
 
@@ -70,7 +70,7 @@ public final class MorphPlugin extends XiaMoJavaPlugin
         return getMorphNameSpace();
     }
 
-    private CommandHelper<MorphPlugin> cmdHelper;
+    private MorphCommandManager cmdHelper;
 
     private MorphManager morphManager;
 
@@ -131,8 +131,8 @@ public final class MorphPlugin extends XiaMoJavaPlugin
         pluginManager = Bukkit.getPluginManager();
         var bukkitVersion = Bukkit.getMinecraftVersion();
 
-        String primaryVersion = "1.21.1";
-        String[] compatVersions = new String[] { primaryVersion, "1.21" };
+        String primaryVersion = "1.21.4";
+        String[] compatVersions = new String[] { primaryVersion };
         if (Arrays.stream(compatVersions).noneMatch(bukkitVersion::equals))
         {
             printImportantWarning(
@@ -236,6 +236,11 @@ public final class MorphPlugin extends XiaMoJavaPlugin
 
         mirrorProcessor = new InteractionMirrorProcessor();
 
+        // Commands
+        var lifecycleManager = this.getLifecycleManager();
+        lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS, event ->
+                cmdHelper.register(event));
+
         //注册EventProcessor
         this.schedule(() ->
         {
@@ -269,6 +274,8 @@ public final class MorphPlugin extends XiaMoJavaPlugin
                     "Note that FeatherMorph does NOT support doing such!",
                     "Before you open any issues, please do a FULL RESTART for your server! We will NOT provide any support after the hot reload!");
         }
+
+        bootstrap.pluginDisabled.set(true);
 
         //调用super.onDisable后依赖管理器会被清空
         //需要在调用前先把一些东西处理好

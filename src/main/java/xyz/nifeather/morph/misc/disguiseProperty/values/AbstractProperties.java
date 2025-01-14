@@ -1,11 +1,16 @@
 package xyz.nifeather.morph.misc.disguiseProperty.values;
 
+import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractProperties
 {
@@ -17,7 +22,7 @@ public abstract class AbstractProperties
         return SingleProperty.of(name, val);
     }
 
-    protected final Logger logger = MorphPlugin.getInstance().getSLF4JLogger();
+    protected final Logger logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
     protected final List<SingleProperty<?>> values = new ObjectArrayList<>();
 
@@ -39,5 +44,23 @@ public abstract class AbstractProperties
     public List<SingleProperty<?>> getValues()
     {
         return new ObjectArrayList<>(values);
+    }
+
+    @Nullable
+    protected abstract Pair<SingleProperty<?>, Object> parseSingleInput(String key, String value);
+
+    public final Map<SingleProperty<?>, Object> readFromPropertiesInput(Map<String, String> propertiesInput)
+    {
+        var map = new ConcurrentHashMap<SingleProperty<?>, Object>();
+
+        propertiesInput.forEach((key, value) ->
+        {
+            var pair = this.parseSingleInput(key, value);
+
+            if (pair != null)
+                map.put(pair.key(), pair.value());
+        });
+
+        return map;
     }
 }

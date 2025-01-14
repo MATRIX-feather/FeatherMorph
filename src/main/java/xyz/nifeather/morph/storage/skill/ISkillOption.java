@@ -3,8 +3,9 @@ package xyz.nifeather.morph.storage.skill;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -51,7 +52,7 @@ public interface ISkillOption
             }
             catch (Throwable t)
             {
-                var logger = MorphPlugin.getInstance().getSLF4JLogger();
+                var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
                 logger.warn("Can't serialize option %s to map: %s".formatted(this, t.getMessage()));
                 t.printStackTrace();
             }
@@ -78,7 +79,7 @@ public interface ISkillOption
                     .filter(f -> f.isAnnotationPresent(Expose.class))
                     .toList();
 
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
             map.forEach((n, v) ->
             {
@@ -171,7 +172,7 @@ public interface ISkillOption
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
             logger.warn("Can't deserialize option %s from map: %s".formatted(this, t.getMessage()));
             t.printStackTrace();
         }
@@ -204,7 +205,7 @@ public interface ISkillOption
         return tryGet(map, key, defaultValue, o -> (T) defaultValue.getClass().cast(o));
     }
 
-    default <T> T tryGet(Map<String, Object> map, String key, Class<T> tClass)
+    default <T> T tryGet(@NotNull Map<String, Object> map, String key, Class<T> tClass)
     {
         return tryGet(map, key, null, tClass::cast);
     }
@@ -220,7 +221,7 @@ public interface ISkillOption
      * @return 目标值
      * @param <T> 值的类型
      */
-    default <T> T tryGet(Map<String, Object> map, String key, T defaultValue, Function<Object, T> castMethod)
+    default <T> T tryGet(@NotNull Map<String, Object> map, String key, T defaultValue, Function<Object, T> castMethod)
     {
         var val = map.get(key);
 
@@ -234,7 +235,7 @@ public interface ISkillOption
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
             logger.warn("Unable to parse key '%s': %s".formatted(key, t.getMessage()));
             t.printStackTrace();
 

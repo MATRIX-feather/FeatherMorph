@@ -1,26 +1,35 @@
 package xyz.nifeather.morph.commands.subcommands.plugin;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import net.minecraft.network.chat.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
-import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.BrigadierCommand;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class QuerySubCommand extends MorphPluginObject implements ISubCommand
+public class QuerySubCommand extends BrigadierCommand
 {
     @Override
-    public String getCommandName()
+    public String name()
     {
         return "query";
     }
@@ -38,61 +47,64 @@ public class QuerySubCommand extends MorphPluginObject implements ISubCommand
     }
 
     @Override
-    public List<String> onTabComplete(List<String> args, CommandSender sender)
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
     {
-        var list = new ObjectArrayList<String>();
-        if (args.size() > 1) return list;
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .then(
+                                Commands.argument("who", ArgumentTypes.player())
+                                        .executes(this::executes)
+                        )
+        );
 
-        var name = args.size() == 1 ? args.get(0) : "";
-
-        for (Player onlinePlayer : Bukkit.getOnlinePlayers())
-        {
-            var playerName = onlinePlayer.getName();
-            if (playerName.toLowerCase().startsWith(name.toLowerCase())) list.add(playerName);
-        }
-
-        return list;
+        super.registerAsChild(parentBuilder);
     }
 
     @Resolved
     private MorphManager manager;
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull String[] args)
+    public int executes(CommandContext<CommandSourceStack> context) throws CommandSyntaxException
     {
-        if (args.length >= 1)
+        var players = context.getArgument("who", PlayerSelectorArgumentResolver.class)
+                .resolve(context.getSource());
+
+        String locale = null;
+
+        var commandSender = context.getSource().getSender();
+
+        if (commandSender instanceof Player player)
+            locale = MessageUtils.getLocale(player);
+
+        if (players.isEmpty())
         {
-            var targetPlayer = Bukkit.getPlayerExact(args[0]);
-            String locale = null;
-
-            if (commandSender instanceof Player player)
-                locale = MessageUtils.getLocale(player);
-
-            if (targetPlayer != null)
-            {
-                var state = manager.getDisguiseStateFor(targetPlayer);
-
-                if (state != null)
-                {
-                    commandSender.sendMessage(MessageUtils.prefixes(commandSender,
-                            CommandStrings.qDisguisedString()
-                                    .withLocale(locale)
-                                    .resolve("who", targetPlayer.getName())
-                                    .resolve("what", state.getDisguiseIdentifier())
-                                    .resolve("storage_status",
-                                            state.showingDisguisedItems()
-                                                    ? CommandStrings.qaShowingDisguisedItemsString()
-                                                    : CommandStrings.qaNotShowingDisguisedItemsString(),
-                                            null)
-                    ));
-                }
-                else
-                {
-                    commandSender.sendMessage(MessageUtils.prefixes(commandSender,
-                            CommandStrings.qNotDisguisedString().resolve("who", targetPlayer.getName())));
-                }
-            }
+            return 0;
         }
-        return true;
+
+        var targetPlayer = players.getFirst();
+
+        var state = manager.getDisguiseStateFor(targetPlayer);
+
+        if (state != null)
+        {
+            commandSender.sendMessage(MessageUtils.prefixes(commandSender,
+                    CommandStrings.qDisguisedString()
+                            .withLocale(locale)
+                            .resolve("who", targetPlayer.getName())
+                            .resolve("what", state.getDisguiseIdentifier())
+                            .resolve("storage_status",
+                                    state.showingDisguisedItems()
+                                            ? CommandStrings.qaShowingDisguisedItemsString()
+                                            : CommandStrings.qaNotShowingDisguisedItemsString(),
+                                    null)
+            ));
+        }
+        else
+        {
+            commandSender.sendMessage(MessageUtils.prefixes(commandSender,
+                    CommandStrings.qNotDisguisedString().resolve("who", targetPlayer.getName())));
+        }
+
+        return 1;
     }
 }

@@ -15,7 +15,7 @@ public class FrogValues extends AnimalValues
 
     private Holder<FrogVariant> getFrogVariant(ResourceKey<FrogVariant> key)
     {
-        return HolderUtils.getHolderFor(key, Registries.FROG_VARIANT);
+        return HolderUtils.getHolderOrThrow(key, Registries.FROG_VARIANT);
     }
 
     public FrogValues()

@@ -1,28 +1,32 @@
 package xyz.nifeather.morph.commands.subcommands.plugin.management;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
+import xyz.nifeather.morph.commands.brigadier.arguments.DisguiseIdentifierArgumentType;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.CommonStrings;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-import java.util.List;
-
-public class RevokeDisguiseSubCommand extends MorphPluginObject implements ISubCommand
+public class RevokeDisguiseSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Override
-    public @NotNull String getCommandName()
+    public @NotNull String name()
     {
         return "revoke";
     }
@@ -34,82 +38,64 @@ public class RevokeDisguiseSubCommand extends MorphPluginObject implements ISubC
     }
 
     @Override
-    public @Nullable String getPermissionRequirement()
+    public @Nullable String permission()
     {
         return CommonPermissions.MANAGE_REVOKE_DISGUISE;
-    }
-
-    @Override
-    public List<String> onTabComplete(List<String> args, CommandSender source)
-    {
-        var list = new ObjectArrayList<String>();
-        if (args.size() > 2) return list;
-
-        var name = args.size() >= 1 ? args.get(0) : "";
-        var target = args.size() == 2 ? args.get(1) : "";
-
-        var onlinePlayers = Bukkit.getOnlinePlayers();
-
-        if (args.size() == 1) //size == 1: 补全玩家
-        {
-            for (var p : onlinePlayers)
-                if (p.getName().toLowerCase().contains(name.toLowerCase())) list.add(p.getName());
-        }
-        else if (args.size() == 2) //size == 2: 补全拥有的伪装
-        {
-            var player = Bukkit.getPlayerExact(name);
-
-            if (player != null)
-            {
-                var disguises = morphs.getAvaliableDisguisesFor(player);
-
-                for (var d : disguises)
-                {
-                    if (d.getKey().toLowerCase().contains(target.toLowerCase()))
-                    {
-                        list.add(d.getKey());
-                    }
-                }
-            }
-        }
-
-        return list;
     }
 
     @Resolved
     private MorphManager morphs;
 
     @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull String[] strings)
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
     {
-        if (strings.length != 2) return false;
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .then(
+                                Commands.argument("who", ArgumentTypes.players())
+                                        .then(
+                                                Commands.argument("id", DisguiseIdentifierArgumentType.ALL_AVAILABLE)
+                                                        .executes(this::execute)
+                                        )
+                        )
+        );
+    }
 
-        var who = Bukkit.getPlayerExact(strings[0]);
-        var targetName = strings[1];
+    private int execute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException
+    {
+        var players = context.getArgument("who", PlayerSelectorArgumentResolver.class)
+                .resolve(context.getSource());
 
-        if (who == null || !who.isOnline())
+        players.forEach(who ->
         {
-            commandSender.sendMessage(MessageUtils.prefixes(commandSender, CommonStrings.playerNotFoundString()));
-            return false;
-        }
+            var targetName = StringArgumentType.getString(context, "id");
 
-        if (!targetName.contains(":"))
-            targetName = "minecraft:" + targetName;
+            var commandSender = context.getSource().getSender();
+            if (!who.isOnline())
+            {
+                commandSender.sendMessage(MessageUtils.prefixes(commandSender, CommonStrings.playerNotFoundString()));
+                return;
+            }
 
-        String finalTargetName = targetName;
-        var info = morphs.getAvaliableDisguisesFor(who)
-                .stream().filter(i -> i.getKey().equals(finalTargetName)).findFirst().orElse(null);
+            if (!targetName.contains(":"))
+                targetName = "minecraft:" + targetName;
 
-        var revokeSuccess = info != null && morphs.revokeMorphFromPlayer(who, info.getKey());
+            String finalTargetName = targetName;
+            var info = morphs.getAvaliableDisguisesFor(who)
+                    .stream().filter(i -> i.getKey().equals(finalTargetName)).findFirst().orElse(null);
 
-        var msg = revokeSuccess
-                ? CommandStrings.revokeSuccessString()
-                : CommandStrings.revokeFailString();
+            var revokeSuccess = info != null && morphs.revokeMorphFromPlayer(who, info.getKey());
 
-        msg.resolve("what", Component.text(targetName)).resolve("who", who.getName());
+            var msg = revokeSuccess
+                    ? CommandStrings.revokeSuccessString()
+                    : CommandStrings.revokeFailString();
 
-        commandSender.sendMessage(MessageUtils.prefixes(commandSender, msg));
+            msg.resolve("what", Component.text(targetName)).resolve("who", who.getName());
 
-        return true;
+            commandSender.sendMessage(MessageUtils.prefixes(commandSender, msg));
+        });
+
+        return 1;
     }
 }

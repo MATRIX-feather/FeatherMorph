@@ -13,7 +13,7 @@ import xiamomc.pluginbase.Bindables.Bindable;
 import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xiamomc.pluginbase.ScheduleInfo;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -21,7 +21,7 @@ import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.messages.UpdateStrings;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-import java.net.URL;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 public class UpdateHandler extends MorphPluginObject
 {
     @Resolved(shouldSolveImmediately = true)
-    private MorphPlugin plugin;
+    private FeatherMorphMain plugin;
 
     private final AtomicInteger requestId = new AtomicInteger(0);
 
@@ -83,6 +83,8 @@ public class UpdateHandler extends MorphPluginObject
 
         var reqId = requestId.addAndGet(1);
 
+        HttpClient httpClient = null;
+
         try
         {
             var urlString = "https://api.modrinth.com"
@@ -95,20 +97,20 @@ public class UpdateHandler extends MorphPluginObject
                     .replace("]", "%5D")
                     .replace("\"", "%22");
 
-            var url = new URL(urlString).toURI();
+            var uri = new URI(urlString);
 
             var request = HttpRequest.newBuilder()
                     .GET()
-                    .uri(url)
+                    .uri(uri)
                     .timeout(Duration.ofSeconds(10))
                     .header("User-Agent", "feathermorph")
                     .build();
 
-            var client = HttpClient.newBuilder()
+            httpClient = HttpClient.newBuilder()
                             .followRedirects(HttpClient.Redirect.ALWAYS)
                             .build();
 
-            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200)
             {
                 logger.error("Failed to check update: Server returned HTTP code {}", response.statusCode());
@@ -128,6 +130,11 @@ public class UpdateHandler extends MorphPluginObject
 
             if (onFinish != null)
                 onFinish.accept(CheckResult.FAIL);
+        }
+        finally
+        {
+            if (httpClient != null)
+                httpClient.close();
         }
     }
 
@@ -221,6 +228,9 @@ public class UpdateHandler extends MorphPluginObject
 
                 return;
             }
+
+            if (compare == VersionHandling.CompareResult.NOT_ON_SAME_CHANNEL)
+                logger.info("We are not on the same channel with the latest release, assuming there is a new update!");
 
             // 提醒服务器关于更新的消息
             var serverOps = Bukkit.getOperators();

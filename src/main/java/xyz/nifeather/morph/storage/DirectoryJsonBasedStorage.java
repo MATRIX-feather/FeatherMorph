@@ -114,19 +114,33 @@ public abstract class DirectoryJsonBasedStorage<T> extends MorphPluginObject
                 .replaceAll("[^a-zA-Z0-9\\-]]", "_");
     }
 
-    /**
-     * @param key The file name
-     * @return NULL if the file does not exist or cannot be read, or there's an error during convert
-     */
     @Nullable
-    public T get(String key)
+    public String getKeyFromFile(File file)
     {
-        key = getPath(key);
+        var root = directoryStorage.getRootDirectory();
+        var rootUri = root.getPath();
+        var fileUri = file.toPath().toUri().getPath();
 
-        var cached = instancesMap.getOrDefault(key, null);
-        if (cached != null) return cached == getDefault() ? null : (T) cached;
+        if (!fileUri.startsWith(rootUri))
+        {
+            logger.error("Trying to access a file that does not belongs to this storage: %s".formatted(file.toURI()));
+            return null;
+        }
 
-        var file = directoryStorage.getFile(key + ".json", false);
+        var relativePath = fileUri.replace(rootUri, "");
+
+        if (relativePath.startsWith("/"))
+            relativePath = relativePath.replaceFirst("/", "");
+
+        var dotIndex = relativePath.lastIndexOf(".");
+
+        return relativePath.substring(0, dotIndex)
+                .replaceFirst("/", ":");
+    }
+
+    @Nullable
+    public T loadFrom(@Nullable File file)
+    {
         if (file == null) return null;
 
         if (!file.canRead())
@@ -147,10 +161,28 @@ public abstract class DirectoryJsonBasedStorage<T> extends MorphPluginObject
             return null;
         }
 
+        return obj == null ? null : (T) obj;
+    }
+
+    /**
+     * @param key The file name
+     * @return NULL if the file does not exist or cannot be read, or there's an error during convert
+     */
+    @Nullable
+    public T get(String key)
+    {
+        key = getPath(key);
+
+        var cached = instancesMap.getOrDefault(key, null);
+        if (cached != null) return cached == getDefault() ? null : (T) cached;
+
+        var file = directoryStorage.getFile(key + ".json", false);
+        var obj = loadFrom(file);
+
         if (obj == null)
             obj = getDefault();
 
         this.instancesMap.put(key, (T) obj);
-        return obj == getDefault() ? null : (T) obj;
+        return obj;
     }
 }

@@ -1,18 +1,20 @@
 package xyz.nifeather.morph.commands;
 
+import io.papermc.paper.command.brigadier.Commands;
 import it.unimi.dsi.fastutil.objects.ObjectList;
-import xiamomc.pluginbase.Command.ISubCommand;
+import org.jetbrains.annotations.Unmodifiable;
 import xiamomc.pluginbase.Messages.FormattableMessage;
-import xyz.nifeather.morph.commands.subcommands.MorphSubCommandHandler;
+import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.commands.subcommands.plugin.*;
 import xyz.nifeather.morph.messages.HelpStrings;
 
 import java.util.List;
 
-public class MorphPluginCommand extends MorphSubCommandHandler
+public class MorphPluginCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Override
-    public String getCommandName()
+    public String name()
     {
         return "feathermorph";
     }
@@ -20,15 +22,22 @@ public class MorphPluginCommand extends MorphSubCommandHandler
     private final List<String> aliases = List.of("fm");
 
     @Override
-    public List<String> getAliases()
+    public boolean register(Commands dispatcher)
     {
-        return aliases;
+        this.registerAs("fm", dispatcher);
+        this.registerAs("feathermorph", dispatcher);
+
+        return true;
     }
 
-    @Override
-    public String getPermissionRequirement()
+    private void registerAs(String name, Commands dispatcher)
     {
-        return null;
+        var cmd = Commands.literal(name);
+
+        for (IConvertibleBrigadier child : this.children)
+            child.registerAsChild(cmd);
+
+        dispatcher.register(cmd.build());
     }
 
     @Override
@@ -37,7 +46,7 @@ public class MorphPluginCommand extends MorphSubCommandHandler
         return HelpStrings.mmorphDescription();
     }
 
-    private final List<ISubCommand> subCommands = ObjectList.of(
+    private final List<IConvertibleBrigadier> children = ObjectList.of(
             new ReloadSubCommand(),
             new HelpSubCommand(),
             new ToggleSelfSubCommand(),
@@ -50,13 +59,12 @@ public class MorphPluginCommand extends MorphSubCommandHandler
             new LookupSubCommand(),
             new SkinCacheSubCommand(),
             new MakeSkillItemSubCommand()
-            //new BackendSubCommand()
     );
 
     @Override
-    public List<ISubCommand> getSubCommands()
+    public @Unmodifiable List<? extends IHaveFormattableHelp> children()
     {
-        return subCommands;
+        return children;
     }
 
     private final List<FormattableMessage> notes = List.of();

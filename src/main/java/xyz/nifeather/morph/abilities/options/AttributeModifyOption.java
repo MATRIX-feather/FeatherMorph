@@ -66,23 +66,30 @@ public class AttributeModifyOption implements ISkillOption
     {
         var instance = new AttributeModifyOption();
 
-        var modifiers = tryGet(map, "modifiers", List.class);
+        var modifiers = map == null ? null : tryGet(map, "modifiers", List.class);
         var defaultInfo = new AttributeInfo();
 
-        if (modifiers != null) modifiers.forEach(o ->
+        if (modifiers != null)
         {
-            if (!(o instanceof Map<?, ?> optionMap)) return;
-
-            var mmap = new Object2ObjectOpenHashMap<String, Object>();
-
-            optionMap.forEach((k, v) ->
+            modifiers.forEach(o ->
             {
-                if (!(k instanceof String kStr)) return;
-                mmap.put(kStr, v);
-            });
+                if (!(o instanceof Map<?, ?> optionMap)) return;
 
-            instance.modifiers.add((AttributeInfo) defaultInfo.fromMap(mmap));
-        });
+                var mmap = new Object2ObjectOpenHashMap<String, Object>();
+
+                optionMap.forEach((k, v) ->
+                {
+                    if (!(k instanceof String kStr)) return;
+                    mmap.put(kStr, v);
+                });
+
+                instance.modifiers.add((AttributeInfo) defaultInfo.fromMap(mmap));
+            });
+        }
+        else
+        {
+            return null;
+        }
 
         return instance;
     }

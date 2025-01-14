@@ -18,7 +18,7 @@ public class CatValues extends TameableAnimalValues
 
     private Holder<CatVariant> getCatVariant(ResourceKey<CatVariant> key)
     {
-        return HolderUtils.getHolderFor(key, Registries.CAT_VARIANT);
+        return HolderUtils.getHolderOrThrow(key, Registries.CAT_VARIANT);
     }
 
     public CatValues()

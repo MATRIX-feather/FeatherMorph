@@ -7,7 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.inventory.EntityEquipment;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.utilities.ItemUtils;
 
 public class ProtocolEquipment
@@ -52,7 +52,7 @@ public class ProtocolEquipment
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
             logger.warn("Can't generate equipment pair: " + t.getMessage());
         }

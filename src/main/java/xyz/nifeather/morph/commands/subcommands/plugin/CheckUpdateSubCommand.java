@@ -1,30 +1,55 @@
 package xyz.nifeather.morph.commands.subcommands.plugin;
 
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.messages.UpdateStrings;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 import xyz.nifeather.morph.updates.UpdateHandler;
 
-public class CheckUpdateSubCommand extends MorphPluginObject implements ISubCommand
+public class CheckUpdateSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Override
-    public @NotNull String getCommandName()
+    public @NotNull String name()
     {
         return "check_update";
     }
 
     @Override
-    public @Nullable String getPermissionRequirement()
+    public @Nullable String permission()
     {
         return CommonPermissions.CHECK_UPDATE;
+    }
+
+    @Override
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
+    {
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .executes(this::execute)
+        );
+    }
+
+    private int execute(CommandContext<CommandSourceStack> context)
+    {
+        var sender = context.getSource().getSender();
+
+        sender.sendMessage(MessageUtils.prefixes(sender, UpdateStrings.checkingUpdate()));
+        handler.checkUpdate(true, result ->
+                this.onRequestFinish(result, sender), sender);
+
+        return 1;
     }
 
     /**
@@ -40,16 +65,6 @@ public class CheckUpdateSubCommand extends MorphPluginObject implements ISubComm
 
     @Resolved
     private UpdateHandler handler;
-
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull String[] args)
-    {
-        sender.sendMessage(MessageUtils.prefixes(sender, UpdateStrings.checkingUpdate()));
-        handler.checkUpdate(true, result ->
-                this.onRequestFinish(result, sender), sender);
-
-        return true;
-    }
 
     private void onRequestFinish(UpdateHandler.CheckResult result, CommandSender sender)
     {

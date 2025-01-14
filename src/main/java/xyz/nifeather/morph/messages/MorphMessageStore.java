@@ -6,7 +6,7 @@ import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
 import xiamomc.pluginbase.Annotations.Initializer;
@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MorphMessageStore extends MessageStore<MorphPlugin>
+public class MorphMessageStore extends MessageStore<FeatherMorphMain>
 {
     private final List<Class<? extends IStrings>> strings = ObjectList.of(
             CommonStrings.class,
@@ -200,6 +200,6 @@ public class MorphMessageStore extends MessageStore<MorphPlugin>
     @Override
     protected String getPluginNamespace()
     {
-        return MorphPlugin.getMorphNameSpace();
+        return FeatherMorphMain.getMorphNameSpace();
     }
 }

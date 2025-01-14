@@ -1,18 +1,18 @@
 package xyz.nifeather.morph.network.server;
 
-import com.google.common.io.ByteStreams;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.text.Component;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.resources.ResourceLocation;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.morph.network.*;
 import xiamomc.morph.network.commands.C2S.*;
@@ -29,7 +29,7 @@ import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Bindables.Bindable;
 import xyz.nifeather.morph.MorphManager;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -40,12 +40,13 @@ import xyz.nifeather.morph.messages.MorphStrings;
 import xyz.nifeather.morph.misc.DisguiseState;
 import xyz.nifeather.morph.misc.NetworkingHelper;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
+import xyz.nifeather.morph.network.server.handlers.CommandPacketHandler;
+import xyz.nifeather.morph.network.server.handlers.ICommandPacketHandler;
+import xyz.nifeather.morph.network.server.handlers.LegacyCommandPacketHandler;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MorphClientHandler extends MorphPluginObject implements BasicClientHandler<Player>
@@ -56,29 +57,59 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     private final Bindable<Boolean> forceClient = new Bindable<>(false);
     private final Bindable<Boolean> forceTargetVersion = new Bindable<>(false);
 
-    private record MorphCustomPacketPayload(ResourceLocation channel, byte[] data) implements CustomPacketPayload
+    public boolean allowClient()
     {
-        @Override
-        public Type<? extends CustomPacketPayload> type()
-        {
-            return null;
-        }
+        return allowClient.get();
     }
 
-    private void sendPacket(String channel, Player player, byte[] message)
+    public boolean logInComingPackets()
     {
-        if (channel == null || player == null || message == null)
+        return logInComingPackets.get();
+    }
+
+    private void sendPacket(String channel, Player player, String message, boolean legacy)
+    {
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        if (!legacy)
+            buffer.writeUtf(message);
+        else
+            buffer.writeBytes(message.getBytes(StandardCharsets.UTF_8));
+
+        if (logOutGoingPackets.get())
+            logPacket(true, player, channel, message, buffer.readableBytes());
+
+        this.sendPacketRaw(channel, player, buffer, false);
+    }
+
+    private void sendPacket(String channel, Player player, int integer)
+    {
+        var buffer = new FriendlyByteBuf(Unpooled.buffer()).writeInt(integer);
+
+        if (logOutGoingPackets.get())
+            logPacket(true, player, channel, "" + integer, buffer.array().length);
+
+        this.sendPacketRaw(channel, player, buffer, false);
+    }
+
+    private void sendPacketRaw(String channel, Player player, ByteBuf buffer)
+    {
+        sendPacketRaw(channel, player, buffer, true);
+    }
+
+    private void sendPacketRaw(String channel, Player player, ByteBuf buffer, boolean logData)
+    {
+        if (channel == null || player == null || buffer == null)
             throw new IllegalArgumentException("Null channel/player/message");
 
         if (!player.isOnline() || !(player instanceof CraftPlayer craftPlayer)) return;
 
-        if (logOutGoingPackets.get())
-            logPacket(true, player, channel, message);
+        if (logData && logOutGoingPackets.get())
+            logPacket(true, player, channel, buffer.array());
 
         try
         {
             var channelLocation = ResourceLocation.parse(channel);
-            var packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(channelLocation, Unpooled.wrappedBuffer(message)));
+            var packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(channelLocation, buffer));
 
             craftPlayer.getHandle().connection.send(packet);
         }
@@ -105,15 +136,15 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     private void logPacket(boolean isOutGoingPacket, Player player, String channel, byte[] data)
     {
         String msg = "<???>";
-        var input = ByteStreams.newDataInput(data);
+        var input = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
 
         try
         {
-            msg = input.readUTF();
+            msg = input.readUtf();
         }
         catch (Throwable t)
         {
-            msg = new String(data, StandardCharsets.UTF_8);
+            msg = "<base64> " + Base64.getEncoder().encodeToString(data);
             //logger.warn("Unable to convert byte data to string: " + t.getMessage());
         }
 
@@ -134,11 +165,21 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     }
 
     private final CommandRegistries registries = new CommandRegistries();
+
+    @ApiStatus.Internal
+    public CommandRegistries getRegistries()
+    {
+        return this.registries;
+    }
+
     private final Bindable<Boolean> modifyBoundingBoxes = new Bindable<>(false);
     private final Bindable<Boolean> useClientRenderer = new Bindable<>(false);
+    private final Bindable<Boolean> debugOutput = new Bindable<>(false);
+
+    private static final String newProtocolIdentify = "1_21_3_packetbuf";
 
     @Initializer
-    private void load(MorphPlugin plugin, MorphConfigManager configManager)
+    private void load(FeatherMorphMain plugin, MorphConfigManager configManager)
     {
         // Constants.initialize(true);
 
@@ -153,122 +194,21 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
 
         var messenger = Bukkit.getMessenger();
 
-        // 注册init频道处理
-        messenger.registerIncomingPluginChannel(plugin, initializeChannel, (cN, player, data) ->
-        {
-            if (!allowClient.get() || this.getPlayerConnectionState(player).greaterThan(InitializeState.HANDSHAKE)) return;
+        // 注册incoming频道
+        messenger.registerIncomingPluginChannel(plugin, MessageChannel.initializeChannel, this::handleInitializeMessage);
 
-            if (logInComingPackets.get())
-                logPacket(false, player, initializeChannel, data);
+        messenger.registerIncomingPluginChannel(plugin, MessageChannel.versionChannel, this::handleVersionMessage);
+        messenger.registerIncomingPluginChannel(plugin, MessageChannel.commandChannel, this::handleCommandMessage);
 
-            playerConnectionStates.put(player, InitializeState.HANDSHAKE);
-
-            this.sendPacket(initializeChannel, player, "".getBytes(StandardCharsets.UTF_8));
-        });
-
-        // 注册api频道处理
-        messenger.registerIncomingPluginChannel(plugin, versionChannel, (cN, player, data) ->
-        {
-            if (!allowClient.get()) return;
-
-            var connectionState = this.getPlayerConnectionState(player);
-
-            //初始化之前忽略API请求
-            if (connectionState.worseThan(InitializeState.HANDSHAKE)) return;
-
-            //尝试获取API版本
-            int clientVersion = 1;
-
-            try
-            {
-                var clientVersionStr = new String(data, StandardCharsets.UTF_8);
-
-                if (logInComingPackets.get())
-                    logPacket(false, player, versionChannel, clientVersionStr, data.length);
-
-                clientVersion = Integer.parseInt(clientVersionStr);
-            }
-            catch (Throwable t)
-            {
-                logger.error("Failed to decode client version: " + t.getMessage());
-            }
-
-            var minimumApiVersion = this.minimumApiVersion;
-
-            if (forceTargetVersion.get()) minimumApiVersion = targetApiVersion;
-
-            //如果客户端版本低于最低能接受的版本或高于当前版本，拒绝初始化
-            if (clientVersion < minimumApiVersion || clientVersion > Constants.PROTOCOL_VERSION)
-            {
-                unInitializePlayer(player);
-
-                //player.sendMessage(MessageUtils.prefixes(player, MorphStrings.clientVersionMismatchString()));
-                logger.info(player.getName() + " joined with incompatible client API version: " + clientVersion + " (This server requires " + targetApiVersion + ")");
-
-                var msg = forceTargetVersion.get() ? MorphStrings.clientVersionMismatchKickString() : MorphStrings.clientVersionMismatchString();
-                msg.withLocale(MessageUtils.getLocale(player))
-                        .resolve("minimum_version", Component.text(minimumApiVersion))
-                        .resolve("player_version", Component.text(clientVersion));
-
-                if (forceTargetVersion.get())
-                    player.kick(msg.toComponent());
-                else
-                    player.sendMessage(msg.toComponent());
-
-                return;
-            }
-
-            logger.info(player.getName() + " joined with API version " + clientVersion);
-
-            this.getPlayerOption(player, true).clientApiVersion = clientVersion;
-            playerConnectionStates.put(player, InitializeState.API_CHECKED);
-
-            var out = ByteStreams.newDataOutput();
-            out.writeInt(targetApiVersion);
-            this.sendPacket(versionChannel, player, out.toByteArray());
-        });
-
-        // 注册command频道处理
-        messenger.registerIncomingPluginChannel(plugin, commandChannel, (cN, player, data) ->
-        {
-            if (!allowClient.get()) return;
-
-            //在API检查完成之前忽略客户端的所有指令
-            if (this.getPlayerConnectionState(player).worseThan(InitializeState.API_CHECKED))
-            {
-                return;
-            }
-
-            if (logInComingPackets.get())
-                logPacket(false, player, commandChannel, data);
-
-            var input = new String(data, StandardCharsets.UTF_8);
-            var str = input.split(" ", 2);
-
-            if (str.length < 1)
-            {
-                logger.warn("Incomplete server command: " + input);
-                return;
-            }
-
-            var baseCommand = str[0];
-            var c2sCommand = registries.createC2SCommand(baseCommand, str.length == 2 ? str[1] : "");
-
-            if (c2sCommand != null)
-            {
-                c2sCommand.setOwner(player);
-                c2sCommand.onCommand(this);
-            }
-            else
-            {
-                logger.warn("Unknown server command: " + baseCommand);
-            }
-        });
+        // Legacy incoming channels
+        // todo: Remove legacy packetbuf support along with 1.22 update
+        messenger.registerIncomingPluginChannel(plugin, MessageChannel.versionChannelLegacy, this::handleVersionMessageLegacy);
+        messenger.registerIncomingPluginChannel(plugin, MessageChannel.commandChannelLegacy, this::handleCommandMessageLegacy);
 
         // 注册outgoing频道
-        messenger.registerOutgoingPluginChannel(plugin, initializeChannel);
-        messenger.registerOutgoingPluginChannel(plugin, versionChannel);
-        messenger.registerOutgoingPluginChannel(plugin, commandChannel);
+        messenger.registerOutgoingPluginChannel(plugin, MessageChannel.initializeChannel);
+        messenger.registerOutgoingPluginChannel(plugin, MessageChannel.versionChannel);
+        messenger.registerOutgoingPluginChannel(plugin, MessageChannel.commandChannel);
 
         configManager.bind(allowClient, ConfigOption.ALLOW_CLIENT);
         //configManager.bind(forceClient, ConfigOption.FORCE_CLIENT);
@@ -280,6 +220,8 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         configManager.bind(modifyBoundingBoxes, ConfigOption.MODIFY_BOUNDING_BOX);
 
         configManager.bind(useClientRenderer, ConfigOption.USE_CLIENT_RENDERER);
+
+        configManager.bind(debugOutput, ConfigOption.DEBUG_OUTPUT);
 
         modifyBoundingBoxes.onValueChanged((o, n) ->
         {
@@ -302,46 +244,221 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
                 this.sendUnAuth(players);
         });
 
-        Bukkit.getOnlinePlayers().forEach(p -> playerStateMap.put(p, ConnectionState.JOINED));
+        Bukkit.getOnlinePlayers().forEach(p ->
+        {
+            var session = this.getOrCreateSession(p);
+            session.connectionState = ConnectionState.JOINED;
+        });
     }
 
     private final AtomicBoolean scheduledReauthPlayers = new AtomicBoolean(false);
 
-    //region wait until ready
-
-    public void waitUntilConnected(Player player, Runnable r)
+    public void handleInitializeMessage(@NotNull String cN, @NotNull Player player, byte @NotNull [] data)
     {
-        var bool = playerConnectionStates.getOrDefault(player, null);
+        if (!allowClient.get() || this.getPlayerConnectionState(player).greaterThan(InitializeState.HANDSHAKE)) return;
 
-        if (bool == null)
+        if (logInComingPackets.get())
+            logPacket(false, player, MessageChannel.initializeChannel, data);
+
+        boolean isLegacyBuf = false;
+
+        try
         {
-            //logger.info("should remove for " + player.getName());
+            var buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
+
+            var utfData = Arrays.stream(buffer.readUtf().split(" ")).toList();
+
+            // 似乎有点多余，因为使用新版序列化方法的客户端总是会发送这个id
+            if (utfData.stream().noneMatch(s -> s.equals(newProtocolIdentify)))
+            {
+                isLegacyBuf = true;
+                logger.info("'%s' is using a legacy client.".formatted(player.getName()));
+                //rejectPlayer(player);
+                //return;
+            }
+
+            buffer.clear();
+        }
+        catch (Throwable t)
+        {
+            isLegacyBuf = true;
+            logger.info("'%s' is using a legacy client.".formatted(player.getName()));
+
+            if (debugOutput.get())
+            {
+                logger.info("Unable to decode packet. Is '%s' using a legacy client? %s".formatted(player.getName(), t.getMessage()));
+                t.printStackTrace();
+            }
+
+            //rejectPlayer(player);
+            //return;
+        }
+
+        var session = getOrCreateSession(player);
+        session.initializeState = InitializeState.HANDSHAKE;
+        session.isLegacyPacketBuf = isLegacyBuf;
+
+        this.sendPacket(MessageChannel.initializeChannel, player, newProtocolIdentify, isLegacyBuf);
+    }
+
+    private void handleVersionInput(ICommandPacketHandler commandPacketHandler, String sourceChannel, Player player, byte[] data)
+    {
+        if (!allowClient.get()) return;
+
+        if (logInComingPackets.get())
+            logPacket(false, player, sourceChannel, data);
+
+        var result = commandPacketHandler.handleVersionData(player, data);
+        if (!result.success())
+        {
+            logger.info("Packet decode failed for player %s, Rejecting...".formatted(player.getName()));
+            rejectPlayer(player);
             return;
         }
 
-        if (bool == InitializeState.DONE)
+        int clientVersion = result.result();
+
+        var minimumApiVersion = this.minimumApiVersion;
+
+        if (forceTargetVersion.get()) minimumApiVersion = targetApiVersion;
+
+        //如果客户端版本低于最低能接受的版本或高于当前版本，拒绝初始化
+        if (clientVersion < minimumApiVersion || clientVersion > Constants.PROTOCOL_VERSION)
         {
-            r.run();
+            unInitializePlayer(player);
+
+            //player.sendMessage(MessageUtils.prefixes(player, MorphStrings.clientVersionMismatchString()));
+            logger.info(player.getName() + " joined with incompatible client API version: " + clientVersion + " (This server requires " + targetApiVersion + ")");
+
+            var msg = forceTargetVersion.get() ? MorphStrings.clientVersionMismatchKickString() : MorphStrings.clientVersionMismatchString();
+            msg.withLocale(MessageUtils.getLocale(player))
+                    .resolve("minimum_version", Component.text(minimumApiVersion))
+                    .resolve("player_version", Component.text(clientVersion));
+
+            if (forceTargetVersion.get())
+                player.kick(msg.toComponent());
+            else
+                player.sendMessage(msg.toComponent());
+
+            return;
+        }
+
+        logger.info(player.getName() + " joined with API version " + clientVersion);
+
+        this.getPlayerOption(player, true).clientApiVersion = clientVersion;
+
+        var session = this.getOrCreateSession(player);
+        session.initializeState = InitializeState.API_CHECKED;
+
+        if (!session.isLegacyPacketBuf)
+            this.sendPacket(MessageChannel.versionChannel, player, targetApiVersion);
+        else
+            this.sendPacket(MessageChannel.versionChannelLegacy, player, targetApiVersion);
+    }
+
+    private void handleCommandInput(ICommandPacketHandler commandPacketHandler, String sourceChannel, Player player, byte[] data)
+    {
+        if (!allowClient.get()) return;
+
+        if (logInComingPackets.get())
+            logPacket(false, player, sourceChannel, data);
+
+        var session = getSession(player);
+        if (session == null || session.initializeState.worseThan(InitializeState.API_CHECKED)) return;
+
+        var result = commandPacketHandler.handleCommandData(player, data);
+        if (!result.success())
+        {
+            logger.info("Packet decode failed for player %s, Rejecting...".formatted(player.getName()));
+            rejectPlayer(player);
+            return;
+        }
+
+        String input = result.result();
+
+        var str = input.split(" ", 2);
+
+        if (str.length < 1)
+        {
+            logger.warn("Incomplete server command: " + input);
+            return;
+        }
+
+        var baseCommand = str[0];
+        var c2sCommand = registries.createC2SCommand(baseCommand, str.length == 2 ? str[1] : "");
+
+        if (c2sCommand != null)
+        {
+            c2sCommand.setOwner(player);
+            c2sCommand.onCommand(this);
         }
         else
         {
-            //logger.info(player.getName() + " not ready! " + bool);
-            this.addSchedule(() -> waitUntilConnected(player, r));
+            logger.warn("Unknown server command '%s', rejecting...".formatted(baseCommand));
+            rejectPlayer(player);
         }
     }
+
+    private void handleCommandMessageLegacy(@NotNull String cN, @NotNull Player player, @NotNull byte[] data)
+    {
+        this.handleCommandInput(LegacyCommandPacketHandler.INSTANCE, cN, player, data);
+    }
+
+    private void handleVersionMessageLegacy(@NotNull String cN, @NotNull Player player, @NotNull byte[] data)
+    {
+        this.handleVersionInput(LegacyCommandPacketHandler.INSTANCE, cN, player, data);
+    }
+
+    public void handleVersionMessage(@NotNull String cN, @NotNull Player player, byte @NotNull [] data)
+    {
+        this.handleVersionInput(CommandPacketHandler.INSTANCE, cN, player, data);
+    }
+
+    public void handleCommandMessage(@NotNull String cN, @NotNull Player player, byte @NotNull [] data)
+    {
+        this.handleCommandInput(CommandPacketHandler.INSTANCE, cN, player, data);
+    }
+
+    private final Map<Player, PlayerSession> playerSessionMap = new ConcurrentHashMap<>();
+
+    private PlayerSession createSession(Player player, boolean isUsingLegacyBuf)
+    {
+        var uuid = player.getUniqueId();
+
+        var cached = playerSessionMap.getOrDefault(player, null);
+
+        if (cached != null)
+            return cached;
+
+        var instance = PlayerSession.SessionBuilder
+                .builder(player)
+                .isLegacy(isUsingLegacyBuf)
+                .build();
+
+        playerSessionMap.put(player, instance);
+        return instance;
+    }
+
+    @Nullable
+    public PlayerSession getSession(Player player)
+    {
+        return playerSessionMap.getOrDefault(player, null);
+    }
+
+    @NotNull
+    public PlayerSession getOrCreateSession(Player player)
+    {
+        return createSession(player, false);
+    }
+
+    //region wait until ready
 
     @ApiStatus.Internal
     public void waitUntilReady(Player player, Runnable r)
     {
-        var bool = playerStateMap.getOrDefault(player, null);
+        var session = getOrCreateSession(player);
 
-        if (bool == null)
-        {
-            //logger.info("should remove for " + player.getName());
-            return;
-        }
-
-        if (bool == ConnectionState.JOINED)
+        if (session.connectionState == ConnectionState.JOINED)
         {
             r.run();
         }
@@ -352,18 +469,13 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         }
     }
 
-    private final Map<Player, ConnectionState> playerStateMap = new Object2ObjectOpenHashMap<>();
-
     public void markPlayerReady(Player player)
     {
-        playerStateMap.put(player, ConnectionState.JOINED);
+        var session = getOrCreateSession(player);
+        session.connectionState = ConnectionState.JOINED;
     }
 
     //endregion
-
-    private final Map<UUID, PlayerOptions<Player>> playerOptionMap = new Object2ObjectOpenHashMap<>();
-
-    private final Map<Player, InitializeState> playerConnectionStates = new Object2ObjectOpenHashMap<>();
 
     /**
      * 刷新某个玩家的客户端的伪装列表
@@ -436,6 +548,14 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         sendReAuth(players);
     }
 
+    public void rejectPlayer(Player player)
+    {
+        logger.info("Rejecting player " + player.getName());
+        player.sendMessage(MessageUtils.prefixes(player, MorphStrings.unsupportedClientBehavior()));
+
+        this.unInitializePlayer(player);
+    }
+
     /**
      * 反初始化玩家
      *
@@ -445,12 +565,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     {
         this.sendCommand(player, new S2CUnAuthCommand(), true);
 
-        synchronized (this)
-        {
-            playerOptionMap.remove(player.getUniqueId());
-            playerStateMap.remove(player);
-            playerConnectionStates.remove(player);
-        }
+        this.playerSessionMap.remove(player);
 
         var playerConfig = manager.getPlayerMeta(player);
         var state = manager.getDisguiseStateFor(player);
@@ -468,8 +583,12 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
 
         players.forEach(p ->
         {
-            playerStateMap.put(p, ConnectionState.JOINED);
-            playerConnectionStates.put(p, InitializeState.NOT_CONNECTED);
+            var session = this.getSession(p);
+
+            if (session == null) return;
+
+            session.connectionState = ConnectionState.JOINED;
+            session.initializeState = InitializeState.NOT_CONNECTED;
 
             sendCommand(p, new S2CReAuthCommand(), true);
         });
@@ -487,12 +606,6 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
 
     //endregion Auth/UnAuth
 
-    private static final String nameSpace = MorphPlugin.getMorphNameSpace();
-
-    public static final String initializeChannel = nameSpace + ":init";
-    public static final String versionChannel = nameSpace + ":version";
-    public static final String commandChannel = nameSpace + ":commands";
-
     //region Player Status/Properties/Option
 
     public boolean isFutureClientProtocol(Player player, int version)
@@ -508,7 +621,10 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
      */
     public InitializeState getPlayerConnectionState(Player player)
     {
-        return playerConnectionStates.getOrDefault(player, InitializeState.NOT_CONNECTED);
+        var session = this.getSession(player);
+        if (session == null) return InitializeState.NOT_CONNECTED;
+
+        return session.initializeState;
     }
 
     /**
@@ -531,23 +647,26 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
      */
     public boolean clientInitialized(Player player)
     {
-        return playerConnectionStates.getOrDefault(player, null) == InitializeState.DONE;
+        var session = this.getSession(player);
+        if (session == null) return false;
+
+        return session.initializeState == InitializeState.DONE;
     }
 
     private final PlayerOptions<Player> nilRecord = new PlayerOptions<Player>(null);
 
+    @Nullable
+    @Contract("_, false -> null; _, true -> !null")
     public PlayerOptions<Player> getPlayerOption(Player player, boolean createIfNull)
     {
-        var option = this.getPlayerOption(player);
+        var session = getSession(player);
 
-        if (option != null) return option;
-        else if (!createIfNull) return null;
+        if (session != null)
+            return session.options;
+        else if (!createIfNull)
+            return null;
 
-        option = new PlayerOptions<>(player);
-
-        playerOptionMap.put(player.getUniqueId(), option);
-
-        return option;
+        return createSession(player, false).options;
     }
 
     /**
@@ -559,19 +678,27 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     public PlayerOptions<Player> getPlayerOption(Player player)
     {
         var uuid = player.getUniqueId();
-        return playerOptionMap.getOrDefault(uuid, null);
+
+        var session = getSession(player);
+        if (session == null) return null;
+
+        return session.options;
     }
 
     @Override
     public int getPlayerVersion(Player player)
     {
-        return this.playerOptionMap.getOrDefault(player.getUniqueId(), nilRecord).clientApiVersion;
+        var option = getPlayerOption(player);
+
+        return option == null ? -1 : option.clientApiVersion;
     }
 
     @Override
     public InitializeState getInitializeState(Player player)
     {
-        return playerConnectionStates.getOrDefault(player, InitializeState.NOT_CONNECTED);
+        var session = getSession(player);
+
+        return session == null ? InitializeState.NOT_CONNECTED : session.initializeState;
     }
 
     @Override
@@ -589,7 +716,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     @Override
     public List<Player> getConnectedPlayers()
     {
-        return new ObjectArrayList<>(playerConnectionStates.keySet());
+        return playerSessionMap.keySet().stream().toList();
     }
 
     //endregion Player Status/Option
@@ -607,7 +734,14 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
 
         if ((!allowClient.get() || !this.clientConnected(player)) && !forceSend) return false;
 
-        this.sendPacket(commandChannel, player, cmd.getBytes(StandardCharsets.UTF_8));
+        var session = this.getSession(player);
+        var isLegacy = session == null || session.isLegacyPacketBuf;
+
+        if (!isLegacy)
+            this.sendPacket(MessageChannel.commandChannel, player, cmd, false);
+        else
+            this.sendPacket(MessageChannel.commandChannelLegacy, player, cmd, true);
+
         return true;
     }
 
@@ -626,50 +760,48 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
 
         if (this.clientInitialized(player)) return;
 
-        if (playerStateMap.getOrDefault(player, null) != ConnectionState.JOINED)
-            playerStateMap.put(player, ConnectionState.CONNECTING);
+        var session = getOrCreateSession(player);
+        if (session.connectionState != ConnectionState.JOINED)
+            session.connectionState = ConnectionState.CONNECTING;
 
-        this.waitUntilReady(player, () ->
+        //再检查一遍玩家有没有初始化完成
+        if (clientInitialized(player))
+            return;
+
+        var config = manager.getPlayerMeta(player);
+        var list = config.getUnlockedDisguiseIdentifiers();
+        refreshPlayerClientMorphs(list, player);
+
+        var state = manager.getDisguiseStateFor(player);
+
+        if (state != null)
+            manager.refreshClientState(state);
+
+        sendCommand(player, new S2CSetSelfViewingCommand(config.showDisguiseToSelf));
+        sendCommand(player, new S2CSetModifyBoundingBoxCommand(modifyBoundingBoxes.get()));
+
+        if (player.hasPermission(CommonPermissions.DISGUISE_REVEALING))
+            sendCommand(player, manager.genMapCommand());
+
+        //TODO: 独立客户端渲染器
+        if (state != null && state.getDisguiseWrapper().getBackend().dependsClientRenderer())
         {
-            //再检查一遍玩家有没有初始化完成
-            if (clientInitialized(player))
-                return;
+            sendCommand(player, manager.genRenderSyncCommand());
 
-            var config = manager.getPlayerMeta(player);
-            var list = config.getUnlockedDisguiseIdentifiers();
-            refreshPlayerClientMorphs(list, player);
-
-            var state = manager.getDisguiseStateFor(player);
-
-            if (state != null)
-                manager.refreshClientState(state);
-
-            sendCommand(player, new S2CSetSelfViewingCommand(config.showDisguiseToSelf));
-            sendCommand(player, new S2CSetModifyBoundingBoxCommand(modifyBoundingBoxes.get()));
-
-            if (player.hasPermission(CommonPermissions.DISGUISE_REVEALING))
-                sendCommand(player, manager.genMapCommand());
-
-            //TODO: 独立客户端渲染器
-            if (state != null && state.getDisguiseWrapper().getBackend().dependsClientRenderer())
+            var disguises = manager.getActiveDisguises();
+            for (DisguiseState bindingState : disguises)
             {
-                sendCommand(player, manager.genRenderSyncCommand());
+                var bindingPlayer = bindingState.getPlayer();
 
-                var disguises = manager.getActiveDisguises();
-                for (DisguiseState bindingState : disguises)
-                {
-                    var bindingPlayer = bindingState.getPlayer();
+                var packet = networkingHelper.prepareMeta(bindingPlayer)
+                        .forDisguiseState(bindingState)
+                        .build();
 
-                    var packet = networkingHelper.prepareMeta(bindingPlayer)
-                            .forDisguiseState(bindingState)
-                            .build();
-
-                    this.sendCommand(player, packet);
-                }
+                this.sendCommand(player, packet);
             }
+        }
 
-            playerConnectionStates.put(player, InitializeState.DONE);
-        });
+        session.initializeState = InitializeState.DONE;
     }
 
     @Override

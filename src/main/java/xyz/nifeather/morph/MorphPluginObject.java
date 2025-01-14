@@ -4,12 +4,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import xiamomc.pluginbase.PluginObject;
 
-public class MorphPluginObject extends PluginObject<MorphPlugin>
+public class MorphPluginObject extends PluginObject<FeatherMorphMain>
 {
     @Override
     protected String getPluginNamespace()
     {
-        return MorphPlugin.getMorphNameSpace();
+        return FeatherMorphMain.getMorphNameSpace();
     }
 
     protected void scheduleOn(Entity entity, Runnable r)

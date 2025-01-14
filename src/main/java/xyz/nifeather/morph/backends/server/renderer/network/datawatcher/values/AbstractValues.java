@@ -2,7 +2,7 @@ package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.slf4j.Logger;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.backends.server.renderer.utilties.ProtocolRegistryUtils;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public abstract class AbstractValues
         return sv;
     }
 
-    protected final Logger logger = MorphPlugin.getInstance().getSLF4JLogger();
+    protected final Logger logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
     protected final List<SingleValue<?>> values = new ObjectArrayList<>();
 

@@ -1,5 +1,6 @@
 package xyz.nifeather.morph.events;
 
+import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent;
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import de.themoep.inventorygui.InventoryGui;
@@ -7,7 +8,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.attribute.Attribute;
+import org.bukkit.block.data.type.CreakingHeart;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -23,6 +24,7 @@ import xiamomc.morph.network.commands.S2C.map.S2CMapRemoveCommand;
 import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Bindables.Bindable;
+import xiamomc.pluginbase.Bindables.BindableList;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.RevealingHandler;
@@ -44,6 +46,7 @@ import xyz.nifeather.morph.network.server.MorphClientHandler;
 import xyz.nifeather.morph.network.server.ServerSetEquipCommand;
 import xyz.nifeather.morph.providers.disguise.VanillaDisguiseProvider;
 import xyz.nifeather.morph.skills.MorphSkillHandler;
+import xyz.nifeather.morph.utilities.CommonUtils;
 import xyz.nifeather.morph.utilities.EntityTypeUtils;
 import xyz.nifeather.morph.utilities.ItemUtils;
 
@@ -95,6 +98,27 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         {
             playersMinedGoldBlocks.clear();
             susIncreasedPlayers.clear();
+        }
+    }
+
+    @EventHandler
+    public void onEntityAddToWorld(EntityAddToWorldEvent e)
+    {
+        if (!(e.getEntity() instanceof Player player))
+            return;
+
+        var world = e.getWorld();
+
+        var state = morphs.getDisguiseStateFor(player);
+        if (state != null && morphs.disguiseDisabledInWorld(world))
+        {
+            this.scheduleOn(player, () ->
+            {
+                if (!player.getWorld().equals(world)) return;
+
+                player.sendMessage(MessageUtils.prefixes(player, MorphStrings.disguiseDisabledInWorldString()));
+                morphs.unMorph(player);
+            });
         }
     }
 
@@ -153,18 +177,18 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     public void onPlayerTookDamage(EntityDamageEvent e)
     {
-        if (e.getEntity() instanceof Player player)
+        if (!(e.getEntity() instanceof Player player))
+            return;
+
+        var state = morphs.getDisguiseStateFor(player);
+
+        if (state != null)
         {
-            var state = morphs.getDisguiseStateFor(player);
+            state.getSoundHandler().resetSoundTime();
 
-            if (state != null)
-            {
-                state.getSoundHandler().resetSoundTime();
-
-                //如果伤害是0，那么取消事件
-                if (e.getDamage() > 0d)
-                    state.setSkillCooldown(Math.max(state.getSkillCooldown(), cooldownOnDamage.get()), true);
-            }
+            //如果伤害是0，那么取消事件
+            if (e.getDamage() > 0d)
+                state.setSkillCooldown(Math.max(state.getSkillCooldown(), cooldownOnDamage.get()), true);
         }
     }
 
@@ -364,27 +388,27 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         clientHandler.markPlayerReady(player);
 
         var effectivePermissions = new ObjectOpenHashSet<>(player.getEffectivePermissions());
-        var permissionAttachment = player.addAttachment(plugin);
         List<String> legacyPermissions = new ObjectArrayList<>();
 
         effectivePermissions.forEach(permInfo ->
         {
             var name = permInfo.getPermission();
-            boolean value = permInfo.getValue();
-
             if (!name.startsWith("xiamomc.morph")) return;
 
-            String nameReplaced = name.replace("xiamomc.morph.", "feathermorph.");
-            permissionAttachment.setPermission(nameReplaced, value);
             legacyPermissions.add(name);
         });
 
         if (!legacyPermissions.isEmpty())
         {
-            logger.warn("Found legacy permission set for player '%s'!".formatted(player.getName()));
-            logger.warn("Please migrate to the new prefix 'feathermorph.XXX' rather than 'xiamomc.morph.XXX' as soon as possible, as legacy support will end at 1.5.0!");
-            logger.warn("Permissions found:");
-            legacyPermissions.forEach(p -> logger.warn("  --> %s".formatted(p)));
+            logger.error("- x - x - x - x - x - x - x - x - x - x - x - x -");
+            logger.error("MAY I HAVE YOUR ATTENTION PLEASE!");
+            logger.error("");
+            logger.error("Found legacy permission set for player '%s'!".formatted(player.getName()));
+            logger.error("Please migrate to the new prefix 'feathermorph.XXX' instead of 'xiamomc.morph.XXX', as legacy permission support is now ENDED!");
+            logger.error("Permissions found:");
+            legacyPermissions.forEach(p -> logger.error("  --> %s".formatted(p)));
+            logger.error("");
+            logger.error("- x - x - x - x - x - x - x - x - x - x - x - x -");
         }
 
         //如果玩家是第一次用客户端连接，那么等待3秒向其发送提示
@@ -404,7 +428,7 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
                 }, 20 * 3);
         }
 
-        for (var attribute : Attribute.values())
+        for (var attribute : CommonUtils.getAvailableAttributes())
         {
             var instance = player.getAttribute(attribute);
 
@@ -603,6 +627,23 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         e.setCancelled(e.isCancelled() || !shouldTarget);
     }
 
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onAdvancement(BlockBreakEvent event)
+    {
+        var block = event.getBlock();
+
+        if (block.getType() != Material.CREAKING_HEART)
+            return;
+
+        if (!(block.getBlockData() instanceof CreakingHeart creakingHeart))
+            return;
+
+        if (!creakingHeart.isActive() || !creakingHeart.isNatural())
+            return;
+
+        morphs.grantMorphToPlayer(event.getPlayer(), EntityType.CREAKING.getKey().asString());
+    }
+
     private void onPlayerKillEntity(Player player, Entity entity)
     {
         if (!(entity instanceof LivingEntity) && !(entity.getType() == EntityType.ARMOR_STAND))
@@ -614,6 +655,9 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         if (entity instanceof Player targetPlayer)
             morphs.grantMorphToPlayer(player, DisguiseTypes.PLAYER.toId(targetPlayer.getName()));
         else
-            morphs.grantMorphToPlayer(player, entity.getType().getKey().asString());
+        {
+            var type = entity.getType();
+            morphs.grantMorphToPlayer(player, type.getKey().asString());
+        }
     }
 }

@@ -3,7 +3,7 @@ package xyz.nifeather.morph.backends.server.renderer.utilties;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 
 import java.util.Optional;
@@ -50,7 +50,7 @@ public class ProtocolRegistryUtils
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
             logger.error("Can't find serializer for value '%s': '%s'".formatted(instance, t.getMessage()));
             //t.printStackTrace();
         }

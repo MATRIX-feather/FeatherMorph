@@ -13,7 +13,7 @@ import xiamomc.pluginbase.Configuration.ConfigNode;
 import xiamomc.pluginbase.Configuration.PluginConfigManager;
 import xiamomc.pluginbase.Managers.DependencyManager;
 import xiamomc.pluginbase.Messages.MessageStore;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.messages.CommonStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 
@@ -23,7 +23,7 @@ public class MorphConfigManager extends PluginConfigManager
 {
     private static final Logger log = LoggerFactory.getLogger(MorphConfigManager.class);
 
-    public MorphConfigManager(MorphPlugin plugin)
+    public MorphConfigManager(FeatherMorphMain plugin)
     {
         super(plugin);
 
@@ -154,6 +154,7 @@ public class MorphConfigManager extends PluginConfigManager
             bindableLists = new Object2ObjectOpenHashMap<>();
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void reload()
     {
@@ -168,7 +169,7 @@ public class MorphConfigManager extends PluginConfigManager
         });
 
         //更新配置
-        int targetVersion = 38;
+        int targetVersion = 39;
 
         var configVersion = getOrDefault(Integer.class, ConfigOption.VERSION);
 
@@ -228,7 +229,6 @@ public class MorphConfigManager extends PluginConfigManager
             if (configVersion < 15)
             {
                 //skill item
-                //noinspection removal
                 var oldSkillItem = get(String.class, ConfigOption.ACTION_ITEM);
 
                 //noinspection removal

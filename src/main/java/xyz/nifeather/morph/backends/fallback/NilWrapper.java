@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import xiamomc.pluginbase.Exceptions.NullDependencyException;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.backends.DisguiseWrapper;
 import xyz.nifeather.morph.backends.EventWrapper;
 import xyz.nifeather.morph.backends.WrapperEvent;
@@ -152,7 +152,7 @@ public class NilWrapper extends EventWrapper<NilDisguise>
         }
     }
 
-    private static final Logger logger = MorphPlugin.getInstance().getSLF4JLogger();
+    private static final Logger logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
     @Override
     public EntityEquipment getFakeEquipments()

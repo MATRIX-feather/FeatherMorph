@@ -60,6 +60,12 @@ public class AnimationNames
 
     public static final String VANISH = "vanish";
 
+    public static final String MAKE_ACTIVE = "make_active";
+    public static final String MAKE_INACTIVE = "make_inactive";
+
+    public static final String DISPLAY_EYE_GLOW = "eye_glow";
+    public static final String DISPLAY_STOP_EYE_GLOW = "stop_eye_glow";
+
     public static final String INTERNAL_DISABLE_SKILL = "exec_disable_skill";
     public static final String INTERNAL_DISABLE_AMBIENT = "exec_disable_ambient";
     public static final String INTERNAL_ENABLE_SKILL = "exec_enable_skill";

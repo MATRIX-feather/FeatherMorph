@@ -1,16 +1,21 @@
 package xyz.nifeather.morph.storage.skill;
 
 import org.apache.commons.io.FileUtils;
+import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Initializer;
+import xyz.nifeather.morph.abilities.impl.AttributeModifyingAbility;
+import xyz.nifeather.morph.abilities.options.AttributeModifyOption;
+import xyz.nifeather.morph.abilities.AbilityType;
+import xyz.nifeather.morph.abilities.options.ReduceDamageOption;
 import xyz.nifeather.morph.skills.DefaultConfigGenerator;
 import xyz.nifeather.morph.storage.DirectoryJsonBasedStorage;
 import xyz.nifeather.morph.storage.MorphJsonBasedStorage;
 
 import java.io.File;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<SkillAbilityConfiguration>
 {
@@ -26,9 +31,12 @@ public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<Skill
 
         if (packageVersion < TARGET_PACKAGE_VERSION)
             update(packageVersion);
+
+        if (packageVersion > TARGET_PACKAGE_VERSION)
+            logger.warn("The package version is newer than our implementation! Errors may occur!");
     }
 
-    private static final int TARGET_PACKAGE_VERSION = PackageVersions.INITIAL;
+    private static final int TARGET_PACKAGE_VERSION = PackageVersions.WITHER_SKELETON_CHANGES;
 
     private void update(int currentVersion)
     {
@@ -41,8 +49,61 @@ public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<Skill
             else
                 saveDefaultGeneratedConfigurations();
         }
+        if (currentVersion < PackageVersions.ATTRIBUTE_NAME_CHANGED)
+            migrate_attribute();
+
+        if (currentVersion < PackageVersions.WITHER_SKELETON_CHANGES)
+        {
+            migrateWitherSkeleton();
+        }
 
         setPackageVersion(TARGET_PACKAGE_VERSION);
+    }
+
+    private void migrate_attribute()
+    {
+        logger.info("Starting migration of attribute names...");
+        var files = directoryStorage.getFiles(".*\\.json$");
+
+        var abilityInstance = new AttributeModifyingAbility();
+
+        for (File file : files)
+        {
+            var config = this.loadFrom(file);
+            if (config == null)
+            {
+                logger.warn("Can't load SkillAbilityConfiguration from '%s', see errors above.".formatted(file.toString()));
+                continue;
+            }
+
+            var targetOption = config.getAbilityOptions(abilityInstance);
+
+            if (targetOption == null) continue;
+
+            var key = getKeyFromFile(file);
+            config.legacy_MobID = key;
+            logger.info("Migrating " + key);
+
+            for (AttributeModifyOption.AttributeInfo attributeInfo : targetOption.modifiers)
+            {
+                if (!attributeInfo.isValid())
+                {
+                    logger.warn("Invalid attribute info for '%s > %s'! Ignoring...".formatted(
+                            config.legacy_MobID,
+                            attributeInfo.attributeName == null ? "<unknown attribute name>" : attributeInfo.attributeName));
+
+                    continue;
+                }
+
+                attributeInfo.attributeName = attributeInfo.attributeName.replace("generic.", "");
+            }
+
+            config.setOption(abilityInstance.getIdentifier().asString(), targetOption);
+
+            this.save(config);
+        }
+
+        logger.info("Done.");
     }
 
     private void migrateFromLegacyStorage()
@@ -77,6 +138,28 @@ public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<Skill
             logger.warn("Can't migrate from legacy skill configuration: " + t.getMessage());
             t.printStackTrace();
         }
+    }
+
+    private void migrateWitherSkeleton()
+    {
+        logger.info("Migrating new Wither Skeleton configuration");
+
+        var configuration = this.get(EntityType.WITHER_SKELETON.key().asString());
+        if (configuration == null)
+        {
+            logger.info("No configuration present for minecraft:wither_skeleton, skipping...");
+            return;
+        }
+
+        configuration.addAbilityIdentifier(AbilityType.HAS_FIRE_RESISTANCE)
+                .addAbilityIdentifier(AbilityType.REDUCES_WITHER_DAMAGE)
+                .appendOption(AbilityType.REDUCES_WITHER_DAMAGE,
+                        new ReduceDamageOption(1, true));
+
+        configuration.legacy_MobID = EntityType.WITHER_SKELETON.key().asString();
+        this.save(configuration);
+
+        logger.info("Done Migrating new Wither Skeleton configuration");
     }
 
     private void saveDefaultGeneratedConfigurations()
@@ -166,5 +249,7 @@ public class SkillsConfigurationStoreNew extends DirectoryJsonBasedStorage<Skill
     public static class PackageVersions
     {
         public static final int INITIAL = 1;
+        public static final int ATTRIBUTE_NAME_CHANGED = 2;
+        public static final int WITHER_SKELETON_CHANGES = 3;
     }
 }

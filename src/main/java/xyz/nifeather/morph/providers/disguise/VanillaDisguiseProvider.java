@@ -252,8 +252,13 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
             }
 
             var craftLiving = (net.minecraft.world.entity.LivingEntity) ((CraftLivingEntity)living).getHandleRaw();
-            var mobMaxHealth = craftLiving.craftAttributes.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue();
-            var playerAttribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+            var mobMaxHealth = craftLiving.craftAttributes.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
+
+            // patch: CREAKING only have half heart, and we don't want that.
+            if (state.getEntityType() == EntityType.CREAKING)
+                mobMaxHealth = 20;
+
+            var playerAttribute = player.getAttribute(Attribute.MAX_HEALTH);
 
             if (mobMaxHealth <= 0d)
             {
@@ -262,9 +267,12 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
             }
 
             assert playerAttribute != null;
+
+            // 获取生物最大生命和玩家最大生命的差异
             var diff = mobMaxHealth - playerAttribute.getBaseValue();
 
-            //确保血量不会超过上限
+            // 如果玩家的基值加上差异大于限制
+            // 确保血量不会超过上限
             if (playerAttribute.getBaseValue() + diff > healthCap.get())
                 diff = healthCap.get() - playerAttribute.getBaseValue();
 
@@ -393,7 +401,7 @@ public class VanillaDisguiseProvider extends DefaultDisguiseProvider
 
     private void removeAllHealthModifiers(Player player)
     {
-        var attribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+            var attribute = player.getAttribute(Attribute.MAX_HEALTH);
         assert attribute != null;
 
         this.executeThenScaleHealth(player, attribute, () -> attribute.removeModifier(healthModifierKey));

@@ -1,17 +1,18 @@
-package xyz.nifeather.morph.abilities.impl;
+package xyz.nifeather.morph.abilities.impl.dmgReduce;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.jetbrains.annotations.NotNull;
 import xyz.nifeather.morph.abilities.AbilityType;
+import xyz.nifeather.morph.abilities.impl.DamageReducingAbility;
 import xyz.nifeather.morph.abilities.options.ReduceDamageOption;
 
-public class ReduceMagicDamageAbility extends DamageReducingAbility<ReduceDamageOption>
+public class ReduceWitherDamageAbility extends DamageReducingAbility<ReduceDamageOption>
 {
     @Override
-    public @NotNull NamespacedKey getIdentifier()
+    protected EntityDamageEvent.DamageCause getTargetCause()
     {
-        return AbilityType.REDUCES_MAGIC_DAMAGE;
+        return EntityDamageEvent.DamageCause.WITHER;
     }
 
     @Override
@@ -21,8 +22,8 @@ public class ReduceMagicDamageAbility extends DamageReducingAbility<ReduceDamage
     }
 
     @Override
-    protected EntityDamageEvent.DamageCause getTargetCause()
+    public @NotNull NamespacedKey getIdentifier()
     {
-        return EntityDamageEvent.DamageCause.MAGIC;
+        return AbilityType.REDUCES_WITHER_DAMAGE;
     }
 }

@@ -8,6 +8,7 @@ import com.comphenix.protocol.injector.GamePhase;
 import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
+import net.minecraft.util.Mth;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -65,7 +66,7 @@ public class PlayerLookPacketListener extends ProtocolListener
     private void onTeleport(ClientboundTeleportEntityPacket packet, PacketEvent event)
     {
         //获取此包的来源实体
-        var sourceNmsEntity = getNmsPlayerFrom(packet.getId());
+        var sourceNmsEntity = getNmsPlayerFrom(packet.id());
         if (sourceNmsEntity == null)
             return;
 
@@ -82,21 +83,15 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (!isDragon && !isPhantom)
             return;
 
-        var yaw = packet.getyRot();
-        var pitch = packet.getxRot();
+        float yaw = packet.change().yRot();
+        float pitch = packet.change().xRot();
 
-        var playerYaw = isDragon ? (sourcePlayer.getYaw() + 180f) : sourcePlayer.getYaw();
-        var finalYaw = (playerYaw / 360f) * 256f;
-        yaw = (byte)finalYaw;
-
-        var playerPitch = isPhantom ? -sourcePlayer.getPitch() : sourcePlayer.getPitch();
-
-        var finalPitch = (playerPitch / 360f) * 256f;
-        pitch = (byte)finalPitch;
+        yaw = isDragon ? (yaw + 180f) : yaw;
+        pitch = isPhantom ? -pitch : pitch;
 
         var container = event.getPacket();
-        container.getBytes().write(0, yaw);
-        container.getBytes().write(1, pitch);
+        container.getBytes().write(0, Mth.packDegrees(yaw));
+        container.getBytes().write(1, Mth.packDegrees(pitch));
     }
 
     private void onHeadRotation(ClientboundRotateHeadPacket packet, PacketEvent event)
@@ -112,9 +107,9 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (watcher == null || watcher.getEntityType() != EntityType.ENDER_DRAGON)
             return;
 
-        var newHeadYaw = (byte)(((sourcePlayer.getYaw() + 180f) / 360f) * 256f);
+        var newHeadYaw = packet.getYHeadRot() + 180f;
 
-        var newPacket = new ClientboundRotateHeadPacket(sourceNmsEntity, newHeadYaw);
+        var newPacket = new ClientboundRotateHeadPacket(sourceNmsEntity, Mth.packDegrees(newHeadYaw));
         var finalPacket = PacketContainer.fromPacket(newPacket);
         getFactory().markPacketOurs(finalPacket);
 
@@ -141,17 +136,11 @@ public class PlayerLookPacketListener extends ProtocolListener
         if (!isDragon && !isPhantom)
             return;
 
-        var yaw = packet.getyRot();
-        var pitch = packet.getxRot();
+        float yaw = packet.getyRot();
+        float pitch = packet.getxRot();
 
-        var playerYaw = isDragon ? (sourcePlayer.getYaw() + 180f) : sourcePlayer.getYaw();
-        var finalYaw = (playerYaw / 360f) * 256f;
-        yaw = (byte)finalYaw;
-
-        var playerPitch = isPhantom ? -sourcePlayer.getPitch() : sourcePlayer.getPitch();
-
-        var finalPitch = (playerPitch / 360f) * 256f;
-        pitch = (byte)finalPitch;
+        yaw = isDragon ? (yaw + 180f) : yaw;
+        pitch = isPhantom ? -pitch : pitch;
 
         ClientboundMoveEntityPacket newPacket;
 
@@ -161,7 +150,7 @@ public class PlayerLookPacketListener extends ProtocolListener
         {
             newPacket = new ClientboundMoveEntityPacket.Rot(
                     sourcePlayer.getEntityId(),
-                    yaw, pitch,
+                    Mth.packDegrees(yaw), Mth.packDegrees(pitch),
                     packet.isOnGround()
             );
         }
@@ -178,7 +167,7 @@ public class PlayerLookPacketListener extends ProtocolListener
             newPacket = new ClientboundMoveEntityPacket.PosRot(
                     sourcePlayer.getEntityId(),
                     packet.getXa(), packet.getYa(), packet.getZa(),
-                    yaw, pitch,
+                    Mth.packDegrees(yaw), Mth.packDegrees(pitch),
                     packet.isOnGround()
             );
         }

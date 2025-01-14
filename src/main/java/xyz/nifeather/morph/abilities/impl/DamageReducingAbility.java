@@ -40,5 +40,8 @@ public abstract class DamageReducingAbility<T extends ReduceDamageOption> extend
                 : damage - dmgOption.getReduceAmount();
 
         e.setDamage(Math.max(0d, damage));
+
+        if (damage <= 0d)
+            e.setCancelled(true);
     }
 }

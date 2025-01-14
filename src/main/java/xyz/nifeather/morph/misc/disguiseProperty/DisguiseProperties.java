@@ -1,5 +1,7 @@
 package xyz.nifeather.morph.misc.disguiseProperty;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -7,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.misc.disguiseProperty.values.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -35,6 +38,11 @@ public class DisguiseProperties
         register(EntityType.ZOMBIE_VILLAGER, new VillagerProperties());
         register(EntityType.ARMOR_STAND, new ArmorStandProperties());
         register(EntityType.CREEPER, new CreeperProperties());
+    }
+
+    public Map<EntityType, AbstractProperties> getAll()
+    {
+        return new Object2ObjectOpenHashMap<>(handlerMap);
     }
 
     public void register(EntityType type, AbstractProperties properties)

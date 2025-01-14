@@ -2,7 +2,7 @@ package xyz.nifeather.morph.network.multiInstance.protocol.c2s;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.network.multiInstance.protocol.IClientHandler;
 import xyz.nifeather.morph.network.multiInstance.protocol.ProtocolLevel;
 
@@ -58,7 +58,7 @@ public class MIC2SLoginCommand extends MIC2SCommand<String>
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
             logger.warn("Error occurred processing arguments: " + t.getMessage());
         }
 

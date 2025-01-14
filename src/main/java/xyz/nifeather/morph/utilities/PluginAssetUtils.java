@@ -2,7 +2,7 @@ package xyz.nifeather.morph.utilities;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 import java.nio.charset.StandardCharsets;
 
@@ -15,7 +15,7 @@ public class PluginAssetUtils
      */
     public static byte @Nullable [] getFileBytes(String path)
     {
-        var plugin = MorphPlugin.getPlugin(MorphPlugin.class);
+        var plugin = FeatherMorphMain.getPlugin(FeatherMorphMain.class);
 
         var stream = plugin.getResource(path);
 

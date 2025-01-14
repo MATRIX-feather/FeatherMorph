@@ -8,19 +8,17 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import org.bukkit.Location;
-import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Enemy;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.misc.DisguiseTypes;
 
 import java.util.Arrays;
@@ -77,7 +75,7 @@ public class EntityTypeUtils
         var locationBlock = spawnLocation.toBlockLocation();
         var spawnBlockLocation = new BlockPos(locationBlock.getBlockX(), locationBlock.getBlockY(), locationBlock.getBlockZ());
 
-        return nmsType.create(serverWorld, EntityTypeUtils::scheduleEntityDiscard, spawnBlockLocation, MobSpawnType.COMMAND, false, false);
+        return nmsType.create(serverWorld, EntityTypeUtils::scheduleEntityDiscard, spawnBlockLocation, EntitySpawnReason.COMMAND, false, false);
     }
 
     @NotNull
@@ -155,7 +153,7 @@ public class EntityTypeUtils
     {
         var entity = nmsEntity.getBukkitEntity();
         entity.getScheduler()
-                .run(MorphPlugin.getInstance(), retiredTask -> {}, entity::remove);
+                .run(FeatherMorphMain.getInstance(), retiredTask -> {}, entity::remove);
     }
 
     public static boolean hasBabyVariant(EntityType type)
@@ -405,15 +403,15 @@ public class EntityTypeUtils
     }
 
     @Nullable
-    public static String getDamageSound(EntityType type)
+    public static String getDamageSoundKey(EntityType type)
     {
         if (type == EntityType.PLAYER) return null;
 
         if (type == EntityType.ARMOR_STAND)
-            return Sound.ENTITY_ARMOR_STAND_HIT.key().asString();
+            return "entity.armor_stand.hit";
 
         if (type == EntityType.TRADER_LLAMA)
-            return Sound.ENTITY_LLAMA_HURT.key().asString();
+            return "entity.llama.hurt";
 
         return "entity.%s.hurt".formatted(type.getKey().getKey());
     }
@@ -424,5 +422,55 @@ public class EntityTypeUtils
         if (type.getEntityClass() == null) return false;
 
         return Enemy.class.isAssignableFrom(type.getEntityClass());
+    }
+
+    public static boolean panicsFrom(EntityType sourceType, EntityType targetType)
+    {
+        return switch (sourceType)
+        {
+            case CREEPER -> targetType == EntityType.CAT || targetType == EntityType.OCELOT;
+            case PHANTOM -> targetType == EntityType.CAT;
+            case SPIDER -> targetType == EntityType.ARMADILLO;
+            case SKELETON, WITHER_SKELETON -> targetType == EntityType.WOLF;
+            case VILLAGER -> targetType == EntityType.ZOMBIE || targetType == EntityType.ZOMBIE_VILLAGER;
+            case PILLAGER, VINDICATOR, EVOKER, ILLUSIONER -> targetType == EntityType.CREAKING;
+
+            default -> false;
+        };
+    }
+
+    /**
+     * 检查源生物和目标生物类型是否敌对
+     * @param sourceType 源生物的类型
+     * @param targetType 目标生物的类型
+     */
+    public static boolean hostiles(EntityType sourceType, EntityType targetType)
+    {
+        return switch (sourceType)
+        {
+            case IRON_GOLEM, SNOW_GOLEM -> EntityTypeUtils.isEnemy(targetType) && targetType != EntityType.CREEPER;
+
+            case FOX -> targetType == EntityType.CHICKEN || targetType == EntityType.RABBIT
+                    || targetType == EntityType.COD || targetType == EntityType.SALMON
+                    || targetType == EntityType.TROPICAL_FISH || targetType == EntityType.PUFFERFISH;
+
+            case CAT -> targetType == EntityType.CHICKEN || targetType == EntityType.RABBIT;
+
+            case WOLF -> EntityTypeUtils.isSkeleton(targetType) || targetType == EntityType.RABBIT
+                    || targetType == EntityType.LLAMA || targetType == EntityType.SHEEP
+                    || targetType == EntityType.FOX;
+
+            case GUARDIAN, ELDER_GUARDIAN -> targetType == EntityType.AXOLOTL || targetType == EntityType.SQUID
+                    || targetType == EntityType.GLOW_SQUID;
+
+            // Doesn't work for somehow
+            case AXOLOTL -> targetType == EntityType.SQUID || targetType == EntityType.GLOW_SQUID
+                    || targetType == EntityType.GUARDIAN || targetType == EntityType.ELDER_GUARDIAN
+                    || targetType == EntityType.TADPOLE || targetType == EntityType.DROWNED
+                    || targetType == EntityType.COD || targetType == EntityType.SALMON
+                    || targetType == EntityType.TROPICAL_FISH || targetType == EntityType.PUFFERFISH;
+
+            default -> false;
+        };
     }
 }

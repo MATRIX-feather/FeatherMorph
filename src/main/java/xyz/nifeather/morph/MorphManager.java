@@ -235,6 +235,8 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         logger.info("Default backend: %s".formatted(defaultBackend));
 
         bannedDisguises = config.getBindableList(String.class, ConfigOption.BANNED_DISGUISES);
+        disabledWorlds = config.getBindableList(String.class, ConfigOption.DISGUISE_DISABLED_WORLDS);
+
         config.bind(allowHeadMorph, ConfigOption.ALLOW_HEAD_MORPH);
         config.bind(allowAcquireMorph, ConfigOption.ALLOW_ACQUIRE_MORPHS);
         config.bind(useClientRenderer, ConfigOption.USE_CLIENT_RENDERER);
@@ -249,6 +251,16 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         ));
 
         Bukkit.getPluginManager().callEvent(new ManagerFinishedInitializeEvent(this));
+    }
+
+    public boolean disguiseDisabledInWorld(World world)
+    {
+        return disguiseDisabledInWorld(world.getName());
+    }
+
+    public boolean disguiseDisabledInWorld(String worldName)
+    {
+        return disabledWorlds.contains(worldName);
     }
 
     private void update()
@@ -356,6 +368,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
     }
 
     private BindableList<String> bannedDisguises;
+    private BindableList<String> disabledWorlds;
 
     /**
      * 内部轮子，检查某个伪装是否被禁用建议使用 {@link MorphManager#disguiseDisabled(String)}
@@ -730,6 +743,12 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
             return null;
         }
 
+        if (disguiseDisabledInWorld(player.getWorld()))
+        {
+            source.sendMessage(MessageUtils.prefixes(source, MorphStrings.disguiseDisabledInWorldString()));
+            return null;
+        }
+
         // 调用早期事件
         var earlyEventPassed = new PlayerMorphEarlyEvent(player, null, disguiseIdentifier, parameters.forceExecute).callEvent();
         if (!parameters.forceExecute && !earlyEventPassed)
@@ -901,7 +920,10 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         {
             // 同步伪装属性
             var propertyHandler = state.disguisePropertyHandler();
-            propertyHandler.setProperties(disguiseProperties.get(state.getEntityType()));
+            var properties = disguiseProperties.get(state.getEntityType());
+            propertyHandler.initProperties(properties);
+            propertyHandler.updateFromPropertiesInput(parameters.properties);
+
             propertyHandler.getAll().forEach((property, value) ->
             {
                 wrapper.writeProperty((SingleProperty<Object>) property, value);
@@ -909,10 +931,10 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         }
 
         // 初始化nbt
-        var wrapperCompound = provider.getInitialNbtCompound(state, targetEntity, false);
+        var initialNbtCompound = provider.getInitialNbtCompound(state, targetEntity, false);
 
-        if (wrapperCompound != null)
-            state.getDisguiseWrapper().mergeCompound(wrapperCompound);
+        if (initialNbtCompound != null)
+            state.getDisguiseWrapper().mergeCompound(initialNbtCompound);
 
         // 设定显示名称
         if (targetEntity != null && targetEntity.customName() != null)
@@ -1460,16 +1482,24 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         return offlineStorage.getAvaliableDisguiseStates();
     }
 
-    public void disguiseFromState(DisguiseState state)
+    public boolean disguiseFromState(DisguiseState state)
     {
         var meta = getDisguiseMeta(state.getDisguiseIdentifier());
         var result = DisguiseBuildResult.of(state, state.getProvider(), meta, null);
         var playerMeta = getPlayerMeta(state.getPlayer());
         var parameters = MorphParameters.create(state.getPlayer(), state.getDisguiseIdentifier());
 
+        if (this.preDisguise(parameters) == null)
+            return false;
+
         this.postBuildDisguise(result, parameters, playerMeta);
-        this.applyDisguise(parameters, state, meta, playerMeta);
+
+        if (!this.applyDisguise(parameters, state, meta, playerMeta))
+            return false;
+
         this.afterDisguise(result, parameters, playerMeta);
+
+        return true;
     }
 
     /**
@@ -1541,7 +1571,7 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
     //region Implementation of IManagePlayerData
 
     @Override
-    @Nullable
+    @NotNull
     public DisguiseMeta getDisguiseMeta(String rawString)
     {
         return data.getDisguiseMeta(rawString);
@@ -1656,16 +1686,19 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
 
             this.scheduleOn(player, () ->
             {
-                var config = this.getPlayerMeta(player);
-                if (!disguiseDisabled(s.getDisguiseIdentifier()) && config.getUnlockedDisguiseIdentifiers().contains(s.getDisguiseIdentifier()))
-                {
-                    disguiseFromState(s);
-                    refreshClientState(s);
+                var parameter = MorphParameters.create(player, s.getDisguiseIdentifier());
+                if (this.preDisguise(parameter) == null)
+                    return;
 
+                if (disguiseFromState(s))
+                {
+                    refreshClientState(s);
                     player.sendMessage(MessageUtils.prefixes(player, MorphStrings.recoverString()));
                 }
                 else
+                {
                     unMorph(nilCommandSource, player, true, true);
+                }
             });
         });
 

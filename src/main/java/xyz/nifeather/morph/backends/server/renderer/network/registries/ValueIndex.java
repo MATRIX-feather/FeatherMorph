@@ -45,6 +45,8 @@ public class ValueIndex
     public static final ShulkerValues SHULKER = new ShulkerValues();
     public static final PufferfishValues PUFFERFISH = new PufferfishValues();
 
+    public static final CreakingValues CREAKING = new CreakingValues();
+
     /*
     private static final Map<EntityType, AbstractValues> valuesMap = new ConcurrentHashMap<>();
     private static void register(EntityType type, AbstractValues values)

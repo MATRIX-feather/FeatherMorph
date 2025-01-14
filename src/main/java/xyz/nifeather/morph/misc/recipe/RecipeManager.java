@@ -66,8 +66,11 @@ public class RecipeManager extends MorphPluginObject
     {
         var key = NamespacedKey.fromString(str);
 
-        return Arrays.stream(Material.values()).parallel().filter(m -> m.key().equals(key))
-                .findFirst().orElse(null);
+        return Arrays.stream(Material.values())
+                .parallel()
+                .filter(m -> !m.isLegacy() && m.key().equals(key))
+                .findFirst()
+                .orElse(null);
     }
 
     @NotNull

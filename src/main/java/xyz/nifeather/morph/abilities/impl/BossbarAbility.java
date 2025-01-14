@@ -25,12 +25,12 @@ import java.util.List;
 
 public class BossbarAbility extends MorphAbility<BossbarOption>
 {
-    private Bindable<Boolean> allowBossbar;
+    private final Bindable<Boolean> allowBossbar = new Bindable<>(false);
 
     @Initializer
     private void load(MorphConfigManager configManager)
     {
-        allowBossbar = configManager.getBindable(Boolean.class, ConfigOption.DISPLAY_BOSSBAR);
+        configManager.bind(allowBossbar, ConfigOption.DISPLAY_BOSSBAR);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class BossbarAbility extends MorphAbility<BossbarOption>
             if (playerGameMode == GameMode.SPECTATOR)
                 playersToShow.removeIf(p -> p.getGameMode() != playerGameMode);
 
-            bossbar.progress((float) (player.getHealth() / player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()));
+            bossbar.progress((float) (player.getHealth() / player.getAttribute(Attribute.MAX_HEALTH).getValue()));
             //bossbar.name(this.getBossbarName(state, option));
 
             if (state.canDisplayBossbar())

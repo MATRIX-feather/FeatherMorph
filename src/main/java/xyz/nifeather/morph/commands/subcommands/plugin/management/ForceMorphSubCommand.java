@@ -1,33 +1,35 @@
 package xyz.nifeather.morph.commands.subcommands.plugin.management;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
-import xyz.nifeather.morph.messages.CommonStrings;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
+import xyz.nifeather.morph.commands.brigadier.arguments.DisguiseIdentifierArgumentType;
 import xyz.nifeather.morph.messages.HelpStrings;
-import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.misc.MorphParameters;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-import java.util.List;
-
-public class ForceMorphSubCommand extends MorphPluginObject implements ISubCommand
+public class ForceMorphSubCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
     @Override
-    public @NotNull String getCommandName()
+    public @NotNull String name()
     {
         return "morph";
     }
 
     @Override
-    public @Nullable String getPermissionRequirement()
+    public @Nullable String permission()
     {
         return CommonPermissions.MANAGE_MORPH_DISGUISE;
     }
@@ -36,61 +38,46 @@ public class ForceMorphSubCommand extends MorphPluginObject implements ISubComma
     private MorphManager manager;
 
     @Override
-    public @Nullable List<String> onTabComplete(List<String> args, CommandSender source)
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
     {
-        var list = new ObjectArrayList<String>();
-
-        if (args.size() == 1)
-        {
-            var name = args.get(0);
-
-            var onlinePlayers = Bukkit.getOnlinePlayers();
-
-            for (var p : onlinePlayers)
-                if (p.getName().toLowerCase().contains(name.toLowerCase())) list.add(p.getName());
-        }
-        else if (args.size() == 2)
-        {
-            var targetLowerCase = args.get(1).toLowerCase();
-
-            for (var p : MorphManager.getProviders())
-            {
-                var ns = p.getNameSpace();
-                p.getAllAvailableDisguises().forEach(s ->
-                {
-                    var str = ns + ":" + s;
-                    if (str.toLowerCase().contains(targetLowerCase)) list.add(str);
-                });
-            }
-        }
-
-        return list;
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .then(
+                                Commands.argument("who", ArgumentTypes.players())
+                                        .then(
+                                                Commands.argument("as_what", DisguiseIdentifierArgumentType.ALL_AVAILABLE)
+                                                        .executes(this::execute)
+                                        )
+                        )
+        );
     }
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, String[] strings)
+    private int execute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException
     {
-        if (strings.length != 2) return false;
+        var players = context.getArgument("who", PlayerSelectorArgumentResolver.class)
+                .resolve(context.getSource());
 
-        var who = Bukkit.getPlayerExact(strings[0]);
-        var targetName = strings[1];
-
-        if (who == null || !who.isOnline())
+        players.forEach(who ->
         {
-            commandSender.sendMessage(MessageUtils.prefixes(commandSender, CommonStrings.playerNotFoundString()));
-            return false;
-        }
+            var targetName = StringArgumentType.getString(context, "as_what");
 
-        var parameters = MorphParameters
-                            .create(who, targetName)
-                            .setSource(commandSender)
-                            //.setTargetedEntity(who.getTargetEntity(3))
-                            .setForceExecute(true)
-                            .setBypassAvailableCheck(true)
-                            .setBypassPermission(true);
+            var commandSender = context.getSource().getSender();
+            if (!who.isOnline())
+                return;
 
-        manager.morph(parameters);
-        return true;
+            var parameters = MorphParameters
+                    .create(who, targetName)
+                    .setSource(commandSender)
+                    //.setTargetedEntity(who.getTargetEntity(3))
+                    .setForceExecute(true)
+                    .setBypassAvailableCheck(true)
+                    .setBypassPermission(true);
+
+            manager.morph(parameters);
+        });
+
+        return 1;
     }
 
     @Override

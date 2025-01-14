@@ -1,21 +1,22 @@
 package xyz.nifeather.morph.commands.subcommands.plugin;
 
-import org.bukkit.command.CommandSender;
-import org.jetbrains.annotations.NotNull;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import xiamomc.pluginbase.Annotations.Resolved;
-import xiamomc.pluginbase.Command.ISubCommand;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
-import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.BrigadierCommand;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-public class QueryAllSubCommand extends MorphPluginObject implements ISubCommand
+public class QueryAllSubCommand extends BrigadierCommand
 {
     @Override
-    public String getCommandName()
+    public String name()
     {
         return "queryall";
     }
@@ -36,15 +37,28 @@ public class QueryAllSubCommand extends MorphPluginObject implements ISubCommand
     private MorphManager manager;
 
     @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull String[] strings)
+    public void registerAsChild(ArgumentBuilder<CommandSourceStack, ?> parentBuilder)
+    {
+        parentBuilder.then(
+                Commands.literal(name())
+                        .requires(this::checkPermission)
+                        .executes(this::executes)
+        );
+
+        super.registerAsChild(parentBuilder);
+    }
+
+    public int executes(CommandContext<CommandSourceStack> context)
     {
         var list = manager.getActiveDisguises();
         var offlineStates = manager.getAvaliableOfflineStates();
 
+        var commandSender = context.getSource().getSender();
+
         if (list.size() == 0 && offlineStates.size() == 0)
         {
             commandSender.sendMessage(MessageUtils.prefixes(commandSender, CommandStrings.qaNoBodyDisguisingString()));
-            return true;
+            return 1;
         }
 
         var msg = CommandStrings.qaDisguisedString();
@@ -76,6 +90,6 @@ public class QueryAllSubCommand extends MorphPluginObject implements ISubCommand
                             .resolve("what", s.disguiseID)));
         }
 
-        return true;
+        return 1;
     }
 }

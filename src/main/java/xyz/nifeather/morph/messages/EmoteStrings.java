@@ -1,7 +1,7 @@
 package xyz.nifeather.morph.messages;
 
 import org.jetbrains.annotations.NotNull;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xiamomc.pluginbase.Messages.FormattableMessage;
 
 import java.util.Map;
@@ -37,7 +37,7 @@ public class EmoteStrings extends AbstractMorphStrings
     {
         var value = map.getOrDefault(animationId, Unknown());
 
-        return new FormattableMessage(MorphPlugin.getInstance(), value.getKey(), value.getDefaultString());
+        return new FormattableMessage(FeatherMorphMain.getInstance(), value.getKey(), value.getDefaultString());
     }
 
     public static String getKey(String key)
@@ -64,5 +64,7 @@ public class EmoteStrings extends AbstractMorphStrings
         register("crawl");
         register("digdown");
         register("appear");
+        register("eye_glow");
+        register("stop_eye_glow");
     }
 }

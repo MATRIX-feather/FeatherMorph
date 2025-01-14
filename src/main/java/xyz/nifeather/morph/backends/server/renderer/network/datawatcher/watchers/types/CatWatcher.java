@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
+import xyz.nifeather.morph.backends.server.renderer.utilties.HolderUtils;
 import xyz.nifeather.morph.misc.AnimationNames;
 import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
@@ -47,31 +48,21 @@ public class CatWatcher extends TameableAnimalWatcher
         return Registry.CAT_VARIANT.get(Key.key(key.location().toString()));
     }
 
-    private CatVariant holderToNmsVariant(Holder<CatVariant> holder)
-    {
-        var keyOptional = holder.unwrapKey();
-        if (keyOptional.isEmpty())
-            throw new NullPointerException("Null ResourceKey for holder " + holder);
-
-        return BuiltInRegistries.CAT_VARIANT.get(keyOptional.get());
-    }
-
     private Holder<CatVariant> bukkitTypeToNmsHolder(Cat.Type bukkitType)
     {
         var bukkitKey = bukkitType.getKey();
         ResourceLocation key = ResourceLocation.fromNamespaceAndPath(bukkitKey.namespace(), bukkitKey.getKey());
 
-        var variant = BuiltInRegistries.CAT_VARIANT.getHolder(key);
-        if (variant.isEmpty() || !variant.get().isBound())
+        try
         {
-            logger.warn("Bukkit type '%s' is not in the registries, returning Tabby...".formatted(bukkitType));
-
-            var world = ((CraftWorld) Bukkit.getWorlds().stream().findFirst().get()).getHandle();
-
-            return world.registryAccess().registryOrThrow(Registries.CAT_VARIANT).getHolderOrThrow(CatVariant.TABBY);
+            return HolderUtils.getHolderOrThrow(key, Registries.CAT_VARIANT);
         }
+        catch (Throwable t)
+        {
+            logger.warn("Bukkit type '%s' is not in the registries, trying default value...".formatted(bukkitType));
 
-        return variant.get();
+            return ValueIndex.CAT.CAT_VARIANT.defaultValue();
+        }
     }
 
     @Override

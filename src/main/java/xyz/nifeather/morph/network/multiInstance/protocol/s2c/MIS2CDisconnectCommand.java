@@ -1,6 +1,6 @@
 package xyz.nifeather.morph.network.multiInstance.protocol.s2c;
 
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.network.multiInstance.protocol.IMasterHandler;
 
 public class MIS2CDisconnectCommand extends MIS2CCommand<String>
@@ -53,7 +53,7 @@ public class MIS2CDisconnectCommand extends MIS2CCommand<String>
         }
         catch (Throwable t)
         {
-            var logger = MorphPlugin.getInstance().getSLF4JLogger();
+            var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
 
             logger.warn("Can't parse disconnect reason code from the server command");
         }

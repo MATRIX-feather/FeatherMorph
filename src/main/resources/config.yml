@@ -152,6 +152,18 @@ root:
     # Disable this will also disable the bossbar ability for all disguises.
     enabled: true
 
+  # Misc world options
+  world_option:
+    # Disabled worlds, players in these worlds will not be able to use the disguise feature
+    #
+    # Example:
+    # disabled_worlds:
+    #   - example_world1
+    #   - example_world2
+    disabled_worlds:
+      - example_world1
+      - example_world2
+
   # Fly ability options
   flying:
     # The base distance for Hunger consumption.
@@ -359,4 +371,4 @@ root:
       - SelectedItem
 
   # Do not touch unless you know what you're doing!
-  version: 38
+  version: 39

@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.world.phys.Vec3;
@@ -17,7 +18,7 @@ import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.Unmodifiable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.nifeather.morph.MorphPlugin;
+import xyz.nifeather.morph.FeatherMorphMain;
 
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -36,7 +37,7 @@ public class NmsUtils
             throw new IllegalArgumentException("No NMS EntityType for bukkit type '%s'".formatted(bukkitType));
 
         var nmsWorld = ((CraftWorld) targetWorld).getHandle();
-        var nmsEntity = nmsType.create(nmsWorld);
+        var nmsEntity = nmsType.create(nmsWorld, EntitySpawnReason.COMMAND);
 
         if (nmsEntity == null)
             throw new IllegalArgumentException("Unable to spawn entity");
@@ -68,7 +69,7 @@ public class NmsUtils
     @Unmodifiable
     public static List<String> getSyncableAttributeListFor(EntityType bukkitType)
     {
-        var logger = MorphPlugin.getInstance().getSLF4JLogger();
+        var logger = FeatherMorphMain.getInstance().getSLF4JLogger();
         var cached = syncableAttributesMap.getOrDefault(bukkitType, null);
         if (cached != null)
             return cached;

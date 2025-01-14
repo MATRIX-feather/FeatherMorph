@@ -55,7 +55,7 @@ public class DisguiseSelectScreenWrapper extends ScreenWrapper
         this.template.addAll(config.getBindableList(String.class, ConfigOption.GUI_PATTERN));
 
         this.guiInstance = this.preparePage();
-        initElements();
+        initElements(this.guiInstance);
     }
 
     /**
@@ -181,7 +181,7 @@ public class DisguiseSelectScreenWrapper extends ScreenWrapper
         return (char)(1000 + index);
     }
 
-    private void initElements()
+    private void initElements(InventoryGui guiInstance)
     {
         var bindingPlayer = getBindingPlayer();
 

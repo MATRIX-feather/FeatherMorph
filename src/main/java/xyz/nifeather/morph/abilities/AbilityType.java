@@ -20,8 +20,6 @@ public class AbilityType
 
     public static final NamespacedKey HAS_FEATHER_FALLING = new NamespacedKey(nameSpace, "feather_falling");
     public static final NamespacedKey NO_FALL_DAMAGE = new NamespacedKey(nameSpace, "no_fall_damage");
-    public static final NamespacedKey REDUCES_FALL_DAMAGE = new NamespacedKey(nameSpace, "reduce_fall_damage");
-    public static final NamespacedKey REDUCES_MAGIC_DAMAGE = new NamespacedKey(nameSpace, "reduce_magic_damage");
     public static final NamespacedKey SNOWY = new NamespacedKey(nameSpace, "snowy");
     public static final NamespacedKey WARDEN_LESS_AWARE = new NamespacedKey(nameSpace, "warden_less_aware");
     public static final NamespacedKey WARDEN = new NamespacedKey(nameSpace, "warden");
@@ -34,4 +32,8 @@ public class AbilityType
     public static final NamespacedKey DRYOUT_IN_AIR = new NamespacedKey(nameSpace, "dryout_in_air");
     public static final NamespacedKey POTION_ON_ATTACK = new NamespacedKey(nameSpace, "potion_on_attack");
     public static final NamespacedKey SPIDER = new NamespacedKey(nameSpace, "spider");
+
+    public static final NamespacedKey REDUCES_FALL_DAMAGE = new NamespacedKey(nameSpace, "reduce_fall_damage");
+    public static final NamespacedKey REDUCES_MAGIC_DAMAGE = new NamespacedKey(nameSpace, "reduce_magic_damage");
+    public static final NamespacedKey REDUCES_WITHER_DAMAGE = new NamespacedKey(nameSpace, "reduce_wither_damage");
 }

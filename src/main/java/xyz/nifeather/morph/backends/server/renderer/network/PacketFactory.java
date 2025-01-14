@@ -166,7 +166,7 @@ public class PacketFactory extends MorphPluginObject
                     spawnUUID, watcher.readEntryOrThrow(CustomEntries.PROFILE),
                     watcher.readEntryOrDefault(CustomEntries.PROFILE_LISTED, false),
                     114514, GameType.DEFAULT_MODE,
-                    null, null
+                    null, true, 0, null
             )
         );
 

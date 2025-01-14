@@ -90,7 +90,7 @@ public class SoundListener extends ProtocolListener
         // 获取正要播放的音效
         AtomicReference<ResourceLocation> resourceLocationRef = new AtomicReference<>(null);
         left.ifPresent(rK -> resourceLocationRef.set(rK.location()));
-        right.ifPresent(se -> resourceLocationRef.set(se.getLocation()));
+        right.ifPresent(se -> resourceLocationRef.set(se.location()));
 
         if (resourceLocationRef.get() == null) return null;
         SoundEvent sound = null;
@@ -116,8 +116,7 @@ public class SoundListener extends ProtocolListener
                 || path.endsWith(".hurt_freeze")
                 || path.endsWith(".hurt_sweet_berry_bush"))
         {
-            var soundId = EntityTypeUtils.getDamageSound(watcher.getEntityType());
-            if (soundId == null) return null;
+            var soundId = EntityTypeUtils.getDamageSoundKey(watcher.getEntityType());
 
             ResourceLocation rL = ResourceLocation.tryParse(soundId);
             if (rL == null) return null;

@@ -187,6 +187,12 @@ public class MorphStrings extends AbstractMorphStrings
                 "<color:red>客户端模组版本不匹配");
     }
 
+    public static FormattableMessage unsupportedClientBehavior()
+    {
+        return getFormattable(getKey("unsupported_client_behavior"),
+                "[Fallback] <color:red>检测到不受支持的客户端行为，将不会启用增强功能！");
+    }
+
     public static FormattableMessage noEnoughSpaceString()
     {
         return getFormattable(getKey("no_enough_space"),
@@ -203,6 +209,11 @@ public class MorphStrings extends AbstractMorphStrings
     {
         return getFormattable(getKey("operation_cancelled"),
                 "<red>操作被其他来源取消");
+    }
+
+    public static FormattableMessage disguiseDisabledInWorldString()
+    {
+        return getFormattable(getKey("disguise_disabled"), "[Fallback] 无法伪装，因为此功能在当前世界被禁用");
     }
 
     public static FormattableMessage revealed()
