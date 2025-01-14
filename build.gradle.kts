@@ -104,7 +104,7 @@ dependencies {
         exclude("org.slf4j")
     }
 
-    implementation("com.github.MATRIX-feather:InventoryGui:791e7bdd65")
+    implementation("com.github.MATRIX-feather:InventoryGui:5b9617812f")
 
     //compileOnly("dev.majek:hexnicks:3.1.1")
 
