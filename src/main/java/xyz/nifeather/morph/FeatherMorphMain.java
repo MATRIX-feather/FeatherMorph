@@ -52,11 +52,8 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
         return instance;
     }
 
-    private final FeatherMorphBootstrap bootstrap;
-
-    public FeatherMorphMain(FeatherMorphBootstrap bootstrap)
+    public FeatherMorphMain()
     {
-        this.bootstrap = bootstrap;
         instance = this;
     }
 
@@ -142,6 +139,7 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
                     "Please use %s instead!".formatted(primaryVersion)
             );
 
+            FeatherMorphBootstrap.muteHotReloadWarning = true;
             pluginManager.disablePlugin(this);
             return;
         }
@@ -272,14 +270,18 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
     {
         if (!getServer().isStopping())
         {
-            printImportantWarning(true,
-                    "HEY, THERE!",
-                    "Are you doing a hot reload?",
-                    "Note that FeatherMorph does NOT support doing such!",
-                    "Before you open any issues, please do a FULL RESTART for your server! We will NOT provide any support after the hot reload!");
+            if (!FeatherMorphBootstrap.muteHotReloadWarning)
+            {
+                printImportantWarning(true,
+                        "HEY, THERE!",
+                        "Are you doing a hot reload?",
+                        "Note that FeatherMorph does NOT support doing such!",
+                        "Before you open any issues, please do a FULL RESTART for your server! We will NOT provide any support after the hot reload!");
+            }
         }
 
-        bootstrap.pluginDisabled.set(true);
+        FeatherMorphBootstrap.muteHotReloadWarning = false;
+        FeatherMorphBootstrap.pluginDisabled.set(true);
 
         //调用super.onDisable后依赖管理器会被清空
         //需要在调用前先把一些东西处理好
