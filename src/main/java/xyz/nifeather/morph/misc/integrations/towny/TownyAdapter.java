@@ -10,6 +10,7 @@ import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.metadata.BooleanDataField;
 import com.palmergames.bukkit.towny.utils.CombatUtil;
 import com.palmergames.bukkit.towny.utils.MetaDataUtil;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import org.bukkit.Bukkit;
@@ -26,8 +27,10 @@ import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Bindables.Bindable;
 import xiamomc.pluginbase.Command.IPluginCommand;
+import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.abilities.impl.FlyAbility;
+import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
 import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
 
@@ -45,27 +48,14 @@ public class TownyAdapter extends MorphPluginObject implements Listener
 
     public static final BooleanDataField allowMorphFlight = new BooleanDataField("allow_morph_flight");
 
-    public boolean registerCommand(IPluginCommand command)
-    {
-        if (Objects.equals(command.getCommandName(), ""))
-        {
-            return false;
-        }
-        else
-        {
-            PluginCommand cmd = Bukkit.getPluginCommand(command.getCommandName());
+    private final FeatherMorphMain plugin;
 
-            if (cmd != null && cmd.getExecutor().equals(plugin))
-            {
-                cmd.setExecutor(command);
-                cmd.setTabCompleter(command);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+    public TownyAdapter(FeatherMorphMain plugin)
+    {
+        this.plugin = plugin;
+
+        plugin.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
+                new TownyToggleFlightCommand(this).register(event.registrar()));
     }
 
     @Initializer
@@ -78,9 +68,6 @@ public class TownyAdapter extends MorphPluginObject implements Listener
             Bukkit.getOnlinePlayers().forEach(p ->
                     this.scheduleOn(p, () -> updatePlayer(p, null)));
         });
-
-        if (!registerCommand(new TownyToggleFlightCommand(this)))
-            logger.warn("Can't register flight toggle command for towny integration, expect problems!");
     }
 
     private boolean allowFlightAt(Player player, @Nullable Town town)
@@ -98,8 +85,6 @@ public class TownyAdapter extends MorphPluginObject implements Listener
         // 如果这个town不支持飞行
         if (MetaDataUtil.hasMeta(town, allowMorphFlight))
             return MetaDataUtil.getBoolean(town, allowMorphFlight);
-
-        // MetaDataUtil.setBoolean(town, allowMorphFlight, true, true);
 
         // 如果这个town信任这个玩家，那么true
         if (town.getTrustedResidents().contains(resident))
@@ -125,6 +110,12 @@ public class TownyAdapter extends MorphPluginObject implements Listener
             return true;
 
         return false;
+    }
+
+    @EventHandler
+    public void onTownCreate(NewTownEvent e)
+    {
+        MetaDataUtil.setBoolean(e.getTown(), TownyAdapter.allowMorphFlight, true, true);
     }
 
     @EventHandler

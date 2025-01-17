@@ -20,7 +20,7 @@ public class DisguiseProperties
 
     private final Map<EntityType, AbstractProperties> handlerMap = new ConcurrentHashMap<>();
 
-    public DisguiseProperties()
+    private DisguiseProperties()
     {
         register(EntityType.FROG, new FrogProperties());
         register(EntityType.CAT, new CatProperties());

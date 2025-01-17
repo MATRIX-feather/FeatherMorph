@@ -77,7 +77,7 @@ public class GrantDisguiseSubCommand extends MorphPluginObject implements IConve
 
         players.forEach(who ->
         {
-            var targetName = StringArgumentType.getString(context, "what");
+            var targetName = DisguiseIdentifierArgumentType.getArgument(context, "what");
 
             if (!who.isOnline())
                 return;

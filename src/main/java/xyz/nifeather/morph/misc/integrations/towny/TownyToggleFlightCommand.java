@@ -1,25 +1,26 @@
 package xyz.nifeather.morph.misc.integrations.towny;
 
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.context.CommandContext;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.utils.MetaDataUtil;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import xiamomc.pluginbase.Command.IPluginCommand;
+import org.jetbrains.annotations.Nullable;
 import xiamomc.pluginbase.Messages.FormattableMessage;
-import xyz.nifeather.morph.MorphPluginObject;
+import xyz.nifeather.morph.commands.brigadier.BrigadierCommand;
 import xyz.nifeather.morph.messages.CommandNameStrings;
 import xyz.nifeather.morph.messages.CommandStrings;
 import xyz.nifeather.morph.messages.CommonStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
 import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 
-import java.util.List;
-
-public class TownyToggleFlightCommand extends MorphPluginObject implements IPluginCommand
+public class TownyToggleFlightCommand extends BrigadierCommand
 {
     private final TownyAdapter adapter;
 
@@ -29,42 +30,63 @@ public class TownyToggleFlightCommand extends MorphPluginObject implements IPlug
     }
 
     @Override
-    public String getCommandName()
-    {
-        return "toggle-town-morph-flight";
-    }
-
-    @Override
     public String getPermissionRequirement()
     {
         return CommonPermissions.TOGGLE_TOWN_FLIGHT;
     }
 
     @Override
-    public FormattableMessage getHelpMessage()
+    public @NotNull String name()
     {
-        return new FormattableMessage(plugin, "Toggle town flight");
-    }
-
-    private final List<String> validOptions = List.of("on", "off");
-
-    @Override
-    public List<String> onTabComplete(List<String> args, CommandSender source)
-    {
-        if (args.size() > 1) return List.of();
-
-        var argZero = args.isEmpty() ? "" : args.get(0);
-        var zeroFinal = argZero.toUpperCase();
-
-        return validOptions.stream().filter(str -> str.toUpperCase().startsWith(zeroFinal)).toList();
+        return "toggle-town-morph-flight";
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String baseName, @NotNull String[] args)
+    public boolean register(Commands dispatcher)
     {
-        if (!(sender instanceof Player player))
-            return false;
+        dispatcher.register(
+                Commands.literal(name())
+                        .executes(this::execNoArg)
+                        .then(Commands.argument("switch", BoolArgumentType.bool())
+                                .executes(this::execWithArg))
+                        .build()
+        );
 
+        return true;
+    }
+
+    private int execWithArg(CommandContext<CommandSourceStack> context)
+    {
+        if (!(context.getSource().getExecutor() instanceof Player player))
+            return 0;
+
+        var bool = BoolArgumentType.getBool(context, "switch");
+
+        this.toggle(
+                context.getSource().getSender(),
+                player,
+                bool
+        );
+
+        return 1;
+    }
+
+    private int execNoArg(CommandContext<CommandSourceStack> context)
+    {
+        if (!(context.getSource().getExecutor() instanceof Player player))
+            return 0;
+
+        this.toggle(
+                context.getSource().getSender(),
+                player,
+                null
+        );
+
+        return 1;
+    }
+
+    private void toggle(CommandSender sender, Player player, @Nullable Boolean input)
+    {
         var towny = TownyAPI.getInstance();
         var town = towny.getTown(player);
         var resident = towny.getResident(player);
@@ -72,19 +94,19 @@ public class TownyToggleFlightCommand extends MorphPluginObject implements IPlug
         if (town == null)
         {
             sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.townyDoesntHaveTown()));
-            return true;
+            return;
         }
 
         if (resident == null)
         {
             sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.unknownError()));
-            return true;
+            return;
         }
 
         if (!town.isMayor(resident))
         {
             sender.sendMessage(MessageUtils.prefixes(sender, CommandStrings.townyPlayerNotMayor()));
-            return true;
+            return;
         }
 
         var playerLocale = MessageUtils.getLocale(sender);
@@ -95,7 +117,7 @@ public class TownyToggleFlightCommand extends MorphPluginObject implements IPlug
 
         boolean allow;
 
-        if (args.length < 1)
+        if (input == null)
         {
             boolean currentAllow = true;
 
@@ -107,7 +129,7 @@ public class TownyToggleFlightCommand extends MorphPluginObject implements IPlug
         }
         else
         {
-            allow = parse(args[0]);
+            allow = input;
         }
 
         setTownFlightStatus(town, allow);
@@ -116,14 +138,12 @@ public class TownyToggleFlightCommand extends MorphPluginObject implements IPlug
 
         sender.sendMessage(MessageUtils.prefixes(sender, message));
 
-        return true;
     }
 
-    private boolean parse(String str)
+    @Override
+    public FormattableMessage getHelpMessage()
     {
-        if (str.equalsIgnoreCase("on")) return true;
-        else if (str.equalsIgnoreCase("off")) return false;
-        else return Boolean.parseBoolean(str);
+        return new FormattableMessage(plugin, "Toggle town flight");
     }
 
     private void setTownFlightStatus(Town town, boolean newStatus)

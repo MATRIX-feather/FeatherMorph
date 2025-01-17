@@ -18,6 +18,7 @@ import xiamomc.pluginbase.Messages.FormattableMessage;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.commands.brigadier.IConvertibleBrigadier;
+import xyz.nifeather.morph.commands.brigadier.arguments.DisguiseIdentifierArgumentType;
 import xyz.nifeather.morph.commands.brigadier.arguments.ValueMapArgumentType;
 import xyz.nifeather.morph.messages.HelpStrings;
 import xyz.nifeather.morph.messages.MessageUtils;
@@ -56,8 +57,7 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
                 .requires(this::checkPermission)
                 .executes(this::executeNoArg)
                         .then(
-                                Commands.argument("id", ArgumentTypes.key())
-                                        .suggests(this::suggestID)
+                                Commands.argument("id", DisguiseIdentifierArgumentType.FOR_PLAYER)
                                         .executes(this::execWithID)
                                         .then(
                                                 Commands.argument("properties", propertyArgument)
@@ -81,33 +81,6 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
 
                 propertyArgument.setProperty(name, values);
             }
-        });
-    }
-
-    public @NotNull CompletableFuture<Suggestions> suggestID(CommandContext<CommandSourceStack> context, SuggestionsBuilder suggestionsBuilder)
-    {
-        var source = context.getSource().getExecutor();
-
-        if (!(source instanceof Player player))
-            return CompletableFuture.completedFuture(suggestionsBuilder.build());
-
-        String input = suggestionsBuilder.getRemainingLowerCase();
-
-        var availableDisguises = morphs.getAvaliableDisguisesFor(player);
-
-        return CompletableFuture.supplyAsync(() ->
-        {
-            for (DisguiseMeta disguiseMeta : availableDisguises)
-            {
-                var name = disguiseMeta.getKey();
-
-                if (!name.toLowerCase().contains(input))
-                    continue;
-
-                suggestionsBuilder.suggest(name);
-            }
-
-            return suggestionsBuilder.build();
         });
     }
 
@@ -144,7 +117,7 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
             return Command.SINGLE_SUCCESS;
         }
 
-        String inputID = context.getArgument("id", Key.class).toString();
+        String inputID = DisguiseIdentifierArgumentType.getArgument(context, "id");
         this.doDisguise(context.getSource().getSender(), player, inputID, null);
 
         return 1;
@@ -182,7 +155,7 @@ public class MorphCommand extends MorphPluginObject implements IConvertibleBriga
         }
 
         var propertiesInput = ValueMapArgumentType.get("properties", context);
-        var disguiseInput = context.getArgument("id", Key.class).toString();
+        var disguiseInput =  DisguiseIdentifierArgumentType.getArgument(context, "id");
 
         this.doDisguise(sender, player, disguiseInput, propertiesInput);
 

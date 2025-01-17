@@ -60,7 +60,7 @@ public class ForceMorphSubCommand extends MorphPluginObject implements IConverti
 
         players.forEach(who ->
         {
-            var targetName = StringArgumentType.getString(context, "as_what");
+            var targetName = DisguiseIdentifierArgumentType.getArgument(context, "as_what");
 
             var commandSender = context.getSource().getSender();
             if (!who.isOnline())

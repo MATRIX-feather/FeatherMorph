@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.scoreboard.Scoreboard;
+import org.jetbrains.annotations.Nullable;
 import xyz.nifeather.morph.abilities.AbilityManager;
 import xyz.nifeather.morph.commands.*;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -173,10 +174,13 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
             this.registerListener(new ResidenceEventProcessor());
         }, true);
 
+        @Nullable
+        TownyAdapter townyAdapter = null;
+
         softDeps.setHandle("Towny", plugin ->
         {
             logger.info("Towny detected, applying integrations...");
-            this.registerListener(new TownyAdapter());
+            this.registerListener(new TownyAdapter(this));
         }, true);
 
         softDeps.setHandle("ModelEngine", r ->
