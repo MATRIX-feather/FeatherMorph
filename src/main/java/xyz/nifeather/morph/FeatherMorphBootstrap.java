@@ -22,7 +22,8 @@ public class FeatherMorphBootstrap implements PluginBootstrap
 
     public boolean bootstrapLoaded = false;
 
-    final AtomicBoolean pluginDisabled = new AtomicBoolean(false);
+    static final AtomicBoolean pluginDisabled = new AtomicBoolean(false);
+    static boolean muteHotReloadWarning = false;
 
     @Override
     public void bootstrap(@NotNull BootstrapContext context)
@@ -37,6 +38,6 @@ public class FeatherMorphBootstrap implements PluginBootstrap
     public @NotNull JavaPlugin createPlugin(@NotNull PluginProviderContext context)
     {
         logger.info("Creating FeatherMorphMain...");
-        return new FeatherMorphMain(this);
+        return new FeatherMorphMain();
     }
 }
