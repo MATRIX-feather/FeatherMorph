@@ -69,7 +69,7 @@ public class RevokeDisguiseSubCommand extends MorphPluginObject implements IConv
 
         players.forEach(who ->
         {
-            var targetName = StringArgumentType.getString(context, "id");
+            var targetName = DisguiseIdentifierArgumentType.getArgument(context, "id");
 
             var commandSender = context.getSource().getSender();
             if (!who.isOnline())

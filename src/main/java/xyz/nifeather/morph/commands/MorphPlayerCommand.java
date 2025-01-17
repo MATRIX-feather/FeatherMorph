@@ -36,7 +36,7 @@ public class MorphPlayerCommand extends MorphPluginObject implements IConvertibl
         dispatcher.register(
                 Commands.literal(name())
                         .then(
-                                Commands.argument("who",  StringArgumentType.greedyString())
+                                Commands.argument("who", StringArgumentType.word())
                                         .executes(this::executes)
                                         .suggests(this::suggests)
                         )
@@ -51,7 +51,7 @@ public class MorphPlayerCommand extends MorphPluginObject implements IConvertibl
         if (!(context.getSource().getExecutor() instanceof Player player))
             return com.mojang.brigadier.Command.SINGLE_SUCCESS;
 
-        var targetName = StringArgumentType.getString(context, "name");
+        var targetName = StringArgumentType.getString(context, "who");
 
         player.performCommand("morph" + " " + DisguiseTypes.PLAYER.toId(targetName));
 
