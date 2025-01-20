@@ -640,8 +640,7 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
         {
             var type = entity.getType();
 
-            if (type != EntityType.CREAKING)
-                morphs.grantMorphToPlayer(player, type.getKey().asString());
+            morphs.grantMorphToPlayer(player, type.getKey().asString());
         }
     }
 }
