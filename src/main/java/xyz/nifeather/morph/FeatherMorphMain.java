@@ -2,6 +2,7 @@ package xyz.nifeather.morph;
 
 import com.ticxo.modelengine.api.ModelEngineAPI;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
@@ -9,6 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.Nullable;
+import xiamomc.pluginbase.ScheduleInfo;
 import xyz.nifeather.morph.abilities.AbilityManager;
 import xyz.nifeather.morph.commands.*;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -37,6 +39,7 @@ import xiamomc.pluginbase.Messages.MessageStore;
 import xiamomc.pluginbase.XiaMoJavaPlugin;
 
 import java.util.Arrays;
+import java.util.List;
 
 public final class FeatherMorphMain extends XiaMoJavaPlugin
 {
@@ -263,6 +266,55 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
 
         //Init GUI IconLookup
         IconLookup.instance();
+    }
+
+    @Override
+    protected void tick()
+    {
+        currentTick += 1;
+
+        if (cancelSchedules) return;
+
+        List<ScheduleInfo> schedulesTemp;
+
+        synchronized (schedules)
+        {
+            schedulesTemp = new ObjectArrayList<>(this.schedules.size());
+            schedulesTemp.addAll(this.schedules);
+        }
+
+        schedulesTemp.forEach(c ->
+        {
+            if (c == null)
+            {
+                if (doInternalDebugOutput)
+                    logger.warn("Trying to execute a NULL ScheduleInfo?! This shouldn't happen!");
+
+                return;
+            }
+
+            if (c.isCanceled())
+            {
+                this.schedules.remove(c);
+                return;
+            }
+
+            if (currentTick - c.TickScheduled >= c.Delay)
+            {
+                this.schedules.remove(c);
+
+                //Allows us to cancel half-way
+                if (cancelSchedules) return;
+
+                //logger.info("执行：" + c + "，当前TICK：" + currentTick);\
+                if (c.isAsync)
+                    runAsync(() -> runFunction(c));
+                else
+                    runFunction(c);
+            }
+        });
+
+        schedulesTemp.clear();
     }
 
     @Override
