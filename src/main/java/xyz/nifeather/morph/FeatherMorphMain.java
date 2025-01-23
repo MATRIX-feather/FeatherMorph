@@ -269,55 +269,6 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
     }
 
     @Override
-    protected void tick()
-    {
-        currentTick += 1;
-
-        if (cancelSchedules) return;
-
-        List<ScheduleInfo> schedulesTemp;
-
-        synchronized (schedules)
-        {
-            schedulesTemp = new ObjectArrayList<>(this.schedules.size());
-            schedulesTemp.addAll(this.schedules);
-        }
-
-        schedulesTemp.forEach(c ->
-        {
-            if (c == null)
-            {
-                if (doInternalDebugOutput)
-                    logger.warn("Trying to execute a NULL ScheduleInfo?! This shouldn't happen!");
-
-                return;
-            }
-
-            if (c.isCanceled())
-            {
-                this.schedules.remove(c);
-                return;
-            }
-
-            if (currentTick - c.TickScheduled >= c.Delay)
-            {
-                this.schedules.remove(c);
-
-                //Allows us to cancel half-way
-                if (cancelSchedules) return;
-
-                //logger.info("执行：" + c + "，当前TICK：" + currentTick);\
-                if (c.isAsync)
-                    runAsync(() -> runFunction(c));
-                else
-                    runFunction(c);
-            }
-        });
-
-        schedulesTemp.clear();
-    }
-
-    @Override
     public void disable()
     {
         if (!getServer().isStopping())
