@@ -469,16 +469,16 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
         // 检查是否可以通过头颅伪装
         if (DisguiseUtils.validForHeadMorph(mainHandItemType))
         {
-            if (!player.hasPermission(CommonPermissions.HEAD_MORPH))
+            if (!allowHeadMorph.get())
             {
-                player.sendMessage(MessageUtils.prefixes(player, CommandStrings.noPermissionMessage()));
+                //player.sendMessage(MessageUtils.prefixes(player, MorphStrings.headDisguiseDisabledString()));
 
                 return true;
             }
 
-            if (!allowHeadMorph.get())
+            if (!player.hasPermission(CommonPermissions.HEAD_MORPH))
             {
-                player.sendMessage(MessageUtils.prefixes(player, MorphStrings.headDisguiseDisabledString()));
+                player.sendMessage(MessageUtils.prefixes(player, CommandStrings.noPermissionMessage()));
 
                 return true;
             }
