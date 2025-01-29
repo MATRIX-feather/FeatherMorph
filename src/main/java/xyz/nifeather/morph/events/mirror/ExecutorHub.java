@@ -45,6 +45,8 @@ public class ExecutorHub extends MorphPluginObject
     public final Bindable<Boolean> logOperations = new Bindable<>(false);
     public final Bindable<Integer> cleanUpDate = new Bindable<>(3);
 
+    public final Bindable<Integer> controlRange = new Bindable<>(0);
+
     @Initializer
     private void load(MorphConfigManager config)
     {
@@ -52,8 +54,7 @@ public class ExecutorHub extends MorphPluginObject
 
         config.bind(logOperations, ConfigOption.MIRROR_LOG_OPERATION);
         config.bind(cleanUpDate, ConfigOption.MIRROR_LOG_CLEANUP_DATE);
-
-        config.getOrDefault(Integer.class, ConfigOption.MIRROR_CONTROL_DISTANCE);
+        config.bind(controlRange, ConfigOption.MIRROR_CONTROL_DISTANCE);
     }
 
     private void update()
