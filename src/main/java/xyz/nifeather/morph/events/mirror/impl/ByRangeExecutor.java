@@ -23,15 +23,19 @@ public class ByRangeExecutor extends ChainedExecutor
     {
         var targetName = getTargetControlFor(source);
         if (targetName == null)
-            return null;
+            targetName = source.getName();
 
         var range = executorHub.getControlDistance();
 
+        String finalTargetName = targetName;
         var nmsPlayer = NmsRecord.ofPlayer(source).level()
                 .getNearestPlayer(source.getX(), source.getY(), source.getZ(),
                 range, entity ->
                 {
                     var bukkitInstance = entity.getBukkitEntity();
+
+                    if (bukkitInstance == source)
+                        return false;
 
                     if (!(bukkitInstance instanceof Player player))
                         return false;
@@ -41,10 +45,10 @@ public class ByRangeExecutor extends ChainedExecutor
 
                     var theirState = morphManager().getDisguiseStateFor(bukkitInstance);
 
-                    if (theirState != null && theirState.getDisguiseIdentifier().equals("player:" + targetName))
+                    if (theirState != null && theirState.getDisguiseIdentifier().equals("player:" + finalTargetName))
                         return true;
                     else
-                        return bukkitInstance.getName().equals(targetName) && theirState == null;
+                        return bukkitInstance.getName().equals(finalTargetName) && theirState == null;
                 });
 
         return nmsPlayer == null ? null : (Player) nmsPlayer.getBukkitEntity();
