@@ -15,6 +15,7 @@ import xyz.nifeather.morph.abilities.AbilityManager;
 import xyz.nifeather.morph.commands.*;
 import xyz.nifeather.morph.config.MorphConfigManager;
 import xyz.nifeather.morph.events.*;
+import xyz.nifeather.morph.events.mirror.ExecutorHub;
 import xyz.nifeather.morph.interfaces.IManagePlayerData;
 import xyz.nifeather.morph.interfaces.IManageRequests;
 import xyz.nifeather.morph.messages.MessageUtils;
@@ -49,7 +50,6 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
      * 仅当当前对象无法继承MorphPluginObject或不需要完全继承MorphPluginObject时使用
      * @return 插件的实例
      */
-    @Deprecated
     public static FeatherMorphMain getInstance()
     {
         return instance;
@@ -91,11 +91,11 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
 
     private Metrics metrics;
 
-    private InteractionMirrorProcessor mirrorProcessor;
-
     private MultiInstanceService instanceService;
 
     private EntityProcessor entityProcessor;
+
+    private ExecutorHub mirrorExecutorHub;
 
     private static final String noticeHeaderFooter = "- x - x - x - x - x - x - x - x - x - x - x - x -";
     private void printImportantWarning(boolean critical, String... warnings)
@@ -239,7 +239,9 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
 
         dependencyManager.cache(new RecipeManager());
 
-        mirrorProcessor = new InteractionMirrorProcessor();
+        dependencyManager.cache(mirrorExecutorHub = new ExecutorHub());
+
+        var mirrorProcessor = new InteractionMirrorProcessor();
 
         // Commands
         var lifecycleManager = this.getLifecycleManager();
@@ -305,8 +307,8 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
             if (metrics != null)
                 metrics.shutdown();
 
-            if (mirrorProcessor != null)
-                mirrorProcessor.pushToLoggingBase();
+            if (mirrorExecutorHub != null)
+                mirrorExecutorHub.pushToLoggingBase();
 
             if (instanceService != null)
                 instanceService.onDisable();

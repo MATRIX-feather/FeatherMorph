@@ -1,5 +1,6 @@
 package xyz.nifeather.morph.utilities;
 
+import ca.spottedleaf.moonrise.common.util.TickThread;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -13,6 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.Unmodifiable;
@@ -135,5 +137,12 @@ public class NmsUtils
         syncableAttributesMap.put(bukkitType, ObjectLists.unmodifiable(validAttributes));
 
         return validAttributes;
+    }
+
+    public static boolean isTickThreadFor(Entity entity)
+    {
+        var nms = ((CraftEntity) entity).getHandle();
+
+        return TickThread.isTickThreadFor(nms);
     }
 }
