@@ -1,5 +1,7 @@
 package xyz.nifeather.morph.events.mirror.impl;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.world.level.GameType;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -9,7 +11,6 @@ import xyz.nifeather.morph.misc.NmsRecord;
 import xyz.nifeather.morph.storage.mirrorlogging.OperationType;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ByRangeExecutor extends ChainedExecutor
 {
@@ -21,37 +22,43 @@ public class ByRangeExecutor extends ChainedExecutor
     @Override
     protected @Nullable Player findNextControllablePlayerFrom(Player source, List<Player> pendingChain)
     {
+        var index = pendingChain.indexOf(source);
+
+        if (index == -1 || index >= pendingChain.size())
+            return null;
+
+        return pendingChain.get(index + 1);
+    }
+
+    @Override
+    protected List<Player> buildSimulateChain(Player source)
+    {
         var targetName = getTargetControlFor(source);
         if (targetName == null)
-            targetName = source.getName();
+            return List.of(source);
 
-        var range = executorHub.getControlDistance();
+        var matchedPlayers = source.getWorld().getNearbyPlayers(source.getLocation(), executorHub.getControlDistance(), p ->
+        {
+            if (p == source)
+                return false;
 
-        String finalTargetName = targetName;
-        var nmsPlayer = NmsRecord.ofPlayer(source).level()
-                .getNearestPlayer(source.getX(), source.getY(), source.getZ(),
-                range, entity ->
-                {
-                    var bukkitInstance = entity.getBukkitEntity();
+            if (NmsRecord.ofPlayer(p).gameMode.getGameModeForPlayer() ==GameType.SPECTATOR)
+                return false;
 
-                    if (bukkitInstance == source)
-                        return false;
+            var theirState = morphManager().getDisguiseStateFor(p);
 
-                    if (!(bukkitInstance instanceof Player player))
-                        return false;
+            if (theirState != null && theirState.getDisguiseIdentifier().equals("player:" + targetName))
+                return true;
+            else
+                return p.getName().equals(targetName) && theirState == null;
+        });
 
-                    if (pendingChain.contains(player))
-                        return false;
+        var list = new ObjectArrayList<Player>();
 
-                    var theirState = morphManager().getDisguiseStateFor(bukkitInstance);
+        list.add(source);
+        list.addAll(matchedPlayers);
 
-                    if (theirState != null && theirState.getDisguiseIdentifier().equals("player:" + finalTargetName))
-                        return true;
-                    else
-                        return bukkitInstance.getName().equals(finalTargetName) && theirState == null;
-                });
-
-        return nmsPlayer == null ? null : (Player) nmsPlayer.getBukkitEntity();
+        return list;
     }
 
     @Override
@@ -92,6 +99,12 @@ public class ByRangeExecutor extends ChainedExecutor
         });
 
         return false;
+    }
+
+    @Override
+    public boolean onHurtEntity(Player damager, Player hurted)
+    {
+        return !isInChain(damager) || !isInChain(hurted);
     }
 
     @Override

@@ -71,9 +71,20 @@ public abstract class ChainedExecutor extends AbstractExecutor
         currentSimulateChain.remove();
     }
 
+    /**
+     * 寻找给定玩家的下一个可控制目标
+     * @param pendingChain 可以用来参考的模拟链，该链可能未完成
+     */
     @Nullable
     protected abstract Player findNextControllablePlayerFrom(Player source, List<Player> pendingChain);
 
+    /**
+     * 构建包含发起玩家在内的模拟链
+     * @implNote 发起的玩家必须是第一个元素
+     *
+     * @param source
+     * @return
+     */
     protected List<Player> buildSimulateChain(Player source)
     {
         List<Player> chain = new ObjectArrayList<>();
@@ -163,75 +174,6 @@ public abstract class ChainedExecutor extends AbstractExecutor
                 logOperation(player, targetPlayer, OperationType.ReleaseUsingItem);
             }
         });
-    }
-
-    @Override
-    public boolean onHurtEntity(Player damager, Player hurted)
-    {
-        var targetPlayer = findNextControllablePlayerFrom(damager, List.of());
-
-        if (targetPlayer == null)
-            return false;
-
-        // 因为HurtEntity之后一定有次ArmSwing，所以不需要在这里进行模拟操作
-
-        var damagerLookingAt = damager.getTargetEntity(5);
-        var playerLookingAt = targetPlayer.getTargetEntity(5);
-
-        //如果伪装的玩家想攻击的实体和被伪装的玩家一样，模拟左键并取消事件
-        if (damagerLookingAt != null && damagerLookingAt.equals(playerLookingAt))
-            return true;
-
-        return hurted.equals(targetPlayer);
-    }
-
-    @Override
-    public boolean onSwing(Player source)
-    {
-        var isInChain = isInChain(source);
-
-        // 如果玩家在链条中，并且不是链条中的最后一个，则取消挥手的事件
-        if (isInChain)
-        {
-            if (isLastInChain(source))
-                return false;
-
-            return true;
-        }
-
-        var tracker = tracker();
-
-        //若源玩家正在丢出物品，不要处理
-        if (tracker.droppingItemThisTick(source))
-            return false;
-
-        var lastAction = tracker.getLastInteractAction(source);
-
-        //如果此时玩家没有触发Interaction, 那么默认设置为左键空气
-        if (!tracker.interactingThisTick(source))
-            lastAction = PlayerTracker.InteractType.LEFT_CLICK_AIR;
-
-        if (lastAction == null) return false;
-
-        //旁观者模式下左键方块不会产生Interact事件，我们得猜这个玩家现在是左键还是右键
-        if (source.getGameMode() == GameMode.SPECTATOR)
-        {
-            if (lastAction.isRightClick())
-                lastAction = PlayerTracker.InteractType.LEFT_CLICK_BLOCK;
-        }
-
-        PlayerTracker.InteractType finalLastAction = lastAction;
-        AtomicBoolean simulateSuccess = new AtomicBoolean(false);
-
-        runIfChainable(source, targetPlayer ->
-        {
-            simulateSuccess.set(true);
-
-            simulateOperation(finalLastAction.toBukkitAction(), targetPlayer, source);
-            logOperation(source, targetPlayer, finalLastAction.isLeftClick() ? OperationType.LeftClick : OperationType.RightClick);
-        });
-
-        return simulateSuccess.get();
     }
 
     @Override
