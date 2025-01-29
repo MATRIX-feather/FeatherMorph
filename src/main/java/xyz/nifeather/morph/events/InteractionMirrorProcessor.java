@@ -24,7 +24,9 @@ import xyz.nifeather.morph.events.mirror.ExecutorHub;
 import xyz.nifeather.morph.misc.DisguiseState;
 import xyz.nifeather.morph.misc.DisguiseTypes;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 public class InteractionMirrorProcessor extends MorphPluginObject implements Listener
 {
@@ -124,8 +126,6 @@ public class InteractionMirrorProcessor extends MorphPluginObject implements Lis
     {
         if (!allowSimulation.get()) return;
 
-        Thread.dumpStack();
-
         AtomicBoolean shouldCancel = new AtomicBoolean(false);
 
         executorHub.executeIfExists(selectionMode.get(), executor ->
@@ -163,6 +163,17 @@ public class InteractionMirrorProcessor extends MorphPluginObject implements Lis
     {
         public static final String BY_NAME = "BY_NAME";
         public static final String BY_SIGHT = "BY_SIGHT";
+        public static final String BY_RANGE = "BY_RANGE";
+
+        public static List<String> values()
+        {
+            return List.of(BY_NAME, BY_SIGHT, BY_RANGE);
+        }
+
+        public static List<String> valuesLowerCase()
+        {
+            return values().stream().map(String::toLowerCase).toList();
+        }
     }
 
     public record PlayerInfo(@Nullable Player target, @NotNull String targetName)

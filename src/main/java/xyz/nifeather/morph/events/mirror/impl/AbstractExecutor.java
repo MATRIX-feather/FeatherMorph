@@ -1,5 +1,6 @@
 package xyz.nifeather.morph.events.mirror.impl;
 
+import io.papermc.paper.event.player.PlayerArmSwingEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryType;
@@ -19,6 +20,7 @@ import xyz.nifeather.morph.misc.permissions.CommonPermissions;
 import xyz.nifeather.morph.network.server.MorphClientHandler;
 import xyz.nifeather.morph.storage.mirrorlogging.OperationType;
 import xyz.nifeather.morph.utilities.DisguiseUtils;
+import xyz.nifeather.morph.utilities.ItemUtils;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -118,5 +120,41 @@ public abstract class AbstractExecutor extends MorphPluginObject implements IExe
         }, () -> { /* retired */ });
     }
 
-    protected abstract boolean simulateOperation(Action action, Player targetPlayer, Player source);
+    /**
+     * 模拟玩家操作
+     *
+     * @param action 操作类型
+     * @param targetPlayer 目标玩家
+     * @return 操作是否成功
+     */
+    protected boolean simulateOperation(Action action, Player targetPlayer, Player source)
+    {
+        // 如果栈内包含目标玩家，或者此玩家这个tick已经和环境互动过了一次，那么忽略此操作
+        if (tracker().interactingThisTick(targetPlayer))
+            return false;
+
+        var isRightClick = action.isRightClick();
+        var result = isRightClick
+                ? operationSimulator().simulateRightClick(targetPlayer)
+                : operationSimulator().simulateLeftClick(targetPlayer);
+
+        boolean success = false;
+
+        if (result.success())
+        {
+            var itemInUse = targetPlayer.getEquipment().getItem(result.hand()).getType();
+
+            if (!isRightClick || !ItemUtils.isContinuousUsable(itemInUse) || result.forceSwing())
+            {
+                var allowed = new PlayerArmSwingEvent(targetPlayer, result.hand()).callEvent();
+
+                if (allowed)
+                    targetPlayer.swingHand(result.hand());
+            }
+
+            success = true;
+        }
+
+        return success;
+    }
 }

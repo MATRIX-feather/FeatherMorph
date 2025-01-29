@@ -1,6 +1,7 @@
 package xyz.nifeather.morph.events.mirror;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.bukkit.Registry;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.inventory.ItemStack;
@@ -13,6 +14,7 @@ import xyz.nifeather.morph.config.ConfigOption;
 import xyz.nifeather.morph.config.MorphConfigManager;
 import xyz.nifeather.morph.events.InteractionMirrorProcessor;
 import xyz.nifeather.morph.events.mirror.impl.ByNameExecutor;
+import xyz.nifeather.morph.events.mirror.impl.ByRangeExecutor;
 import xyz.nifeather.morph.events.mirror.impl.BySightExecutor;
 import xyz.nifeather.morph.storage.DirectoryStorage;
 import xyz.nifeather.morph.storage.mirrorlogging.MirrorSingleEntry;
@@ -37,6 +39,7 @@ public class ExecutorHub extends MorphPluginObject
     {
         registerExecutor(InteractionMirrorProcessor.InteractionMirrorSelectionMode.BY_NAME, new ByNameExecutor(this));
         registerExecutor(InteractionMirrorProcessor.InteractionMirrorSelectionMode.BY_SIGHT, new BySightExecutor(this));
+        registerExecutor(InteractionMirrorProcessor.InteractionMirrorSelectionMode.BY_RANGE, new ByRangeExecutor(this));
     }
 
     public final Bindable<Boolean> logOperations = new Bindable<>(false);

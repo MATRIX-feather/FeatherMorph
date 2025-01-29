@@ -1,6 +1,7 @@
 package xyz.nifeather.morph.events.mirror.impl;
 
 import ca.spottedleaf.moonrise.common.util.TickThread;
+import io.papermc.paper.event.player.PlayerArmSwingEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
@@ -54,38 +55,6 @@ public class ByNameExecutor extends AbstractExecutor
             info = new InteractionMirrorProcessor.PlayerInfo(targetPlayer, targetName);
 
         return info;
-    }
-
-    /**
-     * 模拟玩家操作
-     *
-     * @param action 操作类型
-     * @param targetPlayer 目标玩家
-     * @return 操作是否成功
-     */
-    protected boolean simulateOperation(Action action, Player targetPlayer, Player source)
-    {
-        // 如果玩家这个tick已经和环境互动过了一次，那么忽略此操作
-        if (tracker().interactingThisTick(targetPlayer)) return false;
-
-        var isRightClick = action.isRightClick();
-        var result = isRightClick
-                ? operationSimulator().simulateRightClick(targetPlayer)
-                : operationSimulator().simulateLeftClick(targetPlayer);
-
-        boolean success = false;
-
-        if (result.success())
-        {
-            var itemInUse = targetPlayer.getEquipment().getItem(result.hand()).getType();
-
-            if (!isRightClick || !ItemUtils.isContinuousUsable(itemInUse) || result.forceSwing())
-                targetPlayer.swingHand(result.hand());
-
-            success = true;
-        }
-
-        return success;
     }
 
     private void scheduleIfNotInSameRegion(Player targetPlayer, Runnable consumer)
