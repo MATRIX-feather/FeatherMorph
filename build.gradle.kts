@@ -246,6 +246,15 @@ java {
     withSourcesJar()
 }
 
+// See https://github.com/jpenilla/run-task/wiki/Debugging#hot-swap
+tasks.withType(xyz.jpenilla.runtask.task.AbstractRun::class) {
+    javaLauncher = javaToolchains.launcherFor {
+        vendor = JvmVendorSpec.JETBRAINS
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+}
+
 tasks.build {
     dependsOn(tasks.shadowJar)
 
