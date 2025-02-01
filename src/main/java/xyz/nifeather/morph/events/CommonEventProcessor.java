@@ -479,7 +479,7 @@ public class CommonEventProcessor extends MorphPluginObject implements Listener
     @EventHandler
     public void onPlayerExit(PlayerQuitEvent e)
     {
-        clientHandler.unInitializePlayer(e.getPlayer());
+        clientHandler.disconnect(e.getPlayer());
         skillHandler.removeUnusedList(e.getPlayer());
 
         var state = morphs.getDisguiseStateFor(e.getPlayer());

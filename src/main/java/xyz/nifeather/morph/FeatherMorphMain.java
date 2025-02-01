@@ -2,7 +2,6 @@ package xyz.nifeather.morph;
 
 import com.ticxo.modelengine.api.ModelEngineAPI;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
@@ -10,7 +9,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.Nullable;
-import xiamomc.pluginbase.ScheduleInfo;
 import xyz.nifeather.morph.abilities.AbilityManager;
 import xyz.nifeather.morph.commands.*;
 import xyz.nifeather.morph.config.MorphConfigManager;
@@ -40,7 +38,6 @@ import xiamomc.pluginbase.Messages.MessageStore;
 import xiamomc.pluginbase.XiaMoJavaPlugin;
 
 import java.util.Arrays;
-import java.util.List;
 
 public final class FeatherMorphMain extends XiaMoJavaPlugin
 {
@@ -263,7 +260,7 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
                             entityProcessor = new EntityProcessor()
                     });
 
-            clientHandler.sendReAuth(Bukkit.getOnlinePlayers());
+            clientHandler.reAuthPlayers(Bukkit.getOnlinePlayers());
         });
 
         //Init GUI IconLookup

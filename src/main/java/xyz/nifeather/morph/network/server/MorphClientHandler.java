@@ -28,6 +28,7 @@ import xiamomc.morph.network.commands.S2C.set.S2CSetSelfViewingCommand;
 import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Bindables.Bindable;
+import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.MorphManager;
 import xyz.nifeather.morph.FeatherMorphMain;
 import xyz.nifeather.morph.MorphPluginObject;
@@ -70,6 +71,7 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     private void sendPacket(String channel, Player player, String message, boolean legacy)
     {
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
+
         if (!legacy)
             buffer.writeUtf(message);
         else
@@ -236,12 +238,11 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         allowClient.onValueChanged((o, n) ->
         {
             var players = Bukkit.getOnlinePlayers();
-            players.forEach(this::unInitializePlayer);
 
             if (n)
-                this.sendReAuth(players);
+                this.reAuthPlayers(players);
             else
-                this.sendUnAuth(players);
+                this.disconnectPlayers(players);
         });
 
         Bukkit.getOnlinePlayers().forEach(p ->
@@ -544,8 +545,8 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
     {
         var players = Bukkit.getOnlinePlayers();
 
-        sendUnAuth(players);
-        sendReAuth(players);
+        disconnectPlayers(players);
+        reAuthPlayers(players);
     }
 
     public void rejectPlayer(Player player)
@@ -561,15 +562,25 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
      *
      * @param player 目标玩家
      */
-    public void unInitializePlayer(Player player)
+    private void unInitializePlayer(Player player)
     {
+        if (!this.playerSessionMap.containsKey(player))
+        {
+            if (FeatherMorphMain.getInstance().doInternalDebugOutput)
+                logger.info("Skipping disconnect for player %s since it does not have a session.".formatted(player));
+
+            return;
+        }
+
         this.sendCommand(player, new S2CUnAuthCommand(), true);
 
         this.playerSessionMap.remove(player);
 
         var playerConfig = manager.getPlayerMeta(player);
+
         var state = manager.getDisguiseStateFor(player);
-        if (state != null) state.setServerSideSelfVisible(playerConfig.showDisguiseToSelf);
+        if (state != null)
+            state.setServerSideSelfVisible(playerConfig.showDisguiseToSelf);
     }
 
     /**
@@ -577,20 +588,14 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
      *
      * @param players 玩家列表
      */
-    public void sendReAuth(Collection<? extends Player> players)
+    public void reAuthPlayers(Collection<? extends Player> players)
     {
         if (!allowClient.get()) return;
 
         players.forEach(p ->
         {
-            var session = this.getSession(p);
-
-            if (session == null) return;
-
-            session.connectionState = ConnectionState.JOINED;
-            session.initializeState = InitializeState.NOT_CONNECTED;
-
-            sendCommand(p, new S2CReAuthCommand(), true);
+            // This is not what standard protocol supposed to do but it's the only way to make it work
+            this.sendPacket(MessageChannel.initializeChannel, p, newProtocolIdentify, false);
         });
     }
 
@@ -599,9 +604,9 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
      *
      * @param players 玩家列表
      */
-    public void sendUnAuth(Collection<? extends Player> players)
+    public void disconnectPlayers(Collection<? extends Player> players)
     {
-        players.forEach(this::unInitializePlayer);
+        players.forEach(this::disconnect);
     }
 
     //endregion Auth/UnAuth
@@ -735,12 +740,14 @@ public class MorphClientHandler extends MorphPluginObject implements BasicClient
         if ((!allowClient.get() || !this.clientConnected(player)) && !forceSend) return false;
 
         var session = this.getSession(player);
-        var isLegacy = session == null || session.isLegacyPacketBuf;
 
-        if (!isLegacy)
-            this.sendPacket(MessageChannel.commandChannel, player, cmd, false);
-        else
+        if (session == null)
+            throw new NullDependencyException("Player %s does not have a session registered.".formatted(player.getName()));
+
+        if (session.isLegacyPacketBuf)
             this.sendPacket(MessageChannel.commandChannelLegacy, player, cmd, true);
+        else
+            this.sendPacket(MessageChannel.commandChannel, player, cmd, false);
 
         return true;
     }
