@@ -167,7 +167,7 @@ public class InteractionMirrorProcessor extends MorphPluginObject implements Lis
 
         public static List<String> values()
         {
-            return List.of(BY_NAME, BY_SIGHT, BY_RANGE);
+            return List.of(BY_NAME, BY_SIGHT /*, BY_RANGE */);
         }
 
         public static List<String> valuesLowerCase()

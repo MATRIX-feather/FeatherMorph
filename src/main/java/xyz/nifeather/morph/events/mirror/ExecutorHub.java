@@ -39,7 +39,7 @@ public class ExecutorHub extends MorphPluginObject
     {
         registerExecutor(InteractionMirrorProcessor.InteractionMirrorSelectionMode.BY_NAME, new ByNameExecutor(this));
         registerExecutor(InteractionMirrorProcessor.InteractionMirrorSelectionMode.BY_SIGHT, new BySightExecutor(this));
-        registerExecutor(InteractionMirrorProcessor.InteractionMirrorSelectionMode.BY_RANGE, new ByRangeExecutor(this));
+        //registerExecutor(InteractionMirrorProcessor.InteractionMirrorSelectionMode.BY_RANGE, new ByRangeExecutor(this));
     }
 
     public final Bindable<Boolean> logOperations = new Bindable<>(false);
