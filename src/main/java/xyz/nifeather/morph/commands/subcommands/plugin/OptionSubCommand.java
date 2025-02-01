@@ -102,10 +102,7 @@ public class OptionSubCommand extends MorphPluginObject implements IConvertibleB
     private IConvertibleBrigadier getMirrorMode(String name, ConfigOption option, @Nullable FormattableMessage displayName)
     {
         return new OptionSubCommands.LimiterStringListOptionCommand(
-                name, config, option, List.of(
-                        InteractionMirrorProcessor.InteractionMirrorSelectionMode.BY_NAME.toLowerCase(),
-                        InteractionMirrorProcessor.InteractionMirrorSelectionMode.BY_SIGHT.toLowerCase())
-        );
+                name, config, option, InteractionMirrorProcessor.InteractionMirrorSelectionMode.valuesLowerCase());
     }
 
     private IConvertibleBrigadier getInteger(String name, ConfigOption option)

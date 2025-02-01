@@ -106,13 +106,20 @@ public class DisguiseIdentifierArgumentType extends MorphPluginObject implements
     {
         return CompletableFuture.supplyAsync(() ->
         {
+            var input = builder.getRemainingLowerCase();
+
             if (!cachedAvailableIDs.isEmpty())
             {
-                cachedAvailableIDs.forEach(builder::suggest);
+                cachedAvailableIDs.forEach(id ->
+                {
+                    if (!id.toLowerCase().contains(input))
+                        return;
+
+                    builder.suggest(id);
+                });
+
                 return builder.build();
             }
-
-            var input = builder.getRemainingLowerCase();
 
             for (var p : MorphManager.getProviders())
             {

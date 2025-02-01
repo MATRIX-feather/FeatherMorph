@@ -112,6 +112,7 @@ public class ItemUtils
                 || type == Material.SHIELD
                 || type == Material.POTION
                 || type == Material.MILK_BUCKET
+                || type == Material.SPYGLASS
                 || type.isEdible();
     }
 }
