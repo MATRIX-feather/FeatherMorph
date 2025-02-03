@@ -276,7 +276,11 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
                 cmds.add(new MIS2CSyncMetaCommand(Operation.ADD_IF_ABSENT, identifiers, meta.uniqueId));
         }
 
+        logMasterInfo("Synced %s metadata(s) to socket '%s'".formatted(disguises.size(), socket.getRemoteSocketAddress()));
+
         cmds.forEach(cmd -> this.sendCommand(socket, cmd));
+
+        switchState(socket, ProtocolState.WAIT_LISTEN);
     }
 
     private final NetworkDisguiseManager disguiseManager = new NetworkDisguiseManager();
@@ -294,8 +298,8 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
 
         assert socket != null;
 
-        var meta = cDisguiseMetaCommand.getMeta();
-        if (meta == null || !meta.isValid())
+        var socketMeta = cDisguiseMetaCommand.getMeta();
+        if (socketMeta == null || !socketMeta.isValid())
         {
             logMasterWarn("Bad client implementation? Got invalid meta from '%s'".formatted(socket.getRemoteSocketAddress()));
             return;
@@ -309,23 +313,18 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
             return;
         }
 
-        if (state == ProtocolState.SYNC)
-            switchState(socket, ProtocolState.WAIT_LISTEN);
+        var operation = socketMeta.getOperation();
+        var identifiers = socketMeta.getIdentifiers();
 
-        var operation = meta.getOperation();
-        var identifiers = meta.getIdentifiers();
-
-        var playerMeta = disguiseManager.getPlayerMeta(Bukkit.getOfflinePlayer(Objects.requireNonNull(meta.getBindingUuid(), "???")));
-        var unlocked = playerMeta.getUnlockedDisguises();
+        var playerMeta = disguiseManager.getPlayerMeta(Bukkit.getOfflinePlayer(Objects.requireNonNull(socketMeta.getBindingUuid(), "???")));
 
         if (operation == Operation.ADD_IF_ABSENT)
         {
-            identifiers.forEach(id ->
+            var unlocked = playerMeta.getUnlockedDisguiseIdentifiers();
+            socketMeta.getIdentifiers().forEach(str ->
             {
-                var disguiseMeta = disguiseManager.getDisguiseMeta(id);
-
-                if (!unlocked.contains(disguiseMeta))
-                    playerMeta.addDisguise(disguiseMeta);
+                if (!unlocked.contains(str))
+                    playerMeta.addDisguise(disguiseManager.getDisguiseMeta(str));
             });
 
             // Broadcast to all allowed sockets
@@ -334,7 +333,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
                 if (allowedSocket == cDisguiseMetaCommand.getSocket())
                     continue;
 
-                this.sendCommand(allowedSocket, new MIS2CSyncMetaCommand(meta));
+                this.sendCommand(allowedSocket, new MIS2CSyncMetaCommand(socketMeta));
             }
         }
         else if (operation == Operation.REMOVE)
@@ -352,7 +351,7 @@ public class MasterInstance extends MorphPluginObject implements IInstanceServic
                 if (allowedSocket == cDisguiseMetaCommand.getSocket())
                     continue;
 
-                this.sendCommand(allowedSocket, new MIS2CSyncMetaCommand(meta));
+                this.sendCommand(allowedSocket, new MIS2CSyncMetaCommand(socketMeta));
             }
         }
     }

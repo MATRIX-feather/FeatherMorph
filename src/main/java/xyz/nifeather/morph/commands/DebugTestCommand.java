@@ -1,6 +1,8 @@
 package xyz.nifeather.morph.commands;
 
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 import xiamomc.pluginbase.Annotations.Resolved;
@@ -24,6 +26,30 @@ public class DebugTestCommand extends BrigadierCommand
     @Override
     public boolean register(Commands dispatcher)
     {
+
+        dispatcher.register(
+                Commands.literal("listRaw")
+                        .then(
+                                Commands.argument("who", ArgumentTypes.player())
+                                        .executes(ctx ->
+                                        {
+                                            var players = ctx.getArgument("who", PlayerSelectorArgumentResolver.class)
+                                                    .resolve(ctx.getSource());
+
+                                            if (players.isEmpty()) return 0;
+                                            var player = players.getFirst();
+
+                                            var source = ctx.getSource().getSender();
+                                            for (var meta : morphManager.getPlayerMeta(player).getUnlockedDisguises())
+                                            {
+                                                source.sendMessage(meta.rawIdentifier);
+                                            }
+
+
+                                            return 1;
+                                        })
+                        ).build()
+        );
 
         dispatcher.register(
                 Commands.literal("testDataStore").executes(ctx ->

@@ -183,24 +183,23 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
             return;
         }
 
-        var meta = metaCommand.getMeta();
-        if (meta == null)
+        var socketMeta = metaCommand.getMeta();
+        if (socketMeta == null)
         {
             logSlaveWarn("Bad server implementation? Get DisguiseMeta command but meta is null!");
             return;
         }
 
-        if (!meta.isValid())
+        if (!socketMeta.isValid())
         {
             logSlaveWarn("Bad server implementation? The meta is invalid!");
             return;
         }
 
-        var operation = meta.getOperation();
-        var offlinePlayer = Bukkit.getOfflinePlayer(Objects.requireNonNull(meta.getBindingUuid(), "???"));
+        var operation = socketMeta.getOperation();
+        var offlinePlayer = Bukkit.getOfflinePlayer(Objects.requireNonNull(socketMeta.getBindingUuid(), "???"));
 
         var playerMeta = morphManager.getPlayerMeta(offlinePlayer);
-        var unlocked = playerMeta.getUnlockedDisguises();
 
         var player = offlinePlayer.getPlayer();
 
@@ -209,15 +208,13 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
         if (operation == Operation.ADD_IF_ABSENT)
         {
             var countPrev = playerMeta.getUnlockedDisguises().size();
-            meta.getIdentifiers().forEach(id ->
+            var unlocked = playerMeta.getUnlockedDisguiseIdentifiers();
+
+            socketMeta.getIdentifiers().forEach(str ->
             {
-                var disguiseMeta = morphManager.getDisguiseMeta(id);
-
-                if (!unlocked.contains(disguiseMeta))
-                    playerMeta.addDisguise(disguiseMeta);
+                if (!unlocked.contains(str))
+                    playerMeta.addDisguise(morphManager.getDisguiseMeta(str));
             });
-
-            //morphManager.saveConfiguration();
 
             if (player != null && playerMeta.getUnlockedDisguiseIdentifiers().size() != countPrev)
                 clientHandler.refreshPlayerClientMorphs(playerMeta.getUnlockedDisguiseIdentifiers(), player);
@@ -226,7 +223,7 @@ public class SlaveInstance extends MorphPluginObject implements IInstanceService
         {
             var countPrev = playerMeta.getUnlockedDisguises().size();
 
-            meta.getIdentifiers().forEach(id ->
+            socketMeta.getIdentifiers().forEach(id ->
             {
                 var disguiseMeta = morphManager.getDisguiseMeta(id);
 
