@@ -252,7 +252,8 @@ tasks.withType(xyz.jpenilla.runtask.task.AbstractRun::class) {
         vendor = JvmVendorSpec.JETBRAINS
         languageVersion = JavaLanguageVersion.of(21)
     }
-    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+
+    jvmArgs("-XX:+AllowEnhancedClassRedefinition", "-Dbstats.relocatecheck=false")
 }
 
 tasks.build {
@@ -268,12 +269,28 @@ tasks.build {
 }
 
 tasks.shadowJar {
-    minimize()
+
+    // This allows us to do hot-swap by setting `NO_RELOCATE` to `yes`
+    // See https://github.com/jpenilla/run-task/wiki/Debugging#hot-swap
+    //
+    // ❛
+    //      If you are using Shadow to relocate dependencies,
+    //      you may need to disable relocations or create a separate artifact without relocations for hot-swap to work properly.
+    //                                                                                                                            ❜
+    if (System.getenv("NO_RELOCATE") == "yes")
+    {
+        System.out.println("Not relocating classes!")
+    }
+    else
+    {
+        minimize()
+        relocate("xiamomc.pluginbase", "xyz.nifeather.morph.shaded.pluginbase")
+        relocate("org.bstats", "xyz.nifeather.morph.shaded.bstats")
+        relocate("de.tr7zw.changeme.nbtapi", "xyz.nifeather.morph.shaded.nbtapi")
+        relocate("de.themoep.inventorygui", "xyz.nifeather.morph.shaded.inventorygui")
+    }
+
     archiveFileName = "FeatherMorph-${project.property("project_version")}+${project.property("mc_version")}-final.jar"
-    relocate("xiamomc.pluginbase", "xyz.nifeather.morph.shaded.pluginbase")
-    relocate("org.bstats", "xyz.nifeather.morph.shaded.bstats")
-    relocate("de.tr7zw.changeme.nbtapi", "xyz.nifeather.morph.shaded.nbtapi")
-    relocate("de.themoep.inventorygui", "xyz.nifeather.morph.shaded.inventorygui")
 }
 
 // https://stackoverflow.com/a/74848372
