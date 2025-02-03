@@ -74,6 +74,11 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
 
     private final OfflineStateStore offlineStorage = new OfflineStateStore();
 
+    public PlayerDataStoreNew getDataStore()
+    {
+        return data;
+    }
+
     @Resolved
     private MorphSkillHandler skillHandler;
 

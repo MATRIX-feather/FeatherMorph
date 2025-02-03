@@ -31,6 +31,9 @@ public class PlayerDataStoreNew extends DirectoryJsonBasedStorage<PlayerMeta> im
 
         if (packageVersion < TARGET_PACKAGE_VERSION)
             update(packageVersion);
+
+        defaultMeta.uniqueId = UUID.fromString("0-0-0-0-0");
+        defaultMeta.playerName = "~RESERVED META, SHOULD NOT BE USED~";
     }
 
     private static final int TARGET_PACKAGE_VERSION = PackageVersions.INITIAL;
@@ -195,6 +198,11 @@ public class PlayerDataStoreNew extends DirectoryJsonBasedStorage<PlayerMeta> im
 
     private final Map<UUID, PlayerMeta> trackedPlayerMetaMap = new ConcurrentHashMap<>();
 
+    private boolean isDefaultMeta(@Nullable PlayerMeta meta)
+    {
+        return meta == null || meta == defaultMeta;
+    }
+
     /**
      * 获取玩家的伪装配置
      *
@@ -210,9 +218,13 @@ public class PlayerDataStoreNew extends DirectoryJsonBasedStorage<PlayerMeta> im
         if (tracked != null) return tracked;
 
         var storedMeta = this.get(uuid.toString());
-        if (storedMeta != null)
+
+        // Don't process default meta
+        if (!isDefaultMeta(storedMeta))
         {
+            storedMeta.playerName = player.getName();
             initializePlayerMeta(storedMeta, uuid);
+
             trackedPlayerMetaMap.put(uuid, storedMeta);
 
             return storedMeta;
@@ -221,6 +233,7 @@ public class PlayerDataStoreNew extends DirectoryJsonBasedStorage<PlayerMeta> im
         var metaInstance = new PlayerMeta();
         metaInstance.uniqueId = player.getUniqueId();
         metaInstance.playerName = player.getName();
+        initializePlayerMeta(metaInstance, uuid);
 
         trackedPlayerMetaMap.put(uuid, metaInstance);
 
@@ -230,6 +243,8 @@ public class PlayerDataStoreNew extends DirectoryJsonBasedStorage<PlayerMeta> im
     private void initializePlayerMeta(PlayerMeta meta, UUID matchingUUID)
     {
         meta.uniqueId = matchingUUID;
+
+        logger.info("Doing init for " + meta);
 
         //要设置给c.unlockedDisguises的列表
         var list = new ObjectArrayList<DisguiseMeta>();
@@ -319,7 +334,7 @@ public class PlayerDataStoreNew extends DirectoryJsonBasedStorage<PlayerMeta> im
             if (uuid == null || this.trackedPlayerMetaMap.containsKey(uuid)) continue;
 
             var meta = this.get(fileName);
-            if (meta == null) continue;
+            if (isDefaultMeta(meta)) continue;
 
             initializePlayerMeta(meta, uuid);
 
