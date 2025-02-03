@@ -42,7 +42,8 @@ public class PlayerMeta
 
     public void setUnlockedDisguises(ObjectArrayList<DisguiseMeta> newList)
     {
-        if (disguiseListLocked) throw new IllegalStateException("伪装列表已被锁定，不能设置");
+        if (disguiseListLocked)
+            throw new IllegalStateException("不能为 %s 重新设定解锁的伪装，因为列表已被锁定".formatted(this));
 
         unlockedDisguises = newList;
     }
@@ -82,9 +83,16 @@ public class PlayerMeta
 
     public void setUnlockedDisguiseIdentifiers(ObjectArrayList<String> newList)
     {
-        if (disguiseListLocked) throw new IllegalStateException("伪装列表已被锁定，不能设置");
+        if (disguiseListLocked)
+            throw new IllegalStateException("不能为 %s 重新设定原始解锁的伪装，因为列表已被锁定".formatted(this));
 
         unlockedDisguiseIdentifiers = newList;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "PlayerMeta{ UUID=%s, Name=%s }".formatted(this.uniqueId, this.playerName);
     }
 
     /**

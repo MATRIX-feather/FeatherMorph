@@ -6,6 +6,7 @@ import xyz.nifeather.morph.MorphPluginObject;
 
 public abstract class BrigadierCommand extends MorphPluginObject implements IConvertibleBrigadier
 {
+    @Nullable
     public abstract String getPermissionRequirement();
 
     @Override
