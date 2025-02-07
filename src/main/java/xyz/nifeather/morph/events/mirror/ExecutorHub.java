@@ -108,7 +108,7 @@ public class ExecutorHub extends MorphPluginObject
 
     public int getControlDistance()
     {
-        return 100;
+        return controlRange.get();
     }
 
     //region Operation Logging
