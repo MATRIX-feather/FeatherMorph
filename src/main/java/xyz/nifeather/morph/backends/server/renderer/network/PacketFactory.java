@@ -16,8 +16,10 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
+import org.jetbrains.annotations.Nullable;
 import xyz.nifeather.morph.MorphPluginObject;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.AbstractValues;
+import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.SingleWatcher;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.utilties.ProtocolRegistryUtils;
@@ -28,6 +30,7 @@ import xyz.nifeather.morph.utilities.NmsUtils;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -250,22 +253,14 @@ public class PacketFactory extends MorphPluginObject
         var valuesToSent = watcher.getDirty();
         watcher.clearDirty();
 
+        var customSerializeMethods = watcher.customSerializeMethods();
+
         valuesToSent.forEach((single, val) ->
         {
-            WrappedDataWatcher.Serializer serializer;
+            var wrapped = buildEntityMetadata(single, val, customSerializeMethods);
 
-            try
-            {
-                serializer = ProtocolRegistryUtils.getSerializer(single);
-            }
-            catch (Throwable t)
-            {
-                logger.warn("Error occurred while generating meta packet with id '%s': %s".formatted(single.name(), t.getMessage()));
-                return;
-            }
-
-            var value = new WrappedDataValue(single.index(), serializer, val);
-            wrappedDataValues.add(value);
+            if (wrapped != null)
+                wrappedDataValues.add(wrapped);
         });
 
         modifier.write(0, wrappedDataValues);
@@ -273,6 +268,38 @@ public class PacketFactory extends MorphPluginObject
         markPacketOurs(metaPacket);
 
         return metaPacket;
+    }
+
+    @Nullable
+    public WrappedDataValue buildEntityMetadata(SingleValue<?> single, Object val, Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializers)
+    {
+        WrappedDataWatcher.Serializer serializer;
+
+        WrappedDataValue dataValue;
+
+        var csm = customSerializers.remove(single);
+        if (csm != null)
+        {
+            // :>
+            var customSerializeMethod = (ICustomSerializeMethod<Object>) csm;
+            dataValue = customSerializeMethod.apply((SingleValue<Object>) single, val);
+        }
+        else
+        {
+            try
+            {
+                serializer = ProtocolRegistryUtils.getSerializer(single);
+            }
+            catch (Throwable t)
+            {
+                logger.warn("Error occurred while generating meta packet with id '%s': %s".formatted(single.index(), t.getMessage()));
+                return null;
+            }
+
+            dataValue = new WrappedDataValue(single.index(), serializer, val);
+        }
+
+        return dataValue;
     }
 
     public PacketContainer buildFullMetaPacket(Player player, SingleWatcher watcher)
@@ -289,6 +316,8 @@ public class PacketFactory extends MorphPluginObject
         var valuesToSent = watcher.getOverlayedRegistry();
         watcher.clearDirty();
 
+        var customSerializeMethods = watcher.customSerializeMethods();
+
         valuesToSent.forEach((index, val) ->
         {
             WrappedDataWatcher.Serializer serializer;
@@ -297,18 +326,10 @@ public class PacketFactory extends MorphPluginObject
             if (sv == null)
                 throw new IllegalArgumentException("Not SingleValue found for index " + index);
 
-            try
-            {
-                serializer = ProtocolRegistryUtils.getSerializer(sv);
-            }
-            catch (Throwable t)
-            {
-                logger.warn("Error occurred while generating meta packet with id '%s': %s".formatted(index, t.getMessage()));
-                return;
-            }
+            var wrapped = buildEntityMetadata(sv, val, customSerializeMethods);
 
-            var value = new WrappedDataValue(index, serializer, val);
-            wrappedDataValues.add(value);
+            if (wrapped != null)
+                wrappedDataValues.add(wrapped);
         });
 
         modifier.write(0, wrappedDataValues);

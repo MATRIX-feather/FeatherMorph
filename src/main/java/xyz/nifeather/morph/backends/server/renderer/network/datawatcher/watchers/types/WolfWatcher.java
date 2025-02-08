@@ -1,18 +1,25 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.types;
 
+import com.comphenix.protocol.wrappers.WrappedDataValue;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.animal.WolfVariant;
 import net.minecraft.world.entity.animal.WolfVariants;
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wolf;
-import xiamomc.pluginbase.Exceptions.NullDependencyException;
+import xyz.nifeather.morph.FeatherMorphMain;
+import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
+import xyz.nifeather.morph.backends.server.renderer.network.ICustomSerializeMethod;
+import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
@@ -22,11 +29,26 @@ import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
 import xyz.nifeather.morph.misc.disguiseProperty.values.WolfProperties;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
 public class WolfWatcher extends TameableAnimalWatcher
 {
     public WolfWatcher(Player bindingPlayer)
     {
         super(bindingPlayer, EntityType.WOLF);
+
+        var nmsWolfVariantHandle = WrappedDataWatcher.Registry.fromHandle(EntityDataSerializers.WOLF_VARIANT);
+        customSerializeMethods.put(ValueIndex.WOLF.WOLF_VARIANT, CustomSerializeMethods.WOLF_VARIANT);
+    }
+
+    private final Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializeMethods = new ConcurrentHashMap<>();
+
+    @Override
+    public Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializeMethods()
+    {
+        return customSerializeMethods;
     }
 
     @Override
@@ -35,13 +57,6 @@ public class WolfWatcher extends TameableAnimalWatcher
         super.initRegistry();
 
         register(ValueIndex.WOLF);
-    }
-
-    public Holder<WolfVariant> getVariant(Wolf.Variant bukkitVariant)
-    {
-        var bukkitKey = bukkitVariant.getKey();
-
-        return HolderUtils.getHolderOrThrow(ResourceLocation.parse(bukkitKey.asString()), Registries.WOLF_VARIANT);
     }
 
     @Override
@@ -53,7 +68,7 @@ public class WolfWatcher extends TameableAnimalWatcher
         {
             var val = (Wolf.Variant) value;
 
-            this.writePersistent(ValueIndex.WOLF.WOLF_VARIANT, getVariant(val));
+            this.writePersistent(ValueIndex.WOLF.WOLF_VARIANT, val);
         }
 
         super.onPropertyWrite(property, value);
@@ -87,28 +102,25 @@ public class WolfWatcher extends TameableAnimalWatcher
         if (nbt.contains("variant"))
         {
             var typeString = nbt.getString("variant");
-            ResourceLocation rl;
-            ResourceKey<WolfVariant> type = WolfVariants.PALE;
+            NamespacedKey key = NamespacedKey.fromString(typeString);;
 
-            try
+            if (key == null && FeatherMorphMain.getInstance().doInternalDebugOutput)
             {
-                rl = ResourceLocation.parse(typeString);
-                type = ResourceKey.create(Registries.WOLF_VARIANT, rl);
-            }
-            catch (Throwable t)
-            {
-                logger.error("Failed reading FrogVariant from NBT: " + t.getMessage());
+                logger.warn("[DEBUG] Ignoring unknown variant: " + typeString);
+                return;
             }
 
-            writePersistent(ValueIndex.WOLF.WOLF_VARIANT, getVariant(type));
+            writePersistent(ValueIndex.WOLF.WOLF_VARIANT, getVariant(key));
         }
     }
 
-    private Holder<WolfVariant> getVariant(ResourceKey<WolfVariant> key)
+    private Wolf.Variant getVariant(NamespacedKey key)
     {
         try
         {
-            return HolderUtils.getHolderOrThrow(key, Registries.WOLF_VARIANT);
+            return RegistryAccess.registryAccess()
+                    .getRegistry(RegistryKey.WOLF_VARIANT)
+                    .getOrThrow(key);
         }
         catch (Throwable t)
         {
@@ -117,45 +129,12 @@ public class WolfWatcher extends TameableAnimalWatcher
         }
     }
 
-    private Wolf.Variant getBukkitVariant(Holder<WolfVariant> holder)
-    {
-        var variants = new Wolf.Variant[]
-        {
-                Wolf.Variant.WOODS,
-                Wolf.Variant.ASHEN,
-                Wolf.Variant.BLACK,
-                Wolf.Variant.PALE,
-                Wolf.Variant.RUSTY,
-                Wolf.Variant.CHESTNUT,
-                Wolf.Variant.SNOWY,
-                Wolf.Variant.SPOTTED,
-                Wolf.Variant.STRIPED
-        };
-
-        var idOptional = holder.unwrapKey();
-        if (idOptional.isEmpty())
-        {
-            logger.error("Empty ID for holder " + holder + ", can't get bukkit variant");
-            return Wolf.Variant.PALE;
-        }
-
-        var id = holder.unwrapKey().get().location().toString();
-        for (Wolf.Variant variant : variants)
-        {
-            if (variant.key().toString().equalsIgnoreCase(id))
-                return variant;
-        }
-
-        logger.error("No suitable bukkit variant for id " + id);
-        return Wolf.Variant.PALE;
-    }
-
     @Override
     public void writeToCompound(CompoundTag nbt)
     {
         super.writeToCompound(nbt);
 
         nbt.putByte("CollarColor", read(ValueIndex.WOLF.COLLAR_COLOR).byteValue());
-        nbt.putString("variant", getBukkitVariant(read(ValueIndex.WOLF.WOLF_VARIANT)).key().asString());
+        nbt.putString("variant", read(ValueIndex.WOLF.WOLF_VARIANT).key().asString());
     }
 }
