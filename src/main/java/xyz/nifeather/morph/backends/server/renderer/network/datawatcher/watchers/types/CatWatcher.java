@@ -14,6 +14,9 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
+import xyz.nifeather.morph.backends.server.renderer.network.ICustomSerializeMethod;
+import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
@@ -23,11 +26,24 @@ import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
 import xyz.nifeather.morph.misc.disguiseProperty.values.CatProperties;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class CatWatcher extends TameableAnimalWatcher
 {
     public CatWatcher(Player bindingPlayer)
     {
         super(bindingPlayer, EntityType.CAT);
+
+        customSerializeMethods.put(ValueIndex.CAT.CAT_VARIANT, CustomSerializeMethods.CAT_VARIANT);
+    }
+
+    private final Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializeMethods = new ConcurrentHashMap<>();
+
+    @Override
+    public Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializeMethods()
+    {
+        return customSerializeMethods;
     }
 
     @Override
@@ -38,33 +54,6 @@ public class CatWatcher extends TameableAnimalWatcher
         register(ValueIndex.CAT);
     }
 
-    public Cat.Type getCatType()
-    {
-        var value = read(ValueIndex.CAT.CAT_VARIANT);
-        var key = value.unwrapKey().orElse(null);
-        if (key == null)
-            logger.warn("Null Key for holder " + value);
-
-        return Registry.CAT_VARIANT.get(Key.key(key.location().toString()));
-    }
-
-    private Holder<CatVariant> bukkitTypeToNmsHolder(Cat.Type bukkitType)
-    {
-        var bukkitKey = bukkitType.getKey();
-        ResourceLocation key = ResourceLocation.fromNamespaceAndPath(bukkitKey.namespace(), bukkitKey.getKey());
-
-        try
-        {
-            return HolderUtils.getHolderOrThrow(key, Registries.CAT_VARIANT);
-        }
-        catch (Throwable t)
-        {
-            logger.warn("Bukkit type '%s' is not in the registries, trying default value...".formatted(bukkitType));
-
-            return ValueIndex.CAT.CAT_VARIANT.defaultValue();
-        }
-    }
-
     @Override
     protected <X> void onPropertyWrite(SingleProperty<X> property, X value)
     {
@@ -73,8 +62,9 @@ public class CatWatcher extends TameableAnimalWatcher
         if (property.equals(properties.CAT_VARIANT))
         {
             var variant = (Cat.Type) value;
-            writePersistent(ValueIndex.CAT.CAT_VARIANT, bukkitTypeToNmsHolder(variant));
+            writePersistent(ValueIndex.CAT.CAT_VARIANT, variant);
         }
+
         super.onPropertyWrite(property, value);
     }
 
@@ -118,10 +108,7 @@ public class CatWatcher extends TameableAnimalWatcher
                 var bukkitMatch = Registry.CAT_VARIANT.get(key);
 
                 if (bukkitMatch != null)
-                {
-                    var finalValue = bukkitTypeToNmsHolder(bukkitMatch);
-                    this.writePersistent(ValueIndex.CAT.CAT_VARIANT, finalValue);
-                }
+                    this.writePersistent(ValueIndex.CAT.CAT_VARIANT, bukkitMatch);
             }
             else
             {
@@ -138,7 +125,7 @@ public class CatWatcher extends TameableAnimalWatcher
     {
         super.writeToCompound(nbt);
 
-        var variant = this.getCatType().getKey().asString();
+        var variant = read(ValueIndex.CAT.CAT_VARIANT).getKey().asString();
         nbt.putString("variant", variant);
 
         var collarColor = read(ValueIndex.CAT.COLLAR_COLOR);

@@ -1,17 +1,8 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.types;
 
-import com.comphenix.protocol.wrappers.WrappedDataValue;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.animal.WolfVariant;
-import net.minecraft.world.entity.animal.WolfVariants;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -23,7 +14,6 @@ import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.S
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
-import xyz.nifeather.morph.backends.server.renderer.utilties.HolderUtils;
 import xyz.nifeather.morph.misc.AnimationNames;
 import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
@@ -31,7 +21,6 @@ import xyz.nifeather.morph.misc.disguiseProperty.values.WolfProperties;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 public class WolfWatcher extends TameableAnimalWatcher
 {
@@ -39,7 +28,6 @@ public class WolfWatcher extends TameableAnimalWatcher
     {
         super(bindingPlayer, EntityType.WOLF);
 
-        var nmsWolfVariantHandle = WrappedDataWatcher.Registry.fromHandle(EntityDataSerializers.WOLF_VARIANT);
         customSerializeMethods.put(ValueIndex.WOLF.WOLF_VARIANT, CustomSerializeMethods.WOLF_VARIANT);
     }
 
