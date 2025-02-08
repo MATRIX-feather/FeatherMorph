@@ -22,7 +22,7 @@ public class LivingEntityValues extends EntityValues
     {
         super();
 
-        POTION_COLOR.setSerializer(CustomSerializeMethods.PARTICLE_OPTIONS);
+        POTION_COLOR.setSerializeMethod(CustomSerializeMethods.PARTICLE_OPTIONS);
 
         registerSingle(LIVING_FLAGS, HEALTH, POTION_COLOR, POTION_ISAMBIENT, STUCKED_ARROWS, BED_POS, BEE_STINGERS);
     }

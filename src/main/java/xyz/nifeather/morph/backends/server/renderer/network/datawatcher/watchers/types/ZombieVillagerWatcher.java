@@ -1,15 +1,14 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.types;
 
-import net.minecraft.core.registries.BuiltInRegistries;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.npc.VillagerData;
-import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.entity.npc.VillagerType;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
+import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.DataWrappers;
 import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
 import xyz.nifeather.morph.misc.disguiseProperty.values.VillagerProperties;
@@ -36,33 +35,12 @@ public class ZombieVillagerWatcher extends ZombieWatcher
     private Villager.Type type;
     private int lvl;
 
-    private VillagerData computeNmsVillagerData()
+    private DataWrappers.VillagerData computeVillagerData()
     {
         var prof = this.profession == null ? Villager.Profession.NONE : this.profession;
         var type = this.type == null ? Villager.Type.PLAINS : this.type;
 
-        VillagerProfession villagerProfession = VillagerProfession.NONE;
-        try
-        {
-            villagerProfession = BuiltInRegistries.VILLAGER_PROFESSION
-                    .getOptional(ResourceLocation.parse(prof.key().asString()))
-                    .orElse(VillagerProfession.NONE);
-        }
-        catch (Throwable t)
-        {
-            logger.error("Unable to convert bukkit type '%s' to NMS format: " + t.getMessage());
-        }
-
-        var nmsMatch = BuiltInRegistries.VILLAGER_TYPE.getOptional(ResourceLocation.parse(type.getKey().asString()));
-        if (nmsMatch.isEmpty())
-        {
-            logger.warn("Villager type '%s' not found in registry! Ignoring...".formatted(type.getKey().asString()));
-            return new VillagerData(VillagerType.PLAINS, villagerProfession, this.lvl);
-        }
-        else
-        {
-            return new VillagerData(nmsMatch.get(), villagerProfession, this.lvl);
-        }
+        return new DataWrappers.VillagerData(type, prof, lvl);
     }
 
     // endregion Cache
@@ -76,21 +54,21 @@ public class ZombieVillagerWatcher extends ZombieWatcher
         {
             this.lvl = (Integer) value;
 
-            writePersistent(ValueIndex.ZOMBIE_VILLAGER.VILLAGER_DATA, computeNmsVillagerData());
+            writePersistent(ValueIndex.ZOMBIE_VILLAGER.VILLAGER_DATA, computeVillagerData());
         }
 
         if (property.equals(properties.TYPE))
         {
             this.type = (Villager.Type) value;
 
-            writePersistent(ValueIndex.ZOMBIE_VILLAGER.VILLAGER_DATA, computeNmsVillagerData());
+            writePersistent(ValueIndex.ZOMBIE_VILLAGER.VILLAGER_DATA, computeVillagerData());
         }
 
         if (property.equals(properties.PROFESSION))
         {
             this.profession = (Villager.Profession) value;
 
-            writePersistent(ValueIndex.ZOMBIE_VILLAGER.VILLAGER_DATA, computeNmsVillagerData());
+            writePersistent(ValueIndex.ZOMBIE_VILLAGER.VILLAGER_DATA, computeVillagerData());
         }
 
         super.onPropertyWrite(property, value);
@@ -99,45 +77,54 @@ public class ZombieVillagerWatcher extends ZombieWatcher
     private void mergeFromVillagerData(CompoundTag nbt)
     {
         int level = 0;
-        VillagerProfession profession = VillagerProfession.NONE;
-        VillagerType type = VillagerType.PLAINS;
+        Villager.Profession profession = Villager.Profession.NONE;
+        Villager.Type type = Villager.Type.PLAINS;
+
+        var profRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.VILLAGER_PROFESSION);
+        var typeRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.VILLAGER_TYPE);
 
         if (nbt.contains("level"))
             level = MathUtils.clamp(1, 5, nbt.getInt("level"));
 
         if (nbt.contains("profession"))
         {
-            ResourceLocation rl = BuiltInRegistries.VILLAGER_PROFESSION.getDefaultKey();
+            NamespacedKey rl = NamespacedKey.fromString(nbt.getString("profession"));
 
-            try
+            if (rl == null)
             {
-                rl = ResourceLocation.parse(nbt.getString("profession"));
+                logger.warn("Can't parse string '%s' to a NamespacedKey, using default".formatted(rl));
             }
-            catch (Throwable t)
+            else
             {
-                logger.warn("Error occurred while reading nbt to villager profession: " + t.getMessage());
-            }
+                var prof = profRegistry.get(rl);
 
-            profession = BuiltInRegistries.VILLAGER_PROFESSION.getOptional(rl).orElse(VillagerProfession.NONE);
+                if (prof == null)
+                    logger.warn("No such profession '%s', using default".formatted(rl));
+                else
+                    profession = prof;
+            }
         }
 
         if (nbt.contains("type"))
         {
-            ResourceLocation rl = BuiltInRegistries.VILLAGER_TYPE.getDefaultKey();
+            NamespacedKey rl = NamespacedKey.fromString(nbt.getString("type"));
 
-            try
+            if (rl == null)
             {
-                rl = ResourceLocation.parse(nbt.getString("type"));
+                logger.warn("Can't parse string '%s' to a NamespacedKey, using default".formatted(rl));
             }
-            catch (Throwable t)
+            else
             {
-                logger.warn("Error occurred while reading nbt to villager type: " + t.getMessage());
-            }
+                var typeFromRegistry = typeRegistry.get(rl);
 
-            type = BuiltInRegistries.VILLAGER_TYPE.getOptional(rl).orElse(VillagerType.PLAINS);
+                if (typeFromRegistry == null)
+                    logger.warn("No such type '%s', using default".formatted(rl));
+                else
+                    type = typeFromRegistry;
+            }
         }
 
-        writePersistent(ValueIndex.ZOMBIE_VILLAGER.VILLAGER_DATA, new VillagerData(type, profession, level));
+        writePersistent(ValueIndex.VILLAGER.VILLAGER_DATA, new DataWrappers.VillagerData(type, profession, level));
     }
 
     @Override
@@ -155,14 +142,14 @@ public class ZombieVillagerWatcher extends ZombieWatcher
         super.writeToCompound(nbt);
 
         var villagerData = read(ValueIndex.ZOMBIE_VILLAGER.VILLAGER_DATA);
-        var profession = villagerData.getProfession();
-        var type = villagerData.getType();
-        var level = villagerData.getLevel();
+        var profession = villagerData.profession();
+        var type = villagerData.type();
+        var level = villagerData.level();
 
         var compound = new CompoundTag();
         compound.putInt("level", level);
-        compound.putString("profession", BuiltInRegistries.VILLAGER_PROFESSION.getKey(profession).toString());
-        compound.putString("type", BuiltInRegistries.VILLAGER_TYPE.getKey(type).toString());
+        compound.putString("profession", profession.key().asString());
+        compound.putString("type", type.key().asString());
 
         nbt.put("VillagerData", compound);
     }

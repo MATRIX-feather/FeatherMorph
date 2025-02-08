@@ -3,11 +3,11 @@ package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watcher
 import org.bukkit.Sound;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.DataWrappers.ArmadilloState;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
 import xyz.nifeather.morph.misc.AnimationNames;
-import xyz.nifeather.morph.misc.ArmadilloState;
 
 public class ArmadilloWatcher extends LivingEntityWatcher
 {

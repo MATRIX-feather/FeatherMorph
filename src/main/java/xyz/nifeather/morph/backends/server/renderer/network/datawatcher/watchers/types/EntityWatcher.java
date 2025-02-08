@@ -63,14 +63,13 @@ public class EntityWatcher extends SingleWatcher
         super.doSync();
 
         var player = getBindingPlayer();
-        var nmsPlayer = NmsRecord.ofPlayer(player);
         var values = ValueIndex.BASE_ENTITY;
 
         writeTemp(values.GENERAL, getPlayerBitMask(player));
         //write(values.SILENT, true);
         writeTemp(values.NO_GRAVITY, !player.hasGravity());
-        writeTemp(values.POSE, nmsPlayer.getPose());
-        writeTemp(values.FROZEN_TICKS, nmsPlayer.getTicksFrozen());
+        writeTemp(values.POSE, player.getPose());
+        writeTemp(values.FROZEN_TICKS, player.getFreezeTicks());
     }
 
     @Override

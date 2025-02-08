@@ -4,9 +4,9 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.destroystokyo.paper.ClientOption;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
-import net.minecraft.world.entity.Pose;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
 import xyz.nifeather.morph.backends.server.renderer.network.DisplayParameters;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
@@ -84,8 +84,7 @@ public class PlayerWatcher extends InventoryLivingWatcher
                 }
                 case AnimationNames.STANDUP, AnimationNames.RESET ->
                 {
-                    var nmsPlayer = NmsRecord.ofPlayer(getBindingPlayer());
-                    this.writePersistent(ValueIndex.PLAYER.POSE, nmsPlayer.getPose());
+                    this.writePersistent(ValueIndex.PLAYER.POSE, getBindingPlayer().getPose());
                     this.remove(ValueIndex.PLAYER.POSE);
                 }
             }

@@ -37,13 +37,16 @@ public abstract class AbstractValues
         if (duplicateValue != null)
             throw new IllegalArgumentException("Already contains a value with index '%s'".formatted(value.index()));
 
-        try
+        if (!value.hasSerializeMethod())
         {
-            ProtocolRegistryUtils.getSerializer(value);
-        }
-        catch (Throwable t)
-        {
-            logger.warn("No serializer for type '%s'!".formatted(value.type()));
+            try
+            {
+                ProtocolRegistryUtils.getSerializer(value);
+            }
+            catch (Throwable t)
+            {
+                logger.warn("No serializer available for '%s'!".formatted(value.name()));
+            }
         }
 
         values.add(value);

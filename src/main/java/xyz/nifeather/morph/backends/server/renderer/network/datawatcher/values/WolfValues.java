@@ -15,7 +15,7 @@ public class WolfValues extends TameableAnimalValues
     {
         super();
 
-        WOLF_VARIANT.setSerializer(CustomSerializeMethods.WOLF_VARIANT);
+        WOLF_VARIANT.setSerializeMethod(CustomSerializeMethods.WOLF_VARIANT);
         registerSingle(WOLF_VARIANT, BEGGING, COLLAR_COLOR, ANGER_TIME);
     }
 }

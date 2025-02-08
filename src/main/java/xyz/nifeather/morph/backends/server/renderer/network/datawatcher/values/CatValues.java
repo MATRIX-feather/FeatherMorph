@@ -15,7 +15,7 @@ public class CatValues extends TameableAnimalValues
     {
         super();
 
-        CAT_VARIANT.setSerializer(CustomSerializeMethods.CAT_VARIANT);
+        CAT_VARIANT.setSerializeMethod(CustomSerializeMethods.CAT_VARIANT);
         registerSingle(CAT_VARIANT, IS_LYING, RELAXED, COLLAR_COLOR);
     }
 }

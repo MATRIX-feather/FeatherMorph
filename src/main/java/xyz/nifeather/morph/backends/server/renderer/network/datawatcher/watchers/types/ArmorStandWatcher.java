@@ -1,10 +1,12 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.types;
 
-import net.minecraft.core.Rotations;
+import io.papermc.paper.math.Rotations;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
 import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
@@ -58,13 +60,13 @@ public class ArmorStandWatcher extends InventoryLivingWatcher
 
     private Rotations getVec3(ListTag listTag, Rotations defaultValue)
     {
-        if (listTag.isEmpty())
+        if (listTag.isEmpty() || listTag.size() < 3)
         {
-            logger.warn("Empty listTag! Using defaultValue...");
-            listTag = defaultValue.save();
+            logger.warn("Not enough parameters in listTag! Using defaultValue...");
+            return defaultValue;
         }
 
-        return new Rotations(listTag);
+        return Rotations.ofDegrees(listTag.getFloat(0), listTag.getFloat(1), listTag.getFloat(2));
     }
 
     @Override
@@ -150,6 +152,20 @@ public class ArmorStandWatcher extends InventoryLivingWatcher
         }
     }
 
+    private ListTag saveRotationOf(SingleValue<Rotations> sv)
+    {
+        return saveRotations(read(sv));
+    }
+
+    private ListTag saveRotations(Rotations rotations)
+    {
+        ListTag listTag = new ListTag();
+        listTag.add(FloatTag.valueOf((float)rotations.x()));
+        listTag.add(FloatTag.valueOf((float)rotations.y()));
+        listTag.add(FloatTag.valueOf((float)rotations.z()));
+        return listTag;
+    }
+
     @Override
     public void writeToCompound(CompoundTag nbt)
     {
@@ -160,12 +176,12 @@ public class ArmorStandWatcher extends InventoryLivingWatcher
         nbt.putBoolean("ShowArms", this.showArms());
 
         var poseCompound = new CompoundTag();
-        poseCompound.put("Head", read(ValueIndex.ARMOR_STAND.HEAD_ROTATION).save());
-        poseCompound.put("Body", read(ValueIndex.ARMOR_STAND.BODY_ROTATION).save());
-        poseCompound.put("LeftArm", read(ValueIndex.ARMOR_STAND.LEFT_ARM_ROTATION).save());
-        poseCompound.put("RightArm", read(ValueIndex.ARMOR_STAND.RIGHT_ARM_ROTATION).save());
-        poseCompound.put("LeftLeg", read(ValueIndex.ARMOR_STAND.LEFT_LEG_ROTATION).save());
-        poseCompound.put("RightLeg", read(ValueIndex.ARMOR_STAND.RIGHT_LEG_ROTATION).save());
+        poseCompound.put("Head", saveRotationOf(ValueIndex.ARMOR_STAND.HEAD_ROTATION));
+        poseCompound.put("Body", saveRotationOf(ValueIndex.ARMOR_STAND.BODY_ROTATION));
+        poseCompound.put("LeftArm", saveRotationOf(ValueIndex.ARMOR_STAND.LEFT_ARM_ROTATION));
+        poseCompound.put("RightArm", saveRotationOf(ValueIndex.ARMOR_STAND.RIGHT_ARM_ROTATION));
+        poseCompound.put("LeftLeg", saveRotationOf(ValueIndex.ARMOR_STAND.LEFT_LEG_ROTATION));
+        poseCompound.put("RightLeg", saveRotationOf(ValueIndex.ARMOR_STAND.RIGHT_LEG_ROTATION));
 
         nbt.put("Pose", poseCompound);
     }

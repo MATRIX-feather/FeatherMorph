@@ -12,7 +12,7 @@ public class FrogValues extends AnimalValues
     {
         super();
 
-        FROG_VARIANT.setSerializer(CustomSerializeMethods.FROG_VARIANT);
+        FROG_VARIANT.setSerializeMethod(CustomSerializeMethods.FROG_VARIANT);
 
         registerSingle(FROG_VARIANT);
     }

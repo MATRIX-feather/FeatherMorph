@@ -1,7 +1,7 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.basetypes;
 
 import net.kyori.adventure.text.Component;
-import net.minecraft.world.entity.Pose;
+import org.bukkit.entity.Pose;
 import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.AbstractValues;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
@@ -21,7 +21,8 @@ public class EntityValues extends AbstractValues
 
     public EntityValues()
     {
-        CUSTOM_NAME.setSerializer(CustomSerializeMethods.COMPONENT_ADVENTURE_TO_NMS);
+        CUSTOM_NAME.setSerializeMethod(CustomSerializeMethods.COMPONENT_ADVENTURE_TO_NMS);
+        POSE.setSerializeMethod(CustomSerializeMethods.POSE);
 
         registerSingle(GENERAL, AIR_TICKS, CUSTOM_NAME, CUSTOM_NAME_VISIBLE, SILENT, NO_GRAVITY,
                 POSE, FROZEN_TICKS);

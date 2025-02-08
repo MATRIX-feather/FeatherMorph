@@ -4,12 +4,12 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
-import net.minecraft.world.entity.Pose;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
 import xyz.nifeather.morph.backends.server.renderer.network.DisplayParameters;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
@@ -120,7 +120,7 @@ public class WardenWatcher extends EHasAttackAnimationWatcher
         var bindingPlayer = getBindingPlayer();
 
         this.writePersistent(ValueIndex.BASE_ENTITY.GENERAL, this.getPlayerBitMask(bindingPlayer));
-        this.writePersistent(ValueIndex.BASE_LIVING.POSE, NmsRecord.ofPlayer(bindingPlayer).getPose());
+        this.writePersistent(ValueIndex.BASE_LIVING.POSE, bindingPlayer.getPose());
         this.writePersistent(ValueIndex.BASE_LIVING.SILENT, false);
         this.remove(ValueIndex.BASE_LIVING.POSE);
         this.remove(ValueIndex.BASE_ENTITY.GENERAL);

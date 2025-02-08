@@ -3,6 +3,7 @@ package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values;
 import com.comphenix.protocol.wrappers.WrappedDataValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.backends.server.renderer.network.ICustomSerializeMethod;
 import xyz.nifeather.morph.backends.server.renderer.utilties.ProtocolRegistryUtils;
 
@@ -31,19 +32,27 @@ public class SingleValue<T>
     }
 
     @Nullable
-    private ICustomSerializeMethod<T> customSerializer;
+    private ICustomSerializeMethod<T> customSerializeMethod;
 
-    public void setSerializer(ICustomSerializeMethod<T> customSerializer)
+    public void setSerializeMethod(ICustomSerializeMethod<T> customSerializer)
     {
-        this.customSerializer = customSerializer;
+        this.customSerializeMethod = customSerializer;
+    }
+
+    public boolean hasSerializeMethod()
+    {
+        return customSerializeMethod != null;
     }
 
     public WrappedDataValue wrap(T value)
     {
-        if (customSerializer != null)
-            return customSerializer.apply(this, value);
+        if (customSerializeMethod != null)
+            return customSerializeMethod.apply(this, value);
 
         var defaultSerializer = ProtocolRegistryUtils.getSerializer(this);
+        if (defaultSerializer == null)
+            throw new NullDependencyException("No serializer available for '%s', cannot wrap its value!".formatted(name));
+
         return new WrappedDataValue(this.index, defaultSerializer, value);
     }
 
