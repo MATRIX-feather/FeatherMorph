@@ -1,6 +1,5 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.types;
 
-import net.minecraft.world.entity.animal.armadillo.Armadillo;
 import org.bukkit.Sound;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -8,6 +7,7 @@ import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEnt
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
 import xyz.nifeather.morph.misc.AnimationNames;
+import xyz.nifeather.morph.misc.ArmadilloState;
 
 public class ArmadilloWatcher extends LivingEntityWatcher
 {
@@ -38,22 +38,22 @@ public class ArmadilloWatcher extends LivingEntityWatcher
             {
                 case AnimationNames.PANIC_ROLLING ->
                 {
-                    writePersistent(ValueIndex.ARMADILLO.STATE, Armadillo.ArmadilloState.ROLLING);
+                    writePersistent(ValueIndex.ARMADILLO.STATE, ArmadilloState.ROLLING);
                     world.playSound(player.getLocation(), Sound.ENTITY_ARMADILLO_ROLL, 1, 1);
                 }
                 case AnimationNames.PANIC_SCARED ->
                 {
-                    writePersistent(ValueIndex.ARMADILLO.STATE, Armadillo.ArmadilloState.SCARED);
+                    writePersistent(ValueIndex.ARMADILLO.STATE, ArmadilloState.SCARED);
                     world.playSound(player.getLocation(), Sound.ENTITY_ARMADILLO_LAND, 1, 1);
                 }
                 case AnimationNames.PANIC_UNROLLING ->
                 {
-                    writePersistent(ValueIndex.ARMADILLO.STATE, Armadillo.ArmadilloState.UNROLLING);
+                    writePersistent(ValueIndex.ARMADILLO.STATE, ArmadilloState.UNROLLING);
                     world.playSound(player.getLocation(), Sound.ENTITY_ARMADILLO_UNROLL_START, 1, 1);
                 }
                 case AnimationNames.PANIC_IDLE, AnimationNames.RESET ->
                 {
-                    writePersistent(ValueIndex.ARMADILLO.STATE, Armadillo.ArmadilloState.IDLE);
+                    writePersistent(ValueIndex.ARMADILLO.STATE, ArmadilloState.IDLE);
 
                     if (animId.equals(AnimationNames.PANIC_IDLE))
                         world.playSound(player.getLocation(), Sound.ENTITY_ARMADILLO_UNROLL_FINISH, 1, 1);

@@ -8,9 +8,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wolf;
 import xyz.nifeather.morph.FeatherMorphMain;
-import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
-import xyz.nifeather.morph.backends.server.renderer.network.ICustomSerializeMethod;
-import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
@@ -19,24 +16,11 @@ import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
 import xyz.nifeather.morph.misc.disguiseProperty.values.WolfProperties;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class WolfWatcher extends TameableAnimalWatcher
 {
     public WolfWatcher(Player bindingPlayer)
     {
         super(bindingPlayer, EntityType.WOLF);
-
-        customSerializeMethods.put(ValueIndex.WOLF.WOLF_VARIANT, CustomSerializeMethods.WOLF_VARIANT);
-    }
-
-    private final Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializeMethods = new ConcurrentHashMap<>();
-
-    @Override
-    public Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializeMethods()
-    {
-        return customSerializeMethods;
     }
 
     @Override

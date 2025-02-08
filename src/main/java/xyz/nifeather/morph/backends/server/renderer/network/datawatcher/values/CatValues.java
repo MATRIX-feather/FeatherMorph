@@ -1,14 +1,8 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values;
 
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.animal.CatVariant;
 import org.bukkit.entity.Cat;
+import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.basetypes.TameableAnimalValues;
-import xyz.nifeather.morph.backends.server.renderer.utilties.HolderUtils;
 
 public class CatValues extends TameableAnimalValues
 {
@@ -21,6 +15,7 @@ public class CatValues extends TameableAnimalValues
     {
         super();
 
+        CAT_VARIANT.setSerializer(CustomSerializeMethods.CAT_VARIANT);
         registerSingle(CAT_VARIANT, IS_LYING, RELAXED, COLLAR_COLOR);
     }
 }

@@ -1,9 +1,8 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.basetypes;
 
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.network.syncher.EntityDataSerializers;
+import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 
 import java.util.List;
@@ -23,8 +22,7 @@ public class LivingEntityValues extends EntityValues
     {
         super();
 
-        var handle = WrappedDataWatcher.Registry.fromHandle(EntityDataSerializers.PARTICLES);
-        POTION_COLOR.setSerializer(handle);
+        POTION_COLOR.setSerializer(CustomSerializeMethods.PARTICLE_OPTIONS);
 
         registerSingle(LIVING_FLAGS, HEALTH, POTION_COLOR, POTION_ISAMBIENT, STUCKED_ARROWS, BED_POS, BEE_STINGERS);
     }

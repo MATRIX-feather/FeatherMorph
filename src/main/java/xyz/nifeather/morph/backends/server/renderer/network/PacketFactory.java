@@ -208,31 +208,21 @@ public class PacketFactory extends MorphPluginObject
                 continue;
 
             // 寻找与其匹配的SingleValue
-            var disguiseValue = values.stream()
+            var singleValue = values.stream()
                     .filter(sv -> sv.index() == index && (rawValue == null || rawValue.getClass() == sv.defaultValue().getClass()))
                     .findFirst().orElse(null);
 
             // 如果没有找到，则代表此Index和伪装不兼容，跳过
-            if (disguiseValue == null)
+            if (singleValue == null)
                 continue;
 
             // 从Watcher获取要设定的数据值，如果没有，则从服务器的包里取
-            var val = watcher.readOr(disguiseValue.index(), null);
+            var val = watcher.readOr(singleValue.index(), null);
             if (val == null) val = w.getRawValue();
 
-            WrappedDataWatcher.Serializer serializer;
+            var wrapped = ((SingleValue<Object>)singleValue).wrap(val);
 
-            try
-            {
-                serializer = ProtocolRegistryUtils.getSerializer(disguiseValue);
-            }
-            catch (Throwable t)
-            {
-                logger.warn("Error occurred while generating meta packet with id '%s': %s".formatted(disguiseValue.name(), t.getMessage()));
-                continue;
-            }
-
-            valuesToAdd.add(new WrappedDataValue(disguiseValue.index(), serializer, val));
+            valuesToAdd.add(wrapped);
         }
 
         newPacket.getDataValueCollectionModifier().write(0, valuesToAdd);
@@ -253,11 +243,9 @@ public class PacketFactory extends MorphPluginObject
         var valuesToSent = watcher.getDirty();
         watcher.clearDirty();
 
-        var customSerializeMethods = watcher.customSerializeMethods();
-
         valuesToSent.forEach((single, val) ->
         {
-            var wrapped = buildEntityMetadata(single, val, customSerializeMethods);
+            var wrapped = ((SingleValue<Object>)single).wrap(val);
 
             if (wrapped != null)
                 wrappedDataValues.add(wrapped);
@@ -268,38 +256,6 @@ public class PacketFactory extends MorphPluginObject
         markPacketOurs(metaPacket);
 
         return metaPacket;
-    }
-
-    @Nullable
-    public WrappedDataValue buildEntityMetadata(SingleValue<?> single, Object val, Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializers)
-    {
-        WrappedDataWatcher.Serializer serializer;
-
-        WrappedDataValue dataValue;
-
-        var csm = customSerializers.remove(single);
-        if (csm != null)
-        {
-            // :>
-            var customSerializeMethod = (ICustomSerializeMethod<Object>) csm;
-            dataValue = customSerializeMethod.apply((SingleValue<Object>) single, val);
-        }
-        else
-        {
-            try
-            {
-                serializer = ProtocolRegistryUtils.getSerializer(single);
-            }
-            catch (Throwable t)
-            {
-                logger.warn("Error occurred while generating meta packet with id '%s': %s".formatted(single.index(), t.getMessage()));
-                return null;
-            }
-
-            dataValue = new WrappedDataValue(single.index(), serializer, val);
-        }
-
-        return dataValue;
     }
 
     public PacketContainer buildFullMetaPacket(Player player, SingleWatcher watcher)
@@ -316,17 +272,14 @@ public class PacketFactory extends MorphPluginObject
         var valuesToSent = watcher.getOverlayedRegistry();
         watcher.clearDirty();
 
-        var customSerializeMethods = watcher.customSerializeMethods();
-
         valuesToSent.forEach((index, val) ->
         {
-            WrappedDataWatcher.Serializer serializer;
             var sv = watcher.getSingle(index);
 
             if (sv == null)
                 throw new IllegalArgumentException("Not SingleValue found for index " + index);
 
-            var wrapped = buildEntityMetadata(sv, val, customSerializeMethods);
+            var wrapped = ((SingleValue<Object>)sv).wrap(val);
 
             if (wrapped != null)
                 wrappedDataValues.add(wrapped);

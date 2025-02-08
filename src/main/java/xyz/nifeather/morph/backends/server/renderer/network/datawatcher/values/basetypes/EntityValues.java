@@ -1,8 +1,8 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.basetypes;
 
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
-import net.minecraft.network.chat.Component;
+import net.kyori.adventure.text.Component;
 import net.minecraft.world.entity.Pose;
+import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.AbstractValues;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 
@@ -19,10 +19,9 @@ public class EntityValues extends AbstractValues
     public final SingleValue<Pose> POSE = createSingle("entity_pose", Pose.STANDING);
     public final SingleValue<Integer> FROZEN_TICKS = createSingle("entity_frozen_ticks", 0);
 
-    //TODO: USE ADVENTURE COMPONENT FOR SERIALIZE
     public EntityValues()
     {
-        CUSTOM_NAME.setSerializer(WrappedDataWatcher.Registry.getChatComponentSerializer(true));
+        CUSTOM_NAME.setSerializer(CustomSerializeMethods.COMPONENT_ADVENTURE_TO_NMS);
 
         registerSingle(GENERAL, AIR_TICKS, CUSTOM_NAME, CUSTOM_NAME_VISIBLE, SILENT, NO_GRAVITY,
                 POSE, FROZEN_TICKS);

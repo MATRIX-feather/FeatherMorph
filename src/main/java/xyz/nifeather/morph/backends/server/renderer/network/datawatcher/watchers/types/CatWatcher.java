@@ -1,49 +1,24 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watchers.types;
 
-import net.kyori.adventure.key.Key;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.animal.CatVariant;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
-import xyz.nifeather.morph.backends.server.renderer.network.ICustomSerializeMethod;
-import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntries;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.CustomEntry;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
-import xyz.nifeather.morph.backends.server.renderer.utilties.HolderUtils;
 import xyz.nifeather.morph.misc.AnimationNames;
 import xyz.nifeather.morph.misc.disguiseProperty.DisguiseProperties;
 import xyz.nifeather.morph.misc.disguiseProperty.SingleProperty;
 import xyz.nifeather.morph.misc.disguiseProperty.values.CatProperties;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class CatWatcher extends TameableAnimalWatcher
 {
     public CatWatcher(Player bindingPlayer)
     {
         super(bindingPlayer, EntityType.CAT);
-
-        customSerializeMethods.put(ValueIndex.CAT.CAT_VARIANT, CustomSerializeMethods.CAT_VARIANT);
-    }
-
-    private final Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializeMethods = new ConcurrentHashMap<>();
-
-    @Override
-    public Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializeMethods()
-    {
-        return customSerializeMethods;
     }
 
     @Override

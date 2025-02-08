@@ -1,12 +1,10 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values;
 
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import com.comphenix.protocol.wrappers.WrappedDataValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
-import java.util.List;
+import xyz.nifeather.morph.backends.server.renderer.network.ICustomSerializeMethod;
+import xyz.nifeather.morph.backends.server.renderer.utilties.ProtocolRegistryUtils;
 
 public class SingleValue<T>
 {
@@ -33,17 +31,20 @@ public class SingleValue<T>
     }
 
     @Nullable
-    private WrappedDataWatcher.Serializer serializer;
+    private ICustomSerializeMethod<T> customSerializer;
 
-    public void setSerializer(WrappedDataWatcher.Serializer serializer)
+    public void setSerializer(ICustomSerializeMethod<T> customSerializer)
     {
-        this.serializer = serializer;
+        this.customSerializer = customSerializer;
     }
 
-    @Nullable
-    public WrappedDataWatcher.Serializer getSerializer()
+    public WrappedDataValue wrap(T value)
     {
-        return serializer;
+        if (customSerializer != null)
+            return customSerializer.apply(this, value);
+
+        var defaultSerializer = ProtocolRegistryUtils.getSerializer(this);
+        return new WrappedDataValue(this.index, defaultSerializer, value);
     }
 
     private final String name;

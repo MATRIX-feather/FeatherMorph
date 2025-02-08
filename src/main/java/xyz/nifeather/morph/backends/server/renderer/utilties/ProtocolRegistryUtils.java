@@ -12,15 +12,7 @@ public class ProtocolRegistryUtils
 {
     public static WrappedDataWatcher.Serializer getSerializer(SingleValue<?> sv)
     {
-        var s = sv.getSerializer();
-        if (s != null)
-            return s;
-
-        var s1 = getSerializer(sv.defaultValue());
-        if (s1 != null)
-            sv.setSerializer(s1);
-
-        return s1;
+        return getSerializer(sv.defaultValue());
     }
 
     public static WrappedDataWatcher.Serializer getSerializer(Object instance)

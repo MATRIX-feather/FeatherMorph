@@ -2,7 +2,6 @@ package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watcher
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.WrappedDataValue;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.nbt.CompoundTag;
@@ -15,7 +14,6 @@ import xiamomc.pluginbase.Annotations.Initializer;
 import xiamomc.pluginbase.Annotations.Resolved;
 import xiamomc.pluginbase.Exceptions.NullDependencyException;
 import xyz.nifeather.morph.MorphPluginObject;
-import xyz.nifeather.morph.backends.server.renderer.network.ICustomSerializeMethod;
 import xyz.nifeather.morph.backends.server.renderer.network.PacketFactory;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.AbstractValues;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
@@ -28,7 +26,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 
 public abstract class SingleWatcher extends MorphPluginObject
 {
@@ -109,21 +106,6 @@ public abstract class SingleWatcher extends MorphPluginObject
         if (!syncedOnce.get() && !disposed)
             sync();
     }
-
-    //region Custom Serialize Methods
-
-    // 我本来想着把实体元数据改成全部让 watcher 自己处理，但是这样会导致代码量爆炸
-    // 所以 Custom Serialize Methods 来了（
-
-    /**
-     * @implNote The SingleValue must be the one registered in the registry, for base types, you will need to use the base types(?)
-     */
-    public Map<SingleValue<?>, ICustomSerializeMethod<?>> customSerializeMethods()
-    {
-        return Map.of();
-    }
-
-    //endregion Custom Serialize Methods
 
     //region Disguise Property
 
