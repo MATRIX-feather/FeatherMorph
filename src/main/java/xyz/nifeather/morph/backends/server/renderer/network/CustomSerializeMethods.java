@@ -5,6 +5,7 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.math.Rotations;
 import net.kyori.adventure.text.Component;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -14,8 +15,8 @@ import net.minecraft.world.entity.animal.armadillo.Armadillo;
 import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
-import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.*;
+import org.joml.Vector3i;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.DataWrappers;
 import xyz.nifeather.morph.backends.server.renderer.utilties.HolderUtils;
 
@@ -112,5 +113,25 @@ public class CustomSerializeMethods
         var nmsPose = net.minecraft.world.entity.Pose.values()[val.ordinal()];
 
         return new WrappedDataValue(sv.index(), POSE_SERIALIZER, nmsPose);
+    };
+
+    private static final WrappedDataWatcher.Serializer SNIFFER_STATE_SERIALIZER = WrappedDataWatcher.Registry.fromHandle(EntityDataSerializers.SNIFFER_STATE);
+    public static ICustomSerializeMethod<Sniffer.State> SNIFFER_STATE = (sv, val) ->
+    {
+        var nmsState = net.minecraft.world.entity.animal.sniffer.Sniffer.State.values()[val.ordinal()];
+
+        return new WrappedDataValue(sv.index(), SNIFFER_STATE_SERIALIZER, nmsState);
+    };
+
+    private static final WrappedDataWatcher.Serializer BLOCKPOS_SERIALIZER = WrappedDataWatcher.Registry.getBlockPositionSerializer(true);
+    public static ICustomSerializeMethod<Optional<Vector3i>> BLOCKPOS = (sv, optional) ->
+    {
+        if (optional.isEmpty())
+            return new WrappedDataValue(sv.index(), BLOCKPOS_SERIALIZER, Optional.empty());
+
+        var val = optional.get();
+        var blockPos = new BlockPos(val.x(), val.y(), val.z());
+
+        return new WrappedDataValue(sv.index(), BLOCKPOS_SERIALIZER, Optional.of(blockPos));
     };
 }

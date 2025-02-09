@@ -1,6 +1,7 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values;
 
-import net.minecraft.world.entity.animal.sniffer.Sniffer;
+import org.bukkit.entity.Sniffer;
+import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.basetypes.AnimalValues;
 
 public class SnifferValues extends AnimalValues
@@ -10,6 +11,8 @@ public class SnifferValues extends AnimalValues
 
     public SnifferValues()
     {
+        SNIFFER_STATE.setSerializeMethod(CustomSerializeMethods.SNIFFER_STATE);
+
         registerSingle(SNIFFER_STATE, DROP_SEED_AT_TICK);
     }
 }

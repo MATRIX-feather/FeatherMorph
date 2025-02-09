@@ -3,7 +3,6 @@ package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.watcher
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectObjectMutablePair;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -14,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.potion.PotionEffect;
+import org.joml.Vector3i;
 import xyz.nifeather.morph.backends.server.renderer.network.registries.ValueIndex;
 import xyz.nifeather.morph.misc.NmsRecord;
 
@@ -100,20 +100,13 @@ public class LivingEntityWatcher extends EntityWatcher
         writeTemp(values.STUCKED_ARROWS, player.getArrowsInBody());
         writeTemp(values.BEE_STINGERS, player.getBeeStingersInBody());
 
-        Optional<BlockPos> bedPos = Optional.empty();
+        Optional<Vector3i> bedPos = Optional.empty();
         if (player.isSleeping())
         {
-            try
-            {
-                var bukkitPos = player.getBedLocation();
-                bedPos = Optional.of(
-                        new BlockPos(bukkitPos.blockX(),bukkitPos.blockY(), bukkitPos.blockZ())
-                );
-            }
-            catch (Throwable t)
-            {
-                logger.warn("Error occurred while processing bed pos: " + t.getMessage());
-            }
+            var bukkitPos = player.getBedLocation();
+            bedPos = Optional.of(
+                    new Vector3i(bukkitPos.blockX(), bukkitPos.blockY(), bukkitPos.blockZ())
+            );
         }
 
         writeTemp(values.BED_POS, bedPos);

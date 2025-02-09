@@ -201,28 +201,37 @@ public class PacketFactory extends MorphPluginObject
         for (WrappedDataValue w : originalData)
         {
             var index = w.getIndex();
-            var rawValue = w.getRawValue();
 
             // 跳过被屏蔽的数据
             if (blockedValues.contains(index))
                 continue;
 
             // 寻找与其匹配的SingleValue
+            //
+            // todo: 自从去NMS化之后，一些同一个Index上的值和他们对应的SingleValue用旧办法来看已经不再匹配了
+            //       因此需要寻找别的方法来更全面地证明某个Index和SingleValue匹配
+            //       现在我们只能临时删除class验证
             var singleValue = values.stream()
-                    .filter(sv -> sv.index() == index && (rawValue == null || rawValue.getClass() == sv.defaultValue().getClass()))
+                    .filter(sv -> sv.index() == index)
                     .findFirst().orElse(null);
 
             // 如果没有找到，则代表此Index和伪装不兼容，跳过
             if (singleValue == null)
                 continue;
 
-            // 从Watcher获取要设定的数据值，如果没有，则从服务器的包里取
+            // 如果 Watcher 中有覆盖的有对应的值，则重新包装，否则原样返回
             var val = watcher.readOr(singleValue.index(), null);
-            if (val == null) val = w.getRawValue();
 
-            var wrapped = ((SingleValue<Object>)singleValue).wrap(val);
+            if (val != null)
+            {
+                var wrapped = ((SingleValue<Object>)singleValue).wrap(val);
 
-            valuesToAdd.add(wrapped);
+                valuesToAdd.add(wrapped);
+            }
+            else
+            {
+                valuesToAdd.add(w);
+            }
         }
 
         newPacket.getDataValueCollectionModifier().write(0, valuesToAdd);

@@ -1,7 +1,7 @@
 package xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.basetypes;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
+import org.joml.Vector3i;
 import xyz.nifeather.morph.backends.server.renderer.network.CustomSerializeMethods;
 import xyz.nifeather.morph.backends.server.renderer.network.datawatcher.values.SingleValue;
 
@@ -16,13 +16,15 @@ public class LivingEntityValues extends EntityValues
     public final SingleValue<Boolean> POTION_ISAMBIENT = createSingle("living_potion_is_ambient", false);
     public final SingleValue<Integer> STUCKED_ARROWS = createSingle("living_stucked_arrows", 0);
     public final SingleValue<Integer> BEE_STINGERS = createSingle("living_bee_stingers", 0);
-    public final SingleValue<Optional<BlockPos>> BED_POS = createSingle("living_bed_pos", Optional.of(new BlockPos(0,0,0)));
+    public final SingleValue<Optional<Vector3i>> BED_POS = createSingle("living_bed_pos", Optional.of(new Vector3i(0,0,0)));
 
     public LivingEntityValues()
     {
         super();
 
         POTION_COLOR.setSerializeMethod(CustomSerializeMethods.PARTICLE_OPTIONS);
+
+        BED_POS.setSerializeMethod(CustomSerializeMethods.BLOCKPOS);
 
         registerSingle(LIVING_FLAGS, HEALTH, POTION_COLOR, POTION_ISAMBIENT, STUCKED_ARROWS, BED_POS, BEE_STINGERS);
     }
