@@ -38,6 +38,7 @@ import xiamomc.pluginbase.Messages.MessageStore;
 import xiamomc.pluginbase.XiaMoJavaPlugin;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class FeatherMorphMain extends XiaMoJavaPlugin
 {
@@ -139,7 +140,6 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
                     "Please use %s instead!".formatted(primaryVersion)
             );
 
-            FeatherMorphBootstrap.muteHotReloadWarning = true;
             pluginManager.disablePlugin(this);
             return;
         }
@@ -263,16 +263,21 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
             clientHandler.reAuthPlayers(Bukkit.getOnlinePlayers());
         });
 
+        pluginEnableDone.set(true);
+
         //Init GUI IconLookup
         IconLookup.instance();
     }
 
+    private final AtomicBoolean pluginEnableDone = new AtomicBoolean(false);
+
     @Override
     public void disable()
     {
-        if (!getServer().isStopping())
+        var serverStopping = getServer().isStopping();
+        if (!serverStopping)
         {
-            if (!FeatherMorphBootstrap.muteHotReloadWarning)
+            if (pluginEnableDone.get())
             {
                 printImportantWarning(true,
                         "HEY, THERE!",
@@ -282,15 +287,22 @@ public final class FeatherMorphMain extends XiaMoJavaPlugin
             }
         }
 
-        FeatherMorphBootstrap.muteHotReloadWarning = false;
         FeatherMorphBootstrap.pluginDisabled.set(true);
 
         //调用super.onDisable后依赖管理器会被清空
         //需要在调用前先把一些东西处理好
         try
         {
-            if (entityProcessor != null)
+            if (!serverStopping
+                    && entityProcessor.currentlyDoModifyAI()
+                    && pluginEnableDone.get())
+            {
+                printImportantWarning(true,
+                        "Are you disabling/reloading FeatherMorph while modifying AI is enabled?",
+                        "While we try to recover the modifications, still, you are on your own risk.");
+
                 entityProcessor.recoverGoals();
+            }
 
             if (morphManager != null)
                 morphManager.onPluginDisable();

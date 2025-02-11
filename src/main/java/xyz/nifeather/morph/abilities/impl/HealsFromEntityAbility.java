@@ -25,6 +25,8 @@ import xyz.nifeather.morph.utilities.NbtUtils;
 import xiamomc.pluginbase.Annotations.Resolved;
 
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class HealsFromEntityAbility extends MorphAbility<HealsFromEntityOption>
 {
@@ -45,7 +47,7 @@ public class HealsFromEntityAbility extends MorphAbility<HealsFromEntityOption>
         return new HealsFromEntityOption();
     }
 
-    private final RandomSource random = RandomSource.create();
+    private final Random random = ThreadLocalRandom.current();
 
     private static final String PROPERTY_ID = "morph:HFEA_BEAM_TARGET";
 

@@ -401,7 +401,8 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
     @NotNull
     public static DisguiseProvider getProvider(String id)
     {
-        if (id == null) return null;
+        if (id == null)
+            return fallbackProvider;
 
         id += ":";
         var splitedId = id.split(":", 2);
@@ -1602,7 +1603,6 @@ public class MorphManager extends MorphPluginObject implements IManagePlayerData
             var locale = MessageUtils.getLocale(player);
 
             var meta = data.getDisguiseMeta(disguiseIdentifier);
-            assert meta != null; // 这里不会出现meta是null的情况，除非抽了
 
             var message = MessageUtils.prefixes(player, MorphStrings.morphUnlockedString()
                     .withLocale(locale)

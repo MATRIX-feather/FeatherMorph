@@ -53,6 +53,11 @@ public class EntityProcessor extends MorphPluginObject implements Listener
     private final boolean doModifyAI;
     private final Bindable<Boolean> debugOutput = new Bindable<>(false);
 
+    public boolean currentlyDoModifyAI()
+    {
+        return doModifyAI;
+    }
+
     public EntityProcessor()
     {
         doModifyAI = config.get(Boolean.class, ConfigOption.DO_MODIFY_AI);

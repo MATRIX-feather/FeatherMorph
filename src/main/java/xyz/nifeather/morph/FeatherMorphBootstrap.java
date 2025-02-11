@@ -23,7 +23,6 @@ public class FeatherMorphBootstrap implements PluginBootstrap
     public boolean bootstrapLoaded = false;
 
     static final AtomicBoolean pluginDisabled = new AtomicBoolean(false);
-    static boolean muteHotReloadWarning = false;
 
     @Override
     public void bootstrap(@NotNull BootstrapContext context)
